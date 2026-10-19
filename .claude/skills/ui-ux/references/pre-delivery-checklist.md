@@ -1,6 +1,6 @@
 # Pre-Delivery Checklist
 
-Dùng trước khi bàn giao giao diện (dev-fe), khi kiểm thử UI (tester) và khi review cuối (leader). Mục chưa đạt thì ghi ID rule, lý do và hướng xử lý vào báo cáo.
+Dùng trước khi bàn giao giao diện, khi kiểm thử UI và khi review cuối. Mục chưa đạt thì ghi ID rule, lý do và hướng xử lý vào báo cáo.
 
 ## Cách kiểm tra
 

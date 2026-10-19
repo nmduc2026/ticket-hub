@@ -1,6 +1,6 @@
 ---
 name: verification
-description: "Quy tắc có bằng chứng mới được báo: trước khi khẳng định đã xong, đã pass, đã sửa hay đã đáp ứng AC, phải chạy đúng loại kiểm chứng cho khẳng định đó (test map vào AC, chạy thật luồng nghiệp vụ, red-green cho test hồi quy, gọi API so với contract) và đọc output thật. Dùng trước mọi báo cáo hoàn thành, trước khi bàn giao, và khi nhận báo cáo đã xong từ agent khác."
+description: "Quy tắc có bằng chứng mới được báo: trước khi khẳng định đã xong, đã pass, đã sửa hay đã đáp ứng AC, phải chạy đúng loại kiểm chứng cho khẳng định đó (test map vào AC, chạy thật luồng nghiệp vụ, red-green cho test hồi quy, gọi API so với contract) và đọc output thật. Dùng trước mọi báo cáo hoàn thành, trước khi bàn giao, và khi nhận báo cáo đã xong từ subagent."
 ---
 
 # Verification
@@ -62,7 +62,7 @@ Build và lint chỉ chứng minh code biên dịch được. Chúng **không** 
 
 | Khẳng định | Bằng chứng bắt buộc | Không đủ |
 |---|---|---|
-| Agent khác đã làm xong | Xem diff thật, chạy lại test liên quan | Báo cáo "đã xong" của agent |
+| Subagent đã làm xong | Xem diff thật, chạy lại test liên quan | Báo cáo "đã xong" của subagent |
 
 ## Bảng truy vết trước khi báo xong
 
@@ -88,5 +88,5 @@ Không có môi trường, thiếu dữ liệu, cần quyền: nói rõ cái gì
 - Báo "xong" trước khi chạy kiểm chứng.
 - Dùng kết quả của lần chạy trước, khi code đã sửa sau đó.
 - Có test bị skip mà không nêu ra.
-- Lấy báo cáo của agent khác làm bằng chứng.
+- Lấy báo cáo của subagent làm bằng chứng.
 - Lấy "build pass" làm bằng chứng cho nghiệp vụ.

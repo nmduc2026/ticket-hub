@@ -1,86 +1,29 @@
-# AI Team: bộ Claude Code agents khởi đầu
+# Ticket Hub
 
-Bộ khởi đầu gồm 7 agent cấp senior, copy vào từng dự án. Sau khi copy, agent thuộc về dự án đó: bổ sung `CLAUDE.md`, skill riêng, và sửa thẳng agent để chuyên sâu cho dự án nếu cần.
+Nền tảng bán vé sự kiện / concert có flash sale, dạng marketplace: ban tổ chức bán vé, nền tảng thu phí. Hỗ trợ chọn ghế theo sơ đồ, phòng chờ ảo, thanh toán Stripe (test mode), vé QR có chữ ký số và check-in tại cổng.
 
-| Agent | Vai trò | Đầu ra chính |
-|---|---|---|
-| `leader` | Tech Lead: lập plan, phân công, ADR, API contract, review cuối | `docs/plans/`, `docs/adr/`, `docs/api/` |
-| `ba` | Business Analyst: user story, AC, business rule | `docs/requirements/` |
-| `designer` | Product Designer UX/UI: flow, wireframe, a11y, handoff | `docs/design/` |
-| `dev-fe` | Frontend Engineer: giao diện, state, tích hợp API, a11y, test | code + test |
-| `dev-be` | Backend Engineer: API, business logic, data, migration, test | code + test |
-| `tester` | QA/SDET: test case, test tự động, bug report | `docs/test/` + test |
-| `devops` | DevOps/SRE: CI/CD, IaC, container, observability | `docs/ops/` + infra code |
+Thiết kế hệ thống: [overview.md](overview.md).
 
-| Skill | Nội dung | Nạp sẵn cho | Gọi khi cần |
-|---|---|---|---|
-| `team-workflow` | Điều phối pipeline giữa các agent | | Session chính |
-| `brainstorm` | Hỏi đáp với người dùng để làm rõ yêu cầu mơ hồ, chốt thành brief | | Session chính |
-| `solution-options` | Đưa ra và so sánh phương án kỹ thuật | | leader |
-| `code-review` | Review code, tự review, nhận review | dev-fe, dev-be | leader (review cuối) |
-| `ui-ux` | Bộ rule UX/UI có ID và checklist trước bàn giao | designer, dev-fe | tester, leader (khi có UI) |
-| `verification` | Có bằng chứng đúng loại (AC, BR, contract, red–green) mới được báo xong | dev-fe, dev-be, tester, devops | |
-| `systematic-debugging` | Tìm nguyên nhân gốc trước khi sửa, luật dừng sau 3 lần | | dev-fe, dev-be, tester (khi có bug) |
+## Tech stack
 
-**Nạp sẵn** (field `skills:` trong frontmatter) là toàn bộ `SKILL.md` được nạp mỗi lần agent chạy. Chỉ dùng cho skill mà agent cần ở hầu hết task. **Gọi khi cần** thì chỉ tốn token khi thật sự dùng; agent biết lúc nào cần gọi nhờ dòng kích hoạt trong nội dung agent. Trong frontmatter, skill gọi khi cần được ghi thành dòng comment ngay trong danh sách `skills:`:
-
-```yaml
-skills:
-  - code-review
-  - verification
-#  - systematic-debugging (khi sửa bug)
-```
-
-Agent không nạp sẵn skill nào thì comment cả dòng `skills:` (xem `leader.md`).
-
-## Trong một dự án sau khi copy
-
-| File | Chứa gì |
+| Phần | Công nghệ |
 |---|---|
-| `<project>/.claude/agents/*.md` | Vai trò, quy trình, tiêu chuẩn senior; sửa thêm cho chuyên sâu theo dự án |
-| `<project>/CLAUDE.md` | Stack, lệnh, convention, môi trường |
-| `<project>/.claude/skills/` | Domain, coding convention, runbook... |
+| Backend | Java 21, Spring Boot, Spring Modulith, Maven, PostgreSQL, Redis, Kafka, Keycloak |
+| Frontend | React 19, TypeScript, Vite, shadcn/ui, Tailwind CSS v4, TanStack Router/Query |
+| Hạ tầng | Docker Compose, Kubernetes (k3d/k3s), Helm, ArgoCD, Prometheus/Grafana, ELK, Jaeger |
 
-Agent nào cũng bắt đầu bằng việc nắm bối cảnh: đọc `CLAUDE.md`, gọi skill liên quan và đọc code hiện có.
+## Bắt đầu
 
-## Đưa vào một dự án
+TODO: yêu cầu môi trường, cài đặt, chạy local (điền khi scaffold `backend/` và `frontend/`).
 
-Copy vào source code của dự án và commit cùng code, để cả team dùng chung một phiên bản:
+## Làm việc với Claude Code
 
-| Copy từ repo này | Vào dự án |
-|---|---|
-| `.claude/agents/*.md` | `<project>/.claude/agents/` |
-| `.claude/skills/*` | `<project>/.claude/skills/` (bỏ `ui-ux` nếu dự án không có giao diện) |
-| `templates/CLAUDE.project.md` | `<project>/CLAUDE.md` (gộp vào nếu dự án đã có) |
-
-Không copy `CLAUDE.md` và `README.md` của repo này; hai file đó chỉ dùng cho repo `ai-team`.
-
-Sau khi copy:
-
-1. Điền `<project>/CLAUDE.md`, đặc biệt là **lệnh test/build** và **những việc agent không được tự làm**.
-2. Thêm skill riêng vào `<project>/.claude/skills/<tên>/SKILL.md`, rồi gắn vào agent dùng nó: agent cần ở hầu hết task thì khai báo trong `skills:`; chỉ cần theo tình huống thì thêm thành dòng comment `#  - <skill> (khi nào)` trong danh sách `skills:`, kèm dòng kích hoạt ở đúng bước trong nội dung agent. Gợi ý:
-   - `domain-knowledge`: thuật ngữ và quy tắc nghiệp vụ (cho ba, tester)
-   - `fe-conventions`: stack frontend, cấu trúc, pattern component/state, guideline theo framework (cho dev-fe)
-   - `be-conventions`: stack backend, phân lớp, error handling, migration (cho dev-be)
-   - `design-system`: token, component, brand (cho designer, dev-fe)
-   - `testing-strategy`: framework, fixture, test data (cho tester)
-   - `deploy-runbook`: môi trường, quy trình release/rollback (cho devops)
-
-## Cách dùng
+Bối cảnh dự án ở `CLAUDE.md`; skill trong `.claude/skills/` (quy tắc theo vùng backend / frontend / hạ tầng / test, cùng `tech-lead`, `brainstorm`, `code-review`, `verification`…). Không dùng team agent: mỗi session làm một hạng mục trong plan sprint.
 
 ```text
-# Cả pipeline
-/team-workflow Thêm tính năng đăng nhập bằng Google
+# Lập plan cho sprint
+/tech-lead Lập plan Sprint 2 theo docs/plans/2026-10-19-roadmap.md
 
-# Gọi trực tiếp một agent
-Dùng agent ba phân tích yêu cầu: ...
-@agent-tester tái hiện bug: ...
+# Làm một hạng mục
+Làm hạng mục 3 trong docs/plans/2026-10-19-sprint-1-plan.md
 ```
-
-## Lưu ý thiết kế
-- **Subagent không gọi được subagent khác.** Session chính đóng vai orchestrator (qua skill `team-workflow`), còn `leader` lập kế hoạch và review.
-- Các agent trao đổi qua **file artifact trong `docs/`**, không chép nội dung dài vào prompt.
-- `model: inherit`: agent dùng model của session chính. Muốn cố định (ví dụ `opus` cho leader, dev-fe, dev-be) thì sửa frontmatter.
-- Feature có cả FE và BE: `leader` chốt API contract (`docs/api/`) trước, rồi `dev-fe` và `dev-be` làm song song.
-- `ba` bị giới hạn tool (không có Bash, không có MCP). Các agent còn lại kế thừa toàn bộ tool, kể cả MCP (Playwright, Figma...).
-- Các hành động nguy hiểm (commit/push, deploy, `terraform apply`, migration DB thật) luôn cần người dùng xác nhận.

@@ -125,7 +125,7 @@ Còn Critical hoặc Important thì kết luận là **CHANGES REQUESTED**.
    - Sửa theo sẽ làm hỏng chức năng khác.
    - Người review thiếu bối cảnh.
    - Đề xuất xây thứ chưa ai dùng (YAGNI): tìm trong code xem có chỗ nào gọi tới không.
-   - Góp ý mâu thuẫn với ADR hoặc quyết định đã chốt: chuyển cho leader hoặc người dùng quyết.
+   - Góp ý mâu thuẫn với ADR hoặc quyết định đã chốt: nêu ra để người dùng quyết.
 5. **Sửa theo thứ tự**: Critical → mục sửa đơn giản → mục sửa phức tạp. Chạy test sau mỗi mục và kiểm tra hồi quy.
 6. **Phản hồi** từng mục: đã sửa gì, ở đâu; hoặc lý do không sửa.
    - Không đồng ý xã giao kiểu "Bạn hoàn toàn đúng!". Hành động chứng minh là đã nghe.

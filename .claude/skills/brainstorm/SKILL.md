@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: "Làm rõ một ý tưởng hoặc yêu cầu còn mơ hồ bằng cách hỏi đáp trực tiếp với người dùng, rồi chốt thành bản brief trước khi giao cho team. Dùng khi yêu cầu chưa rõ mục tiêu, phạm vi hay tiêu chí thành công, hoặc khi người dùng gọi /brainstorm. Chạy ở session chính, không dùng trong subagent."
+description: "Làm rõ một ý tưởng hoặc yêu cầu còn mơ hồ bằng cách hỏi đáp trực tiếp với người dùng, rồi chốt thành bản brief trước khi lập plan và làm. Dùng khi yêu cầu chưa rõ mục tiêu, phạm vi hay tiêu chí thành công, hoặc khi người dùng gọi /brainstorm. Chạy ở session chính, không dùng trong subagent."
 ---
 
 # Brainstorm
@@ -9,13 +9,13 @@ Chuyển thể từ skill `brainstorming` của [obra/superpowers](https://githu
 
 Người dùng thường chưa nghĩ xong mình muốn gì. Câu hỏi đúng giúp họ nghĩ cho trọn. Khi hiểu được **tại sao**, team sẽ tự đưa ra hàng trăm quyết định nhỏ theo đúng cách người dùng muốn.
 
-Skill này chạy ở **session chính**, vì subagent không hỏi đáp qua lại được với người dùng. Kết quả là bản brief để `ba` viết thành đặc tả.
+Skill này chạy ở **session chính**, vì subagent không hỏi đáp qua lại được với người dùng. Kết quả là bản brief, đầu vào để lập plan theo skill `tech-lead`.
 
 ## 1. Có cần brainstorm không?
 
 Tự hỏi: mình đã biết người dùng muốn gì và tại sao chưa?
 
-- **Yêu cầu đã đủ rõ:** bỏ qua skill này, đi thẳng `team-workflow`.
+- **Yêu cầu đã đủ rõ:** bỏ qua skill này, lập plan hoặc làm luôn.
 - **Còn thiếu điều quan trọng:** bắt đầu hỏi.
 
 ## 2. Tin nhắn đầu tiên
@@ -23,7 +23,7 @@ Tự hỏi: mình đã biết người dùng muốn gì và tại sao chưa?
 Chỉ gồm hai thứ, theo đúng thứ tự:
 
 1. Một dòng cho biết nếu người dùng muốn bỏ qua phần hỏi và bắt đầu luôn thì cứ nói.
-   - Nếu họ chọn bỏ qua: nêu một dòng về các lựa chọn lớn sẽ áp dụng, rồi chuyển sang `team-workflow`.
+   - Nếu họ chọn bỏ qua: nêu một dòng về các lựa chọn lớn sẽ áp dụng, rồi chuyển sang lập plan.
 2. Một câu hỏi mở để họ mô tả, bám vào một tình huống cụ thể. Ví dụ: "Lần gần nhất anh/chị cần đến tính năng này là trong tình huống nào?"
 
 ## 3. Cách hỏi
@@ -65,16 +65,16 @@ Khi đã hiểu, chọn quy mô và nói ra bằng lời đơn giản. Người 
 
 | Quy mô | Mô tả đầy đủ nằm ở | Bước tiếp |
 |---|---|---|
-| Việc nhỏ, rõ ràng | chính yêu cầu | giao thẳng cho `dev-fe` / `dev-be` |
-| Thay đổi vừa | tóm tắt trong chat | `team-workflow` với pipeline ngắn |
-| Feature / dự án | bản brief | `team-workflow` đầy đủ |
+| Việc nhỏ, rõ ràng | chính yêu cầu | làm luôn theo skill convention của vùng đó |
+| Thay đổi vừa | tóm tắt trong chat | plan ngắn trong chat rồi làm |
+| Feature / dự án | bản brief | plan theo skill `tech-lead` |
 
 - Làm giữa chừng mà việc phình ra thì dừng lại, nói rõ, và nâng quy mô.
 - Nếu thực chất là nhiều việc độc lập thì nói ra, thống nhất thứ tự, và brainstorm từng việc một.
 
 ## 6. Bản brief
 
-Ghi vào `docs/briefs/YYYY-MM-DD-<slug>.md`, đủ để `ba` viết đặc tả mà không phải hỏi lại người dùng:
+Ghi vào `docs/briefs/YYYY-MM-DD-<slug>.md`, đủ để lập plan và viết acceptance criteria mà không phải hỏi lại người dùng:
 
 ```markdown
 # Brief: <tên>
@@ -85,17 +85,17 @@ Ghi vào `docs/briefs/YYYY-MM-DD-<slug>.md`, đủ để `ba` viết đặc tả
 ## Ràng buộc
 ## Quyết định người dùng đã chốt
 ## Quyết định do Claude đề xuất (người dùng chưa xác nhận riêng)
-## Câu hỏi còn mở (cho ba / leader)
+## Câu hỏi còn mở
 ```
 
 ## 7. Cổng duyệt (bắt buộc)
 
-**Chưa dispatch agent nào để thiết kế hay code cho đến khi người dùng duyệt** brief (với feature) hoặc mô tả trong chat (với thay đổi vừa). Đọc và khảo sát thì được.
+**Chưa thiết kế hay code cho đến khi người dùng duyệt** brief (với feature) hoặc mô tả trong chat (với thay đổi vừa). Đọc và khảo sát thì được.
 
 - Nếu người dùng chọn bỏ qua phần hỏi thì không cần cổng này.
 - "Nghe hay đấy" chỉ là duyệt phần đã trình bày. Mô tả chưa viết ra thì chưa được duyệt.
 
-Duyệt xong: gọi `team-workflow` và truyền đường dẫn brief làm input cho `ba`.
+Duyệt xong: lập plan theo skill `tech-lead`, lấy brief làm đầu vào.
 
 ## 8. Dấu hiệu đang làm sai
 

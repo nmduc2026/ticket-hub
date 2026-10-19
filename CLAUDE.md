@@ -1,23 +1,91 @@
-# ai-team
+# Ticket Hub
 
-Repo này là **nguồn gốc (source of truth)** của bộ team AI agents dùng chung cho nhiều dự án. Bản thân nó không phải một dự án phần mềm.
+Đọc file này đầu tiên để nạp bối cảnh. Thiết kế chi tiết nằm ở `overview.md`; file này chỉ tóm tắt. Mục nào còn `TODO` là chưa chốt, hỏi người dùng trước khi tự giả định.
 
-## Cấu trúc
-- `.claude/agents/*.md` — 7 agent: leader, ba, designer, dev-fe, dev-be, tester, devops
-- `.claude/skills/` — 7 skill: team-workflow, brainstorm (session chính); solution-options, code-review, ui-ux, verification, systematic-debugging (agent)
-- `templates/CLAUDE.project.md` — mẫu `CLAUDE.md` cho từng dự án
+## Tổng quan
+- Nền tảng bán vé sự kiện / concert có flash sale, dạng marketplace: ban tổ chức bán vé, nền tảng thu phí.
+- Dự án cá nhân, mục tiêu học xây dựng **và vận hành** hệ thống mức production. Chi phí ~0$.
+- Actor: Guest, Customer, Organizer, Admin (`overview.md` §2).
+- Bất biến số 1: **không bao giờ bán 1 ghế cho 2 người** (oversell). Đã trừ tiền thì phải có vé hoặc được hoàn tiền tự động.
+- Quy tắc nghiệp vụ có mã BR-xx (`overview.md` §3). Khi viết requirement, test hay code, trích đúng mã BR.
+- Trạng thái: mới có bản thiết kế, chưa có code. Lộ trình 9 sprint, hạn 18/12/2026: `docs/plans/2026-10-19-roadmap.md`.
 
-Cách dùng: copy `.claude/agents/` và `.claude/skills/` vào source code của dự án (xem README).
+## Tech stack
+- Backend: Java 21 (virtual threads), Spring Boot, Spring MVC REST, Spring Modulith, Maven
+  - Data: PostgreSQL, Spring Data JPA + Hibernate, jOOQ (báo cáo), Flyway
+  - Redis (Lettuce, Redisson, Bucket4j), Kafka (KRaft) + Avro + Schema Registry, Debezium (outbox)
+  - Auth: Keycloak, Spring Cloud Gateway làm BFF (session cookie, SPA không cầm token)
+  - Khác: Elasticsearch, Stripe (test mode, Connect), Resilience4j, ShedLock, Unleash, Vault
+- Frontend: React 19, TypeScript strict, Vite, npm
+  - shadcn/ui + Tailwind CSS v4, TanStack Router, TanStack Query, Zustand
+  - Orval sinh client từ OpenAPI (hooks + Zod), React Hook Form + Zod, react-konva (sơ đồ ghế)
+- Test: JUnit, Testcontainers, WireMock, ArchUnit, Pact (BE); Vitest, RTL, MSW (FE); Playwright (E2E); JMeter (load)
+- Hạ tầng: Docker Compose (dev), k3d/k3s + Helm, ArgoCD, Prometheus/Grafana, ELK, Jaeger, GitHub Actions, Terraform (AWS lab)
 
-## Quy tắc khi chỉnh sửa agent
-- Viết agent **như đã thuộc về một dự án**: không có câu kiểu "bạn được dùng chung cho nhiều dự án", "không giả định stack", "nếu dự án quy định khác thì...", và không liệt kê đủ loại stack/công cụ cho mọi trường hợp. Sau khi copy, dự án được phép sửa agent cho chuyên sâu.
-- Không ghi stack, domain hay đường dẫn riêng của một dự án cụ thể vào repo này.
-- Mỗi agent giữ cấu trúc: Nắm bối cảnh → Trách nhiệm → Quy trình → Nguyên tắc/Checklist → Báo cáo trả về.
-- Đổi định dạng báo cáo hoặc đường dẫn artifact thì cập nhật đồng bộ cả `team-workflow/SKILL.md`.
-- Gắn skill vào agent:
-  - Skill agent cần ở **hầu hết** task: khai báo trong `skills:` (nạp sẵn, tốn token mỗi lần chạy).
-  - Skill chỉ cần **theo tình huống**: không khai báo trong `skills:`. Ghi thành dòng comment `#  - <skill> (khi nào)` ngay trong danh sách `skills:` (agent không nạp sẵn skill nào thì comment cả dòng `# skills:`), và thêm dòng kích hoạt ở đúng bước trong nội dung agent.
-  - Cập nhật bảng skill trong README cho khớp.
-- Đổi ID rule trong `ui-ux` thì cập nhật cả `pre-delivery-checklist.md` và các agent có nhắc tới ID đó.
-- `description` có dấu `: ` thì phải bọc trong dấu nháy kép, nếu không YAML sẽ báo lỗi.
-- `description` trong frontmatter quyết định khi nào agent được tự gọi; viết cụ thể, có "dùng khi...".
+Danh sách đầy đủ: `overview.md` §21.
+
+## Lệnh thường dùng
+```bash
+# TODO: điền khi scaffold backend/ và frontend/
+# Backend: Maven
+# Frontend: npm
+# Hạ tầng dev: docker compose --profile <core|kafka|search|observability|platform>
+```
+
+## Cấu trúc thư mục
+Monorepo (`overview.md` §22):
+- `backend/`: Maven multi-module ngay từ đầu, `backend/pom.xml` là parent
+  - `backend/gateway/`: Spring Cloud Gateway làm BFF, ứng dụng riêng
+  - `backend/app/`: modular monolith, package gốc `com.ndz.backend`, mỗi module nghiệp vụ là 1 package: `account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `shared`; `queue` (phòng chờ) thêm ở Sprint 7
+  - Giai đoạn đầu event giữa các module đi bằng Spring Modulith in-process; Kafka vào ở Sprint 8
+- `frontend/`: tổ chức theo feature (`src/features/<feature>`); `src/api/generated/` do Orval sinh, không sửa tay
+- `infra/`: docker-compose, helm, argocd, keycloak, terraform
+- `load-tests/jmeter/`
+- `docs/`: `plans/` (lộ trình, plan sprint có AC), `adr/`, `briefs/`, `design/`, `test/`, `ops/`, `runbooks/`, `postmortems/`
+
+## Convention
+- Tên dự án: "Ticket Hub" khi hiển thị; định danh kỹ thuật (Keycloak realm/client, audience, tên image...) dùng `tickethub`. Tên cũ "TicketRush" không dùng nữa
+- API: REST/JSON, tiền tố `/api/v1`, lỗi theo RFC 9457 Problem Details kèm `code` nghiệp vụ (vd. `SEAT_UNAVAILABLE`), path danh từ số nhiều kebab-case
+- Contract: OpenAPI sinh bằng springdoc là nguồn sự thật cho FE
+- `Idempotency-Key` bắt buộc với `POST /bookings`, `POST /payments`, `POST /bookings/{id}/refund`
+- Tiền: `amount_minor` BIGINT + mã tiền tệ, mặc định VND (zero-decimal, không nhân 100). Không dùng float/double
+- Thời gian: lưu UTC (`timestamptz`), hiển thị `Asia/Ho_Chi_Minh`
+- Khoá chính UUIDv7; bảng có cập nhật đồng thời dùng cột `version`
+- Module không truy cập dữ liệu (bảng, class nội bộ) của module khác. Giao tiếp qua event (outbox), hoặc gọi interface công khai của module khi người dùng đang chờ kết quả (vd. Payment hỏi Booking lúc tạo thanh toán). Consumer phải idempotent
+- Tài liệu thiết kế (`overview.md`): viết như bản thiết kế hoàn chỉnh, ở thì hiện tại. Không ghi lịch sử quyết định, ngày chốt, mã review hay "đã sửa so với bản cũ"; những thứ đó ghi ở `docs/plans/*-review.md` hoặc ADR. Khi thêm một quyết định, sửa thẳng BR/mục liên quan thay vì thêm dòng "quyết định"
+- Git:
+  - `main` luôn build và deploy được. Nhánh: `feat/<slug>`, `fix/<slug>`, `infra/<slug>`, `docs/<slug>`, `chore/<slug>`.
+  - Commit theo Conventional Commits, scope là module: `feat(booking): giữ ghế bằng Postgres (BR-02, BR-03)`. Ghi mã BR khi liên quan.
+  - 1 PR = 1 việc kiểm chứng được. Mô tả PR: mục tiêu, BR / AC liên quan, cách test, kết quả verify. Gắn `[USER-REVIEW]` khi đụng phần người dùng bắt buộc tự xem (xem file lộ trình).
+  - Chỉ merge khi CI xanh; squash merge vào `main`.
+
+## Môi trường & deploy
+- dev: máy 16GB, Docker Compose theo profile
+- staging: máy 32GB, k3d
+- aws-lab: AWS `ap-southeast-1`, tạo bằng Terraform và destroy ngay sau lab
+- Thao tác cần **báo trước** cho người dùng: commit, push, mở PR, merge, deploy (k3d hay AWS), `kubectl`/`helm` lên cluster, `terraform apply`/`destroy`, chạy migration trên database không phải local/test.
+  - Agent được thực hiện các thao tác này, nhưng trước khi làm phải báo: làm gì, trên môi trường nào, lệnh cụ thể, ảnh hưởng và cách hoàn tác. Chờ người dùng đồng ý rồi mới làm.
+  - Người dùng trả lời **"skip"** cho một thao tác, hoặc cho cả một loại thao tác (vd. "skip commit"), thì agent tự làm mà không cần hỏi lại, nhưng vẫn ghi lại trong báo cáo.
+  - Subagent không hỏi trực tiếp được người dùng: dừng ở bước chuẩn bị, ghi thao tác cần làm vào báo cáo; session chính hỏi người dùng rồi mới giao làm tiếp.
+  - Luôn hỏi từng lần, không áp dụng "skip": `terraform apply` tạo tài nguyên AWS tốn tiền.
+- Không bao giờ làm: dùng Stripe live mode hoặc dữ liệu khách hàng thật; commit secret (Stripe key, Keycloak client secret...).
+
+## Cách làm việc
+- Không dùng team agent. Session chính làm trực tiếp, nạp skill theo vùng việc (bảng dưới). Người dùng là PM: đưa yêu cầu, duyệt plan, review.
+- **Một session cho một hạng mục** trong plan sprint; xong hạng mục thì báo cáo bàn giao, người dùng `/clear` trước hạng mục kế tiếp.
+- **Không đọc cả `overview.md`** (rất dài): chỉ đọc các § mà plan / hạng mục chỉ ra, tìm theo tiêu đề.
+- Yêu cầu mơ hồ → `brainstorm`. Bắt đầu sprint / việc lớn, viết ADR, review cuối sprint → `tech-lead`.
+- Review độc lập (tuỳ chọn, vùng `[USER-REVIEW]`): gọi subagent general-purpose review diff theo skill `code-review`.
+
+## Skill
+| Vùng việc | Skill nạp |
+|---|---|
+| Mọi code | `ticket-hub-coding-conventions` |
+| Backend (`backend/`) | `ticket-hub-springbot-conventions` (gồm quy trình và mẫu báo cáo) |
+| Frontend (`frontend/`) | `ticket-hub-react-conventions` (gồm quy trình và mẫu báo cáo); giao diện, thiết kế màn hình: `ui-ux` |
+| Hạ tầng (`infra/`, `.github/`, Dockerfile, AWS) | `ticket-hub-infra-conventions` |
+| Test | `ticket-hub-testcase-rule` |
+| Plan, ADR, review cuối sprint | `tech-lead` |
+| Trước khi báo xong | `verification`; tự review theo phần B của `code-review` |
+| Bug | `systematic-debugging` |
+| Chọn phương án kỹ thuật | `solution-options` |

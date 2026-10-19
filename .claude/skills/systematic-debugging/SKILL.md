@@ -71,7 +71,7 @@ Dấu hiệu đây là vấn đề kiến trúc chứ không phải bug lẻ:
 - Muốn sửa thì phải refactor lớn.
 - Sửa chỗ này sinh triệu chứng ở chỗ kia.
 
-Khi đó báo cáo những gì đã điều tra, các giả thuyết đã loại, và chuyển cho `leader` quyết định hướng xử lý.
+Khi đó báo cáo cho người dùng những gì đã điều tra, các giả thuyết đã loại, và đề xuất hướng xử lý (skill `solution-options` nếu là vấn đề kiến trúc). Chờ người dùng quyết.
 
 ## Không tìm ra nguyên nhân gốc
 
@@ -83,13 +83,20 @@ Phần lớn trường hợp "không có nguyên nhân" thực ra là điều tr
 
 Test chập chờn do timing: chờ theo điều kiện (đợi phần tử xuất hiện, đợi request xong), không dùng `sleep` cố định.
 
-## Dùng cho tester: tái hiện & khoanh vùng
+## Bug report
 
-Tester làm giai đoạn 1 và 2 để bug report có chất lượng; tester không sửa code.
-- Bước tái hiện chính xác và dữ liệu cần dùng.
-- Lỗi xảy ra luôn hay thỉnh thoảng; điều kiện để xảy ra.
-- **Vùng**: frontend / backend / dữ liệu / chưa rõ, kèm bằng chứng (request/response, log).
-- Khác biệt so với trường hợp chạy đúng.
+Bug chưa sửa ngay (phát hiện khi verify, hoặc cần người dùng quyết) thì ghi lại sau giai đoạn 1–2, trong báo cáo hoặc `docs/test/<slug>.md`:
+
+```markdown
+### BUG-xx: <hành vi sai, ngắn gọn>
+- Mức độ: Critical / Major / Minor
+- BR / AC liên quan; rule `ui-ux` bị vi phạm (nếu là lỗi giao diện)
+- Vùng: frontend / backend / dữ liệu / hạ tầng / chưa rõ
+- Bước tái hiện và dữ liệu cần dùng; xảy ra luôn hay thỉnh thoảng
+- Kết quả thực tế / kết quả mong đợi
+- Bằng chứng: log, request / response, output test, screenshot
+- Khoanh vùng nghi ngờ: `file:line` (nếu có)
+```
 
 ## Dấu hiệu đang làm sai
 

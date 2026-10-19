@@ -30,12 +30,35 @@ Checklist trước bàn giao: `references/pre-delivery-checklist.md`.
 
 **Chỉ đọc file của nhóm liên quan tới việc đang làm**, không nạp hết.
 
-## Cách dùng theo vai
+## Cách dùng
 
-- **designer**: đọc nhóm liên quan trước khi thiết kế. Trong `docs/design/<slug>.md`, ghi ID rule áp dụng cho từng màn hình, đặc biệt là các rule về trạng thái, form và accessibility.
-- **dev-fe**: đọc nhóm liên quan khi code. Trước khi báo xong, chạy `pre-delivery-checklist.md` và ghi kết quả vào báo cáo.
-- **tester**: dùng `pre-delivery-checklist.md` làm tiêu chí kiểm thử UI. Bug vi phạm rule ghi kèm ID rule.
-- **leader**: khi review cuối, đối chiếu các mục Critical/High của checklist.
+- **Thiết kế màn hình**: đọc nhóm liên quan, làm theo mục "Thiết kế màn hình" bên dưới.
+- **Code giao diện**: đọc nhóm liên quan khi code. Trước khi báo xong, chạy `pre-delivery-checklist.md` và ghi kết quả vào báo cáo.
+- **Kiểm thử / review**: dùng `pre-delivery-checklist.md` làm tiêu chí; mục Critical / High chưa đạt thì chưa xong. Bug vi phạm rule ghi kèm ID rule.
+
+## Thiết kế màn hình
+
+Làm trước khi code với màn hình mới có nhiều trạng thái hoặc tương tác: sơ đồ ghế, checkout, phòng chờ, check-in, dashboard, các form quản trị lớn. Màn hình đơn giản dựng từ component shadcn có sẵn thì bỏ qua bước này.
+
+Ghi ngắn vào `docs/design/<slug>.md`:
+
+```markdown
+# Design: <tên>
+## Tham chiếu: plan / AC / BR liên quan
+## User flow (Mermaid, gồm nhánh lỗi và điểm thoát)
+## Màn hình: <tên>
+- Mục đích; wireframe ASCII
+- Component: dùng lại (shadcn, component dự án) / làm mới (kèm lý do)
+- Trạng thái: loading / empty / error / success / disabled / không có quyền
+- Interaction và validation (báo lỗi khi nào, ở đâu); xác nhận hành động nguy hiểm
+- Responsive (mobile / desktop); UX copy (nhãn, thông báo lỗi, empty state)
+- Rule áp dụng (ID) và ngoại lệ (ID, lý do)
+## Câu hỏi mở
+```
+
+- Nhất quán trước, sáng tạo sau: dùng token và component có sẵn; thiếu token thì đề xuất token mới, không hard-code.
+- Thiết kế cho dữ liệu thật: text dài, danh sách rỗng, hàng nghìn ghế.
+- Không viết code production trong bước này; prototype HTML chỉ khi wireframe không đủ diễn đạt.
 
 ## Mức độ và ngoại lệ
 
