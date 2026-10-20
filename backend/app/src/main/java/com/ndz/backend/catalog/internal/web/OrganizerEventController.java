@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ndz.backend.catalog.internal.application.EventBannerService;
+import com.ndz.backend.catalog.internal.application.EventLifecycleService;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService.Assignment;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService.EventFilter;
@@ -52,10 +53,13 @@ class OrganizerEventController {
 
 	private final OrganizerEventService service;
 	private final EventBannerService banners;
+	private final EventLifecycleService lifecycle;
 
-	OrganizerEventController(OrganizerEventService service, EventBannerService banners) {
+	OrganizerEventController(OrganizerEventService service, EventBannerService banners,
+			EventLifecycleService lifecycle) {
 		this.service = service;
 		this.banners = banners;
+		this.lifecycle = lifecycle;
 	}
 
 	@Operation(operationId = "listOrganizerEvents", summary = "Danh sách sự kiện của tôi")
@@ -89,6 +93,15 @@ class OrganizerEventController {
 	@PutMapping("/{eventId}")
 	Detail update(@PathVariable UUID eventId, @Valid @RequestBody EventRequest request) {
 		return Detail.from(service.update(CurrentUser.require().id(), eventId, request.toContent()));
+	}
+
+	@Operation(operationId = "publishOrganizerEvent", summary = "Publish sự kiện",
+			description = "Kiểm BR-05 (organizer đã duyệt và nhận được tiền), chốt mức phí nền tảng (BR-06), khoá thông tin bán vé (BR-14)")
+	@ApiResponse(responseCode = "409", description = "PUBLISH_NOT_ALLOWED (kèm reasons) hoặc INVALID_EVENT_TRANSITION")
+	@ApiResponse(responseCode = "422", description = "PUBLISH_INCOMPLETE (kèm missing) hoặc INVALID_EVENT_TIMES")
+	@PostMapping("/{eventId}/publish")
+	Detail publish(@PathVariable UUID eventId) {
+		return Detail.from(lifecycle.publish(CurrentUser.require().id(), eventId));
 	}
 
 	@Operation(operationId = "uploadEventBanner", summary = "Tải ảnh banner",

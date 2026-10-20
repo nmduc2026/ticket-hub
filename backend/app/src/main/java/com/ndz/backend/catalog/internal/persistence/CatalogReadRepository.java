@@ -1,10 +1,13 @@
 package com.ndz.backend.catalog.internal.persistence;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -12,13 +15,15 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.ndz.backend.catalog.internal.domain.CatalogViews.ElementRow;
+import com.ndz.backend.catalog.internal.domain.CatalogViews.OrganizerInfo;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SeatMapRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SectionRow;
+import com.ndz.backend.catalog.internal.domain.CatalogViews.VenueInfo;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.VenueRow;
 
 /**
- * Truy vấn đọc cho địa điểm và sơ đồ ghế (dữ liệu do Admin quản lý, organizer chỉ chọn). Dùng SQL thuần vì cột
- * {@code shape_json} là JSONB trả nguyên văn cho frontend vẽ sơ đồ.
+ * Truy vấn đọc cho địa điểm, sơ đồ ghế, tổ chức và mức phí (dữ liệu do Admin quản lý, organizer chỉ chọn). Dùng SQL
+ * thuần vì cột {@code shape_json} là JSONB trả nguyên văn cho frontend vẽ sơ đồ.
  */
 @Repository
 public class CatalogReadRepository {
@@ -51,6 +56,35 @@ public class CatalogReadRepository {
 
 	public boolean organizerExists(UUID organizerId) {
 		return exists("SELECT EXISTS (SELECT 1 FROM catalog.organizers WHERE id = ?)", organizerId);
+	}
+
+	public Optional<OrganizerInfo> organizer(UUID organizerId) {
+		return jdbc.query("SELECT status, payout_ready FROM catalog.organizers WHERE id = ?",
+				(rs, i) -> new OrganizerInfo(rs.getString("status"), rs.getBoolean("payout_ready")), organizerId)
+				.stream().findFirst();
+	}
+
+	/** Mức phí nền tảng đang hiệu lực tại thời điểm {@code at} (BR-06): bản ghi mới nhất đã tới ngày áp dụng. */
+	public Optional<Integer> feeBpsAt(Instant at) {
+		return jdbc.queryForList("""
+				SELECT fee_bps FROM catalog.platform_fee_policies
+				WHERE effective_from <= ? ORDER BY effective_from DESC LIMIT 1
+				""", Integer.class, Timestamp.from(at)).stream().findFirst();
+	}
+
+	public Optional<VenueInfo> venueInfo(UUID venueId) {
+		return jdbc.query("""
+				SELECT v.name, c.name AS city_name FROM catalog.venues v
+				         JOIN catalog.administrative_units w ON w.id = v.ward_id
+				         JOIN catalog.administrative_units c ON c.id = w.parent_id
+				WHERE v.id = ?
+				""", (rs, i) -> new VenueInfo(rs.getString("name"), rs.getString("city_name")), venueId).stream()
+				.findFirst();
+	}
+
+	/** Khoá sơ đồ khi có sự kiện publish dùng (bất biến, overview.md §6.1). */
+	public void lockSeatMap(UUID seatMapId) {
+		jdbc.update("UPDATE catalog.seat_maps SET locked = TRUE WHERE id = ?", seatMapId);
 	}
 
 	public List<SeatMapRow> listSeatMaps(UUID venueId) {
@@ -90,8 +124,8 @@ public class CatalogReadRepository {
 	}
 
 	public Set<UUID> sectionIdsOfSeatMap(UUID seatMapId) {
-		return new HashSet<>(jdbc.queryForList("SELECT id FROM catalog.sections WHERE seat_map_id = ?", UUID.class,
-				seatMapId));
+		return new HashSet<>(
+				jdbc.queryForList("SELECT id FROM catalog.sections WHERE seat_map_id = ?", UUID.class, seatMapId));
 	}
 
 	/** Tên địa điểm theo id, để hiển thị cùng danh sách sự kiện mà không phải tải cả địa điểm. */

@@ -5,11 +5,14 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.ndz.backend.catalog.events.EventUpdated;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService.EventDetail;
+import com.ndz.backend.catalog.internal.domain.EventStatus;
 import com.ndz.backend.catalog.internal.domain.Event;
 import com.ndz.backend.catalog.internal.domain.ImageType;
 import com.ndz.backend.catalog.internal.persistence.EventRepository;
@@ -33,10 +36,13 @@ public class EventBannerService {
 	private final ObjectStorage storage;
 	private final StorageProperties properties;
 	private final TransactionTemplate transaction;
+	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	EventBannerService(EventRepository events, OrganizerEventService eventService, ObjectStorage storage,
-			StorageProperties properties, TransactionTemplate transaction, Clock clock) {
+			StorageProperties properties, TransactionTemplate transaction, ApplicationEventPublisher publisher,
+			Clock clock) {
+		this.publisher = publisher;
 		this.events = events;
 		this.eventService = eventService;
 		this.storage = storage;
@@ -58,6 +64,10 @@ public class EventBannerService {
 				Event event = owned(organizerId, eventId);
 				String previous = event.changeBanner(storage.publicUrl(key));
 				events.save(event);
+				if (event.getStatus() != EventStatus.DRAFT) {
+					publisher.publishEvent(new EventUpdated(Uuid7.next(clock), clock.instant(), event.getId(),
+							event.getTitle(), event.getDescription(), event.getCategory(), event.getBannerUrl()));
+				}
 				return previous;
 			});
 		}

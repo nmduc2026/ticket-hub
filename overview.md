@@ -565,6 +565,9 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 - Danh sách ghế không đi trong event vì sự kiện lớn có hàng chục nghìn ghế, payload vượt giới hạn message của Kafka.
 - Giai đoạn modular monolith: Booking gọi interface công khai của module catalog trong cùng process; Spring Modulith chặn mọi truy cập vào bảng hay class nội bộ của catalog. Khi tách service: thay phần cài đặt của interface đó bằng lời gọi API nội bộ (client `tickethub-internal`), code của Booking giữ nguyên.
 - Chỉ ghế thuộc khu có hạng vé mới được tạo trong `seat_inventory` (§6.1).
+- Job của Catalog (ShedLock, 30 giây) chuyển `PUBLISHED` → `ON_SALE` (phát `EventOnSale`) và → `ENDED` (phát `EventEnded`); Booking dùng các event này để giữ trạng thái trong `event_snapshots`.
+- Publish bị từ chối bằng `409 PUBLISH_NOT_ALLOWED` kèm `reasons` (`ORGANIZER_NOT_APPROVED`, `PAYOUT_NOT_READY`) hoặc `422 PUBLISH_INCOMPLETE` kèm `missing` (`VENUE`, `SEAT_MAP`, `STARTS_AT`, `ENDS_AT`, `SALE_STARTS_AT`, `TICKET_TIERS`, `TIER_SECTIONS`).
+- Giai đoạn modular monolith, kiểu `SeatInventoryReady` khai báo trong package `events` của Catalog (bên nhận định nghĩa điều nó cần) để Catalog và Booking không phụ thuộc vòng; trên Kafka vẫn là message của topic `booking.events.v1`.
 
 ---
 
@@ -574,7 +577,7 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 
 | Topic | Key | Events | Producer | Consumers |
 |---|---|---|---|---|
-| `catalog.events.v1` | eventId | EventPublished, EventUpdated, EventSuspended, EventResumed, EventCancelled, OrganizerApproved | Catalog | Booking, Queue, Account, Search projection, Notification |
+| `catalog.events.v1` | eventId | EventPublished, EventUpdated, EventOnSale, EventEnded, EventSuspended, EventResumed, EventCancelled, OrganizerApproved | Catalog | Booking, Queue, Account, Search projection, Notification |
 | `booking.events.v1` | bookingId (SeatInventoryReady: eventId) | BookingCreated, BookingConfirmed, BookingExpired, BookingCancelled, BookingConfirmationFailed, RefundRequested, SeatInventoryReady | Booking | Payment, Ticket, Notification, Catalog, Queue |
 | `payment.events.v1` | bookingId (OrganizerPayoutStatusChanged: organizerId) | PaymentSucceeded, PaymentFailed, RefundCompleted, RefundFailed, OrganizerPayoutStatusChanged | Payment | Booking, Ticket, Notification, Catalog |
 | `ticket.events.v1` | ticketId | TicketIssued, TicketIssuanceFailed, TicketCheckedIn, TicketRevoked | Ticket | Booking, Payment, Notification |

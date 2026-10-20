@@ -133,6 +133,14 @@ export const createTicketTierBody = zod.object({
 })
 
 /**
+ * Kiểm BR-05 (organizer đã duyệt và nhận được tiền), chốt mức phí nền tảng (BR-06), khoá thông tin bán vé (BR-14)
+ * @summary Publish sự kiện
+ */
+export const publishOrganizerEventParams = zod.object({
+  "eventId": zod.uuid()
+})
+
+/**
  * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
  * @summary Tải ảnh banner
  */

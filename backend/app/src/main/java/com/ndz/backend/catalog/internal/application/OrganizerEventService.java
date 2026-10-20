@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ndz.backend.catalog.events.EventUpdated;
 import com.ndz.backend.catalog.internal.domain.Event;
 import com.ndz.backend.catalog.internal.domain.EventContent;
 import com.ndz.backend.catalog.internal.domain.EventStatus;
@@ -60,10 +62,12 @@ public class OrganizerEventService {
 	private final TicketTierRepository tiers;
 	private final TierSectionRepository tierSections;
 	private final CatalogReadRepository catalog;
+	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	OrganizerEventService(EventRepository events, TicketTierRepository tiers, TierSectionRepository tierSections,
-			CatalogReadRepository catalog, Clock clock) {
+			CatalogReadRepository catalog, ApplicationEventPublisher publisher, Clock clock) {
+		this.publisher = publisher;
 		this.events = events;
 		this.tiers = tiers;
 		this.tierSections = tierSections;
@@ -94,7 +98,13 @@ public class OrganizerEventService {
 			// Khu của sơ đồ cũ không còn thuộc sự kiện: bỏ các gán hạng vé cũ.
 			tierSections.deleteByEventId(eventId);
 		}
-		return detail(events.save(event));
+		events.save(event);
+		if (event.getStatus() != EventStatus.DRAFT) {
+			// Sự kiện đã publish: thông tin hiển thị đổi thì các module khác cập nhật bản sao của họ.
+			publisher.publishEvent(new EventUpdated(Uuid7.next(clock), clock.instant(), event.getId(),
+					event.getTitle(), event.getDescription(), event.getCategory(), event.getBannerUrl()));
+		}
+		return detail(event);
 	}
 
 	@Transactional(readOnly = true)

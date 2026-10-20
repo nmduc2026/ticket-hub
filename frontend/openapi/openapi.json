@@ -347,6 +347,45 @@
         }
       }
     },
+    "/api/v1/organizer/events/{eventId}/publish" : {
+      "post" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Publish sự kiện",
+        "description" : "Kiểm BR-05 (organizer đã duyệt và nhận được tiền), chốt mức phí nền tảng (BR-06), khoá thông tin bán vé (BR-14)",
+        "operationId" : "publishOrganizerEvent",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "409" : {
+            "description" : "PUBLISH_NOT_ALLOWED (kèm reasons) hoặc INVALID_EVENT_TRANSITION",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "PUBLISH_INCOMPLETE (kèm missing) hoặc INVALID_EVENT_TIMES",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizer/events/{eventId}/banner" : {
       "post" : {
         "tags" : [ "organizer-event-controller" ],
@@ -720,63 +759,63 @@
           "float" : {
             "type" : "boolean"
           },
-          "number" : {
-            "type" : "boolean"
-          },
           "container" : {
-            "type" : "boolean"
-          },
-          "bigInteger" : {
-            "type" : "boolean"
-          },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
-          "bigDecimal" : {
-            "type" : "boolean"
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "floatingPointNumber" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
-            "type" : "boolean"
-          },
-          "string" : {
-            "type" : "boolean"
-          },
-          "int" : {
             "type" : "boolean"
           },
           "short" : {
             "type" : "boolean"
           },
-          "double" : {
+          "boolean" : {
             "type" : "boolean"
           },
-          "binary" : {
+          "string" : {
             "type" : "boolean"
           },
           "object" : {
             "type" : "boolean"
           },
-          "pojo" : {
+          "int" : {
             "type" : "boolean"
           },
           "long" : {
+            "type" : "boolean"
+          },
+          "double" : {
             "type" : "boolean"
           },
           "textual" : {
             "type" : "boolean",
             "deprecated" : true
           },
-          "boolean" : {
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "binary" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "type" : "boolean"
+          },
+          "floatingPointNumber" : {
+            "type" : "boolean"
+          },
+          "bigDecimal" : {
+            "type" : "boolean"
+          },
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "bigInteger" : {
+            "type" : "boolean"
+          },
+          "missingNode" : {
             "type" : "boolean"
           },
           "embeddedValue" : {

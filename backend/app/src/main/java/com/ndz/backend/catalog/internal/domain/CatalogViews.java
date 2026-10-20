@@ -2,7 +2,7 @@ package com.ndz.backend.catalog.internal.domain;
 
 import java.util.UUID;
 
-/** Giá trị chỉ đọc của địa điểm và sơ đồ ghế (do Admin quản lý, organizer chỉ chọn). */
+/** Giá trị chỉ đọc của địa điểm, sơ đồ ghế và tổ chức (do Admin quản lý, organizer chỉ chọn). */
 public final class CatalogViews {
 
 	private CatalogViews() {
@@ -18,6 +18,12 @@ public final class CatalogViews {
 	}
 
 	public record ElementRow(UUID id, UUID seatMapId, String type, String label, String shapeJson) {
+	}
+
+	public record OrganizerInfo(String status, boolean payoutReady) {
+	}
+
+	public record VenueInfo(String name, String cityName) {
 	}
 
 }

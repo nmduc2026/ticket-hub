@@ -152,6 +152,71 @@ public class Event {
 		return new BusinessException("EVENT_LOCKED", message, HttpStatus.CONFLICT);
 	}
 
+	// ---- Máy trạng thái (overview.md §7.7) ----
+
+	/** Publish chỉ làm được từ nháp; trạng thái khác bị máy trạng thái từ chối. */
+	public void requireDraft() {
+		if (status != EventStatus.DRAFT) {
+			throw invalidTransition(EventStatus.PUBLISHED);
+		}
+	}
+
+	/** Organizer publish: khoá thông tin bán vé (BR-14) và chốt mức phí (BR-06). */
+	public void publish(int platformFeeBps) {
+		transition(EnumSet.of(EventStatus.DRAFT), EventStatus.PUBLISHED);
+		this.platformFeeBps = platformFeeBps;
+	}
+
+	/** Tới giờ mở bán và tồn kho ghế đã sẵn sàng thì mới được bán. */
+	public boolean canStartSale(Instant now) {
+		return status == EventStatus.PUBLISHED && inventoryReady && !now.isBefore(saleStartsAt);
+	}
+
+	public void startSale(Instant now) {
+		if (!canStartSale(now)) {
+			throw invalidTransition(EventStatus.ON_SALE);
+		}
+		this.status = EventStatus.ON_SALE;
+	}
+
+	public void end() {
+		transition(EnumSet.of(EventStatus.PUBLISHED, EventStatus.ON_SALE, EventStatus.SUSPENDED), EventStatus.ENDED);
+	}
+
+	/** Tạm dừng bán (BR-13). */
+	public void suspend() {
+		transition(EnumSet.of(EventStatus.PUBLISHED, EventStatus.ON_SALE), EventStatus.SUSPENDED);
+	}
+
+	/** Mở bán lại: về ON_SALE nếu đã qua giờ mở bán và có tồn kho, ngược lại về PUBLISHED (BR-13). */
+	public void resume(Instant now) {
+		transition(EnumSet.of(EventStatus.SUSPENDED),
+				inventoryReady && !now.isBefore(saleStartsAt) ? EventStatus.ON_SALE : EventStatus.PUBLISHED);
+	}
+
+	/** Admin huỷ sự kiện (BR-08). */
+	public void cancel() {
+		transition(EnumSet.of(EventStatus.PUBLISHED, EventStatus.ON_SALE, EventStatus.SUSPENDED),
+				EventStatus.CANCELLED);
+	}
+
+	/** Booking đã tạo xong tồn kho ghế; nhận lại nhiều lần cũng không đổi kết quả. */
+	public void markInventoryReady() {
+		this.inventoryReady = true;
+	}
+
+	private void transition(Set<EventStatus> allowedFrom, EventStatus to) {
+		if (!allowedFrom.contains(status)) {
+			throw invalidTransition(to);
+		}
+		this.status = to;
+	}
+
+	private BusinessException invalidTransition(EventStatus to) {
+		return new BusinessException("INVALID_EVENT_TRANSITION",
+				"Không thể chuyển sự kiện từ %s sang %s".formatted(status, to), HttpStatus.CONFLICT);
+	}
+
 	public boolean isOwnedBy(UUID userId) {
 		return Objects.equals(organizerId, userId);
 	}

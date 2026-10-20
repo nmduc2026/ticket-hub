@@ -32,6 +32,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	ProblemDetail handleBusiness(BusinessException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.status(), ex.getMessage());
 		problem.setProperty("code", ex.code());
+		ex.properties().forEach(problem::setProperty);
 		addTraceId(problem);
 		return problem;
 	}

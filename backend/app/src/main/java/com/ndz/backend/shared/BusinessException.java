@@ -1,5 +1,8 @@
 package com.ndz.backend.shared;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 
 /**
@@ -9,6 +12,7 @@ public class BusinessException extends RuntimeException {
 
 	private final String code;
 	private final HttpStatus status;
+	private final Map<String, Object> properties = new LinkedHashMap<>();
 
 	public BusinessException(String code, String message) {
 		this(code, message, HttpStatus.UNPROCESSABLE_CONTENT);
@@ -18,6 +22,16 @@ public class BusinessException extends RuntimeException {
 		super(message);
 		this.code = code;
 		this.status = status;
+	}
+
+	/** Thêm thông tin có cấu trúc vào Problem Details (vd. danh sách mục còn thiếu), để frontend hiển thị chi tiết. */
+	public BusinessException with(String name, Object value) {
+		properties.put(name, value);
+		return this;
+	}
+
+	public Map<String, Object> properties() {
+		return Map.copyOf(properties);
 	}
 
 	public String code() {

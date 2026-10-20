@@ -895,6 +895,94 @@ export const useCreateTicketTier = <TError = unknown,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * Kiểm BR-05 (organizer đã duyệt và nhận được tiền), chốt mức phí nền tảng (BR-06), khoá thông tin bán vé (BR-14)
+ * @summary Publish sự kiện
+ */
+export type publishOrganizerEventResponse409 = {
+  data: OrganizerEventDetail
+  status: 409
+}
+
+export type publishOrganizerEventResponse422 = {
+  data: OrganizerEventDetail
+  status: 422
+}
+    
+;
+export type publishOrganizerEventResponseError = (publishOrganizerEventResponse409 | publishOrganizerEventResponse422) & {
+  headers: Headers;
+};
+
+export type publishOrganizerEventResponse = (publishOrganizerEventResponseError)
+
+export const getPublishOrganizerEventUrl = (eventId: string,) => {
+
+
+  
+
+  return `/api/v1/organizer/events/${eventId}/publish`
+}
+
+export const publishOrganizerEvent = async (eventId: string, options?: RequestInit): Promise<publishOrganizerEventResponse> => {
+  
+  return apiFetch<publishOrganizerEventResponse>(getPublishOrganizerEventUrl(eventId),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+
+export const getPublishOrganizerEventMutationOptions = <TError = OrganizerEventDetail | OrganizerEventDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishOrganizerEvent>>, TError,{eventId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof publishOrganizerEvent>>, TError,{eventId: string}, TContext> => {
+
+const mutationKey = ['publishOrganizerEvent'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof publishOrganizerEvent>>, {eventId: string}> = (props) => {
+          const {eventId} = props ?? {};
+
+          return  publishOrganizerEvent(eventId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PublishOrganizerEventMutationResult = NonNullable<Awaited<ReturnType<typeof publishOrganizerEvent>>>
+    
+    export type PublishOrganizerEventMutationError = OrganizerEventDetail | OrganizerEventDetail
+
+    /**
+ * @summary Publish sự kiện
+ */
+export const usePublishOrganizerEvent = <TError = OrganizerEventDetail | OrganizerEventDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishOrganizerEvent>>, TError,{eventId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof publishOrganizerEvent>>,
+        TError,
+        {eventId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getPublishOrganizerEventMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
  * @summary Tải ảnh banner
  */
