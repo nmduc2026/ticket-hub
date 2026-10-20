@@ -241,3 +241,98 @@ export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TE
 
 
 
+/**
+ * @summary Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)
+ */
+export type cancelBookingResponse204 = {
+  data: void
+  status: 204
+}
+
+export type cancelBookingResponse404 = {
+  data: void
+  status: 404
+}
+
+export type cancelBookingResponse409 = {
+  data: void
+  status: 409
+}
+    
+export type cancelBookingResponseSuccess = (cancelBookingResponse204) & {
+  headers: Headers;
+};
+export type cancelBookingResponseError = (cancelBookingResponse404 | cancelBookingResponse409) & {
+  headers: Headers;
+};
+
+export type cancelBookingResponse = (cancelBookingResponseSuccess | cancelBookingResponseError)
+
+export const getCancelBookingUrl = (bookingId: string,) => {
+
+
+  
+
+  return `/api/v1/bookings/${bookingId}`
+}
+
+export const cancelBooking = async (bookingId: string, options?: RequestInit): Promise<cancelBookingResponse> => {
+  
+  return apiFetch<cancelBookingResponse>(getCancelBookingUrl(bookingId),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+
+export const getCancelBookingMutationOptions = <TError = void | void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelBooking>>, TError,{bookingId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof cancelBooking>>, TError,{bookingId: string}, TContext> => {
+
+const mutationKey = ['cancelBooking'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof cancelBooking>>, {bookingId: string}> = (props) => {
+          const {bookingId} = props ?? {};
+
+          return  cancelBooking(bookingId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CancelBookingMutationResult = NonNullable<Awaited<ReturnType<typeof cancelBooking>>>
+    
+    export type CancelBookingMutationError = void | void
+
+    /**
+ * @summary Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)
+ */
+export const useCancelBooking = <TError = void | void,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelBooking>>, TError,{bookingId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof cancelBooking>>,
+        TError,
+        {bookingId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getCancelBookingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    

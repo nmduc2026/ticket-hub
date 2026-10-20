@@ -723,6 +723,31 @@
             }
           }
         }
+      },
+      "delete" : {
+        "tags" : [ "booking-controller" ],
+        "summary" : "Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)",
+        "operationId" : "cancelBooking",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)"
+          },
+          "409" : {
+            "description" : "BOOKING_NOT_CANCELLABLE (đã hết hạn, đã huỷ hoặc đã thanh toán)"
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
       }
     },
     "/api/v1/administrative-units" : {
@@ -1058,6 +1083,25 @@
           "float" : {
             "type" : "boolean"
           },
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "bigDecimal" : {
+            "type" : "boolean"
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "missingNode" : {
+            "type" : "boolean"
+          },
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "bigInteger" : {
+            "type" : "boolean"
+          },
           "container" : {
             "type" : "boolean"
           },
@@ -1067,54 +1111,35 @@
           "floatingPointNumber" : {
             "type" : "boolean"
           },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "string" : {
-            "type" : "boolean"
-          },
-          "short" : {
-            "type" : "boolean"
-          },
           "object" : {
-            "type" : "boolean"
-          },
-          "int" : {
-            "type" : "boolean"
-          },
-          "long" : {
             "type" : "boolean"
           },
           "double" : {
             "type" : "boolean"
           },
+          "boolean" : {
+            "type" : "boolean"
+          },
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "int" : {
+            "type" : "boolean"
+          },
           "binary" : {
+            "type" : "boolean"
+          },
+          "short" : {
             "type" : "boolean"
           },
           "textual" : {
             "type" : "boolean",
             "deprecated" : true
           },
-          "boolean" : {
+          "string" : {
             "type" : "boolean"
           },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "bigDecimal" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
-            "type" : "boolean"
-          },
-          "bigInteger" : {
-            "type" : "boolean"
-          },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
-          "integralNumber" : {
+          "long" : {
             "type" : "boolean"
           },
           "embeddedValue" : {

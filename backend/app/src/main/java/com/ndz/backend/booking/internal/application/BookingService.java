@@ -17,9 +17,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
+import com.ndz.backend.booking.events.BookingCancelled;
 import com.ndz.backend.booking.events.BookingCreated;
+import com.ndz.backend.booking.internal.domain.BookingStatus;
 import com.ndz.backend.booking.internal.domain.BookingViews.BookingView;
 import com.ndz.backend.booking.internal.domain.BookingViews.EventRules;
+import com.ndz.backend.booking.internal.domain.BookingViews.LockedBooking;
 import com.ndz.backend.booking.internal.domain.BookingViews.LockedSeat;
 import com.ndz.backend.booking.internal.persistence.BookingRepository;
 import com.ndz.backend.booking.internal.persistence.EventSnapshotRepository;
@@ -94,6 +97,33 @@ public class BookingService {
 				throw e;
 			}
 		}
+	}
+
+	/**
+	 * Khách tự huỷ booking đang chờ thanh toán để nhả ghế ngay (BR-12). Khoá dòng booking nên không xung đột với job hết
+	 * hạn hay thanh toán đến cùng lúc; booking của người khác coi như không tồn tại.
+	 *
+	 * @throws BusinessException {@code BOOKING_NOT_FOUND} hoặc {@code BOOKING_NOT_CANCELLABLE}
+	 */
+	public void cancel(UUID userId, UUID bookingId) {
+		transaction.executeWithoutResult(status -> {
+			LockedBooking booking = bookings.lockBooking(bookingId).filter(found -> found.userId().equals(userId))
+					.orElseThrow(() -> new BusinessException("BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt vé",
+							HttpStatus.NOT_FOUND));
+			if (booking.status() != BookingStatus.PENDING_PAYMENT) {
+				throw new BusinessException("BOOKING_NOT_CANCELLABLE",
+						"Chỉ huỷ được đơn đang chờ thanh toán", HttpStatus.CONFLICT);
+			}
+			booking.status().requireTransitionTo(BookingStatus.CANCELLED);
+			if (!bookings.transition(bookingId, BookingStatus.PENDING_PAYMENT, BookingStatus.CANCELLED)) {
+				throw new BusinessException("BOOKING_NOT_CANCELLABLE", "Chỉ huỷ được đơn đang chờ thanh toán",
+						HttpStatus.CONFLICT);
+			}
+			List<UUID> seatIds = bookings.releaseSeats(bookingId);
+			publisher.publishEvent(new BookingCancelled(Uuid7.next(clock), clock.instant(), bookingId, userId,
+					booking.eventId(), seatIds));
+			log.info("Booking {} được khách huỷ, nhả {} ghế", bookingId, seatIds.size());
+		});
 	}
 
 	@Transactional(readOnly = true)

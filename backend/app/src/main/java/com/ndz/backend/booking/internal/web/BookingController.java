@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,6 +60,15 @@ class BookingController {
 	@GetMapping("/{bookingId}")
 	BookingResponse get(@PathVariable UUID bookingId) {
 		return BookingResponse.from(service.get(CurrentUser.require().id(), bookingId));
+	}
+
+	@Operation(operationId = "cancelBooking", summary = "Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)")
+	@ApiResponse(responseCode = "404", description = "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)")
+	@ApiResponse(responseCode = "409", description = "BOOKING_NOT_CANCELLABLE (đã hết hạn, đã huỷ hoặc đã thanh toán)")
+	@DeleteMapping("/{bookingId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	void cancel(@PathVariable UUID bookingId) {
+		service.cancel(CurrentUser.require().id(), bookingId);
 	}
 
 	@Schema(name = "CreateBookingRequest")

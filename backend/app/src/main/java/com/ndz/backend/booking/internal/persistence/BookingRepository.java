@@ -1,6 +1,7 @@
 package com.ndz.backend.booking.internal.persistence;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +11,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.ndz.backend.booking.internal.domain.BookingViews.BookingItemView;
+import com.ndz.backend.booking.internal.domain.BookingStatus;
 import com.ndz.backend.booking.internal.domain.BookingViews.BookingView;
+import com.ndz.backend.booking.internal.domain.BookingViews.LockedBooking;
 import com.ndz.backend.booking.internal.domain.BookingViews.LockedSeat;
 
 /**
@@ -110,6 +113,46 @@ public class BookingRepository {
 				""", (rs, i) -> new BookingView(rs.getObject("id", UUID.class), rs.getObject("event_id", UUID.class),
 				rs.getString("status"), rs.getLong("total_minor"), rs.getString("currency"),
 				rs.getTimestamp("expires_at").toInstant(), items(bookingId)), bookingId, userId).stream().findFirst();
+	}
+
+	/**
+	 * Booking chờ thanh toán đã quá hạn giữ ghế: hạn là {@code expires_at}, hoặc {@code expires_at + ân hạn} nếu đã bắt
+	 * đầu thanh toán (BR-03). Chỉ trả id, theo lô; use case kiểm lại dưới khoá trước khi đổi.
+	 */
+	public List<UUID> findDueForExpiry(Instant now, Duration paymentGrace, int limit) {
+		return jdbc.queryForList("""
+				SELECT id FROM booking.bookings
+				WHERE status = 'PENDING_PAYMENT'
+				  AND (CASE WHEN payment_started_at IS NULL THEN expires_at ELSE expires_at + ? * interval '1 second' END) <= ?
+				ORDER BY expires_at LIMIT ?
+				""", UUID.class, paymentGrace.toSeconds(), Timestamp.from(now), limit);
+	}
+
+	/** Khoá dòng booking để chuyển trạng thái; người khác chờ tới khi transaction này kết thúc. */
+	public Optional<LockedBooking> lockBooking(UUID bookingId) {
+		return jdbc.query("""
+				SELECT id, user_id, event_id, status, expires_at, payment_started_at
+				FROM booking.bookings WHERE id = ? FOR UPDATE
+				""", (rs, i) -> new LockedBooking(rs.getObject("id", UUID.class),
+				rs.getObject("user_id", UUID.class), rs.getObject("event_id", UUID.class),
+				BookingStatus.valueOf(rs.getString("status")), rs.getTimestamp("expires_at").toInstant(),
+				rs.getTimestamp("payment_started_at") == null ? null
+						: rs.getTimestamp("payment_started_at").toInstant()), bookingId).stream().findFirst();
+	}
+
+	/** Chuyển trạng thái có điều kiện trạng thái cũ; trả false nếu booking đã bị tiến trình khác chuyển. */
+	public boolean transition(UUID bookingId, BookingStatus from, BookingStatus to) {
+		return jdbc.update("UPDATE booking.bookings SET status = ?, version = version + 1 WHERE id = ? AND status = ?",
+				to.name(), bookingId, from.name()) == 1;
+	}
+
+	/** Nhả các ghế đang giữ của booking về {@code AVAILABLE}; trả về id các ghế đã nhả. */
+	public List<UUID> releaseSeats(UUID bookingId) {
+		return jdbc.queryForList("""
+				UPDATE booking.seat_inventory SET status = 'AVAILABLE', booking_id = NULL, version = version + 1
+				WHERE booking_id = ? AND status = 'HELD'
+				RETURNING seat_id
+				""", UUID.class, bookingId);
 	}
 
 	private List<BookingItemView> items(UUID bookingId) {

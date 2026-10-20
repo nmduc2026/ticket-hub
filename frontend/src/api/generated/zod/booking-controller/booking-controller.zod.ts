@@ -23,3 +23,10 @@ export const getBookingParams = zod.object({
   "bookingId": zod.uuid()
 })
 
+/**
+ * @summary Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)
+ */
+export const cancelBookingParams = zod.object({
+  "bookingId": zod.uuid()
+})
+

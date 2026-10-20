@@ -19,6 +19,11 @@ public final class BookingViews {
 			int seatNumber, long priceMinor, String currency, String status) {
 	}
 
+	/** Dòng booking đang bị khoá để chuyển trạng thái. */
+	public record LockedBooking(UUID id, UUID userId, UUID eventId, BookingStatus status, Instant expiresAt,
+			Instant paymentStartedAt) {
+	}
+
 	public record BookingItemView(UUID seatId, String sectionCode, String rowLabel, int seatNumber, UUID tierId,
 			String tierName, long priceMinor) {
 	}
