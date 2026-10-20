@@ -762,16 +762,45 @@
           "container" : {
             "type" : "boolean"
           },
-          "short" : {
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "bigDecimal" : {
+            "type" : "boolean"
+          },
+          "bigInteger" : {
+            "type" : "boolean"
+          },
+          "missingNode" : {
+            "type" : "boolean"
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "number" : {
+            "type" : "boolean"
+          },
+          "double" : {
             "type" : "boolean"
           },
           "boolean" : {
             "type" : "boolean"
           },
-          "string" : {
+          "textual" : {
+            "type" : "boolean",
+            "deprecated" : true
+          },
+          "binary" : {
             "type" : "boolean"
           },
           "object" : {
+            "type" : "boolean"
+          },
+          "pojo" : {
             "type" : "boolean"
           },
           "int" : {
@@ -780,42 +809,13 @@
           "long" : {
             "type" : "boolean"
           },
-          "double" : {
+          "short" : {
             "type" : "boolean"
           },
-          "textual" : {
-            "type" : "boolean",
-            "deprecated" : true
-          },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "binary" : {
-            "type" : "boolean"
-          },
-          "number" : {
+          "string" : {
             "type" : "boolean"
           },
           "floatingPointNumber" : {
-            "type" : "boolean"
-          },
-          "bigDecimal" : {
-            "type" : "boolean"
-          },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "bigInteger" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
             "type" : "boolean"
           },
           "embeddedValue" : {

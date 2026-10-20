@@ -14,6 +14,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.ndz.backend.catalog.CatalogApi.SellableSeat;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.ElementRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.OrganizerInfo;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SeatMapRow;
@@ -140,6 +141,24 @@ public class CatalogReadRepository {
 					names.put(rs.getObject("id", UUID.class), rs.getString("name"));
 				}, venueIds.toArray());
 		return names;
+	}
+
+	/** Ghế của các khu đã gán hạng vé trong sự kiện, kèm hạng vé và giá (nguồn của tồn kho ghế ở Booking). */
+	public List<SellableSeat> sellableSeats(UUID eventId) {
+		return jdbc.query("""
+				SELECT s.id AS seat_id, sec.id AS section_id, sec.code, s.row_label, s.seat_number,
+				       t.id AS tier_id, t.name AS tier_name, t.price_minor, t.currency
+				FROM catalog.events e
+				         JOIN catalog.tier_sections ts ON ts.event_id = e.id
+				         JOIN catalog.sections sec ON sec.id = ts.section_id AND sec.seat_map_id = e.seat_map_id
+				         JOIN catalog.ticket_tiers t ON t.id = ts.tier_id
+				         JOIN catalog.seats s ON s.section_id = sec.id
+				WHERE e.id = ?
+				ORDER BY sec.code, s.row_label, s.seat_number
+				""", (rs, i) -> new SellableSeat(rs.getObject("seat_id", UUID.class),
+				rs.getObject("section_id", UUID.class), rs.getString("code"), rs.getString("row_label"),
+				rs.getInt("seat_number"), rs.getObject("tier_id", UUID.class), rs.getString("tier_name"),
+				rs.getLong("price_minor"), rs.getString("currency")), eventId);
 	}
 
 	private boolean exists(String sql, Object... args) {

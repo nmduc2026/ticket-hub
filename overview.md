@@ -255,19 +255,22 @@ bookings        (id, user_id, event_id,
                  total_minor, currency, expires_at, payment_started_at NULL, contact_email, version)
                  -- payment_started_at: ghi khi Payment tạo PaymentIntent, dùng cho ân hạn BR-03
                  -- contact_email: email của khách tại thời điểm đặt vé, dùng để gửi vé và hoá đơn
-booking_items   (booking_id, seat_id, tier_id, price_minor)
+booking_items   (booking_id, event_id, seat_id, tier_id, price_minor,
+                 FOREIGN KEY (event_id, seat_id) → seat_inventory)
 event_publication (Spring Modulith)                         -- outbox giai đoạn modular monolith (§8.3)
-processed_events(event_id PRIMARY KEY, processed_at)        -- idempotent consumer
-event_snapshots (event_id PK, organizer_id, title, venue_name, starts_at, sale_starts_at,
-                 status, high_demand, max_tickets_per_user, platform_fee_bps, currency, version)
-                 -- bản sao thông tin sự kiện, cập nhật từ catalog.events.v1
+processed_events(consumer, message_id, processed_at, PRIMARY KEY (consumer, message_id))   -- idempotent consumer
+event_snapshots (event_id PK, organizer_id, title, description, category, banner_url, venue_id, venue_name, city_name,
+                 seat_map_id, starts_at, ends_at, sale_starts_at, status[PUBLISHED|ON_SALE|SUSPENDED|ENDED|CANCELLED],
+                 high_demand, max_tickets_per_user, platform_fee_bps, currency, last_event_at, version)
+                 -- bản sao thông tin sự kiện, cập nhật từ catalog.events.v1; last_event_at là mốc của event đã áp dụng
+                 -- gần nhất: event cũ hơn mốc này bị bỏ qua
 sales_by_event  (event_id, tier_id, sold_count, revenue_minor, refunded_count, refunded_minor, updated_at,
                  PRIMARY KEY (event_id, tier_id))
                  -- doanh thu cho dashboard organizer, cập nhật khi booking CONFIRMED / REFUNDED
 ```
 
 **Dữ liệu Booking nhận từ module khác:**
-- `event_snapshots` được cập nhật từ `EventPublished`, `EventUpdated`, `EventSuspended`, `EventResumed`, `EventCancelled`. Booking dùng bản sao này để kiểm BR-02 (giới hạn vé), BR-07 (mốc 48 giờ), giờ mở bán và trạng thái sự kiện; không đọc DB của Catalog.
+- `event_snapshots` được cập nhật từ `EventPublished`, `EventUpdated`, `EventOnSale`, `EventEnded`, `EventSuspended`, `EventResumed`, `EventCancelled`. Booking dùng bản sao này để kiểm BR-02 (giới hạn vé), BR-07 (mốc 48 giờ), giờ mở bán và trạng thái sự kiện; không đọc DB của Catalog.
 - Payload `BookingConfirmed` mang sẵn tên sự kiện, giờ diễn, địa điểm, danh sách ghế và `contact_email`, để Ticket in lên vé và Notification gửi email mà không cần bản sao riêng.
 - Payment không giữ bản sao booking: khi tạo PaymentIntent, Payment gọi đồng bộ Booking (§7.2) vì người dùng đang chờ kết quả. Booking trả kèm `platform_fee_bps` của sự kiện; Payment tính `application_fee_minor = floor(total_minor × platform_fee_bps / 10000)`.
 - `seat_inventory` được tạo khi sự kiện publish (§7.9).

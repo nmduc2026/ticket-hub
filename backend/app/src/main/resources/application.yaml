@@ -34,6 +34,11 @@ spring:
     default-schema: shared
     locations: classpath:db/migration
 
+  modulith:
+    events:
+      # Event đang xử lý dở (listener lỗi hoặc app tắt giữa chừng) được gửi lại khi khởi động (overview.md §8.3).
+      republish-outstanding-events-on-restart: true
+
 logging:
   structured:
     format:
