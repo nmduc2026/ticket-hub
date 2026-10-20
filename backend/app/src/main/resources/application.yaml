@@ -46,3 +46,10 @@ management:
   tracing:
     sampling:
       probability: 1.0
+
+tickethub:
+  security:
+    # iss mong đợi (địa chỉ công khai của Keycloak) và nơi lấy khoá ký (có thể là địa chỉ nội bộ).
+    issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/tickethub}
+    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/tickethub/protocol/openid-connect/certs}
+    audience: tickethub-api

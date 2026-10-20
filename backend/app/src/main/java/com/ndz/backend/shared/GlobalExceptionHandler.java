@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -35,7 +37,11 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	}
 
 	@ExceptionHandler(Exception.class)
-	ProblemDetail handleUnexpected(Exception ex) {
+	ProblemDetail handleUnexpected(Exception ex) throws Exception {
+		// 401 / 403 do Spring Security xử lý (ExceptionTranslationFilter), không phải lỗi hệ thống.
+		if (ex instanceof AccessDeniedException || ex instanceof AuthenticationException) {
+			throw ex;
+		}
 		log.error("Lỗi không mong đợi", ex);
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
 				"Đã xảy ra lỗi hệ thống");

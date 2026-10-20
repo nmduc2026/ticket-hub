@@ -19,7 +19,8 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({ TestcontainersConfiguration.class, ProbeController.class })
+@Import({ TestcontainersConfiguration.class, TestSecurityConfiguration.class, ProbeController.class,
+		AdminProbeController.class })
 public @interface IntegrationTest {
 
 }
