@@ -1,0 +1,4 @@
+# Bật bằng SPRING_PROFILES_ACTIVE=seed: nạp thêm dữ liệu mẫu cho máy dev và test.
+spring:
+  flyway:
+    locations: classpath:db/migration,classpath:db/seed
