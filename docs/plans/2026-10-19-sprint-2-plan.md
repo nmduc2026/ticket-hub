@@ -18,11 +18,12 @@
 | 6 | API công khai: `GET /events` (lọc từ khoá, thành phố, ngày, danh mục bằng Postgres; phân trang), `GET /events/{id}`, `GET /events/{id}/seats` (sơ đồ từ catalog + trạng thái từ `seat_inventory`) | BE | §5, §6.1, §11.2, §15.2 (dòng Elasticsearch) | 5 | Guest gọi được không cần đăng nhập; khu không gán hạng vé trả về là "không bán" |
 | 7 | Giữ ghế `POST /bookings` (bắt buộc `Idempotency-Key`): kiểm sự kiện `ON_SALE` theo `event_snapshots`, BR-02 (≤ 6 ghế, 1 booking pending, tổng vé ≤ `max_tickets_per_user`), khoá theo thứ tự `seat_id`, `UPDATE … WHERE status = 'AVAILABLE'`, deadlock thử lại 1 lần; `expires_at` = now + 10 phút; lưu `contact_email`; phát `BookingCreated`. `GET /bookings/{id}` (chủ booking) | BE | §6.2, §6.7, §7.2 (đến bước 201), §10 (lớp 2); BR-01, 02, 03; ADR 0020, 0025 | 5 | Test 50 luồng tranh 1 ghế → đúng 1 thành công; hai booking chồng ghế khác thứ tự không treo; test biên BR-02 |
 | 8 | Hết hạn và huỷ: job `ExpireBookings` (30 giây, ShedLock, hạn theo `expires_at` / `payment_started_at` + ân hạn) → `EXPIRED`, nhả ghế, `BookingExpired`; `DELETE /bookings/{id}` (BR-12) → `CANCELLED`, nhả ghế, `BookingCancelled`; máy trạng thái booking | BE | §7.3 (2 dòng đầu), §7.7 (Booking); BR-03, 12 | 7 | Test với `Clock` cố định: quá hạn → `EXPIRED`, ghế `AVAILABLE`; có `payment_started_at` thì chưa hết hạn trong 5 phút ân hạn |
-| 9 | FE công khai: trang chủ, danh sách / tìm kiếm sự kiện, chi tiết sự kiện (mock MSW theo mục API khi BE chưa xong) | FE | §14.2, §14.3 | S1 | Đủ trạng thái loading / empty / error; lọc theo thành phố, ngày |
-| 10 | Thiết kế màn hình sơ đồ ghế và màn hình giữ ghế (`docs/design/seat-map.md`) theo skill `ui-ux` | FE | §14.4; BR-02, 03, 12; ADR 0008 | — | Có user flow, trạng thái, wireframe; người dùng duyệt |
+| 9 | FE công khai: trang chủ, danh sách / tìm kiếm sự kiện, chi tiết sự kiện theo màn #1–3 (mock MSW theo mục API khi BE chưa xong) | FE | §14.2, §14.3 | S1 | Đủ trạng thái loading / empty / error; lọc theo thành phố, ngày |
+| 9b | Component danh sách dùng chung (README §3): toolbar ghim dưới topbar (tìm, bộ lọc, Đặt lại \| Cột, Xuất, nút Tạo), bộ lọc facet phương án A (chọn nhiều / chọn một, ghi lên URL), dropdown và combobox có ô tìm, bảng + phân trang + trạng thái loading / empty / không có kết quả / lỗi, chọn dòng + nút hàng loạt kèm số | FE | README §3; prototype #12 (mẫu), #34; skill react mục 10 | S1-7b | Component test bộ lọc (chọn tất cả 3 trạng thái, ghi URL, Đặt lại); Playwright: tải lại trang giữ bộ lọc, cuộn thì toolbar ghim |
+| 10 | Đối chiếu prototype màn #5, #6 (phần giữ ghế), #23; ghi `docs/design/seat-map.md` chỉ phần prototype chưa thể hiện: luồng lỗi API, polling trạng thái ghế, thao tác bàn phím trên canvas | FE | §14.4; BR-02, 03, 12; ADR 0008 | — | Người dùng duyệt phần bổ sung |
 | 11 | Component sơ đồ ghế react-konva: zoom / pan, màu theo hạng vé và trạng thái, khu không bán màu xám, chọn tối đa theo BR-02 | FE | §14.4; ADR 0008; skill react mục 9 | 10 | Render mượt ~500 ghế; component test chọn / bỏ chọn, chặn ghế thứ 7 |
 | 12 | Luồng giữ ghế trên FE: gửi `POST /bookings` (sinh `Idempotency-Key` một lần mỗi lần bấm), đồng hồ đếm ngược theo `expiresAt`, nút "Huỷ và chọn lại ghế", map mã lỗi sang thông báo tiếng Việt | FE | §14.4 (Checkout); BR-02, 03, 12 | 7, 8, 11 | Playwright: chọn 2 ghế → thấy đồng hồ; huỷ → ghế trống lại |
-| 13 | FE organizer: danh sách sự kiện của tôi, form tạo / sửa sự kiện (upload banner), CRUD hạng vé | FE | §14.2 (Organizer); BR-14 | 2, 3 | Trường bị khoá sau publish hiển thị chỉ đọc |
+| 13 | FE organizer: danh sách sự kiện của tôi (#12, dùng component 9b), modal tạo sự kiện + sửa sự kiện (#24, upload banner), CRUD hạng vé (#13) | FE | §14.2 (Organizer); BR-14 | 2, 3 | Trường bị khoá sau publish hiển thị chỉ đọc |
 | 14 | FE organizer: gán hạng vé cho khu trên sơ đồ, publish (hiện lỗi BR-05 nếu có) | FE | §7.9; BR-05, 06 | 4, 11, 13 | Playwright: tạo sự kiện → gán khu → publish → thấy sự kiện ở trang công khai |
 | 15 | AWS lab 1 (`infra/terraform/aws/lab1/`): EC2 chạy image Sprint 1 bằng compose (gateway, app, Keycloak, Redis), RDS Postgres, S3 + CloudFront (frontend ở `/`; `/api/*`, `/oauth2/*`, `/login/*`, `/logout`, `/auth/*` về EC2 để cùng domain), CloudWatch; `verify-clean.sh` | Infra | §23; ADR 0017; skill infra mục 9 | S1 (image trên GHCR, kết quả thăm dò Free plan) | Người dùng apply → đăng nhập được qua CloudFront → destroy → `verify-clean.sh` sạch |
 | 16 | Verify toàn sprint theo AC bên dưới, kèm bằng chứng (skill `verification`) | Verify | AC bên dưới | 1–15 | Báo cáo verify; truy vấn số ghế `HELD` / `SOLD` trùng booking = 0 |
@@ -31,7 +32,7 @@
 ## Thứ tự
 
 1. BE: 1 → 2 → (3 ‖ 4) → 5 → (6 ‖ 7) → 8.
-2. FE song song với BE nhờ MSW: 9 và 10 bắt đầu ngay; 11 sau 10; 13 sau 2; 12 và 14 khi BE tương ứng xong.
+2. FE song song với BE nhờ MSW: 9, 9b và 10 bắt đầu ngay; 11 sau 10; 13 sau 2 và 9b; 12 và 14 khi BE tương ứng xong.
 3. 15 làm bất cứ lúc nào (chỉ cần kết quả Sprint 1).
 4. 16 → 17.
 
@@ -60,6 +61,7 @@
 - AC-9 (BR-03): Booking quá 10 phút (dùng `Clock`) → `EXPIRED`, ghế về `AVAILABLE`, người khác giữ được.
 - AC-10 (BR-12): Khách huỷ booking `PENDING_PAYMENT` → `CANCELLED`, ghế `AVAILABLE` ngay; huỷ booking của người khác → 404; huỷ booking đã `EXPIRED` → `409 BOOKING_NOT_CANCELLABLE`.
 - AC-11: Lab AWS: mở frontend qua CloudFront, đăng nhập được bằng user test; sau destroy `verify-clean.sh` không còn tài nguyên.
+- AC-12: Danh sách sự kiện của organizer: lọc trạng thái + địa điểm và từ khoá ghi lên URL, tải lại trang giữ nguyên; toolbar ghim khi cuộn; chọn dòng hiện "Xuất (n)"; màn khớp prototype #12.
 
 ## Người dùng tự xem (`[USER-REVIEW]`)
 

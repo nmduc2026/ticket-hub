@@ -35,6 +35,8 @@ Ghi vào `docs/plans/YYYY-MM-DD-<slug>.md`, theo mẫu của plan Sprint 1:
 
 - Mỗi hạng mục đủ nhỏ để làm trong **một session** và kiểm chứng được; cột "Xong khi" là hành vi hoặc lệnh cụ thể.
 - Mỗi hạng mục ghi đúng các § overview và ADR cần đọc, để session làm việc đó không phải đọc thừa.
+- Hạng mục FE ghi **số màn prototype** (`docs/design/README.md` §4, vd. "màn #12, #13") làm nguồn giao diện, và phần nào của màn thuộc sprint này (prototype vẽ bản hoàn chỉnh). Màn đã có trong prototype thì không lập hạng mục "thiết kế màn hình" làm lại; chỉ bổ sung phần prototype chưa thể hiện (luồng lỗi, API, trạng thái) vào `docs/design/<slug>.md`. Màn chưa có thì thiết kế theo skill `ui-ux` và thêm vào prototype + README §4.
+- Component dùng chung ở `docs/design/README.md` §3 (khung, toolbar, bộ lọc, dropdown, toast, modal / sheet) làm một hạng mục riêng, trước các màn dùng nó.
 
 ### Acceptance criteria
 
@@ -64,6 +66,6 @@ Ghi vào `docs/plans/YYYY-MM-DD-<slug>.md`, theo mẫu của plan Sprint 1:
    - Bảo mật: authn / authz, IDOR, secret.
    - Migration, tương thích ngược, rollback.
    - Log, metric, alert đủ để vận hành chưa?
-   - Có UI: mục Critical / High của `pre-delivery-checklist` (skill `ui-ux`) đạt chưa?
+   - Có UI: mục Critical / High của `pre-delivery-checklist` (skill `ui-ux`) đạt chưa? Màn có khớp prototype (bố cục, chữ, hành vi theo ghi chú "HÀNH ĐỘNG") không; lệch có được người dùng đồng ý không?
 4. **Review độc lập** (tuỳ chọn, khoảng 1 lần mỗi sprint): với vùng `[USER-REVIEW]` (tiền, oversell, bảo mật), gọi một subagent general-purpose review diff theo skill `code-review`, để có mắt thứ hai không bị thiên vị bởi người viết code.
 5. Kết luận: **APPROVED** hoặc **CHANGES REQUESTED** kèm danh sách việc cần sửa.

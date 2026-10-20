@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Admin — Sơ đồ ghế</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+/* === Ticket Hub tokens — nguồn: docs/design/README.md §2. Không sửa tay mã màu trong file, dùng var(--…). === */
+:root,[data-mode]{--font:'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;--bg:#FFFFFF;--bg-subtle:#F6F7F6;--surface:#FFFFFF;--surface-2:#F1F3F2;--surface-3:#E7EBE9;--fg:#0A0F0D;--fg-2:#3D4642;--fg-muted:#5A6461;--border:#E3E7E5;--border-strong:#C5CDC9;--input-bg:#FFFFFF;--primary:#047857;--primary-hover:#065F46;--on-primary:#FFFFFF;--primary-strong:#059669;--primary-soft:#E7F5EF;--on-primary-soft:#065F46;--primary-border:#A7F3D0;--accent-text:#047857;--ring:rgba(4,120,87,.22);--focus:#047857;--inverse:#0A0F0D;--on-inverse:#FFFFFF;--night:#022C22;--on-night:#ECFDF5;--on-night-muted:#A7C9BC;--night-border:#0F4A3B;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#B91C1C;--danger-soft:#FEF2F2;--danger-border:#FECACA;--on-danger-soft:#7F1D1D;--warning-dot:#F59E0B;--warning-text:#B45309;--warning-soft:#FFFBEB;--warning-border:#FDE68A;--on-warning-soft:#78350F;--success-dot:#16A34A;--success-text:#15803D;--success-soft:#F0FDF4;--info-dot:#2563EB;--info-text:#1D4ED8;--info-soft:#EFF6FF;--on-info-soft:#1E3A8A;--neutral-dot:#8A938F;--hot:#FBBF24;--on-hot:#3B2504;--hot-text:#B45309;--scrim:rgba(10,15,13,.5);--skeleton:#ECEFED;--shadow-sm:0 1px 2px rgba(10,15,13,.06);--shadow-md:0 8px 24px rgba(10,15,13,.10);--tier-1:#C2410C;--tier-2:#1D4ED8;--tier-3:#A21CAF;--seat-off:#DCE2DF;--seat-off-mark:#9AA49F;color-scheme:light}
+[data-mode="dark"]{--bg:#0A0F0D;--bg-subtle:#0E1412;--surface:#121A17;--surface-2:#18221E;--surface-3:#212C27;--fg:#E8EFEC;--fg-2:#C3CEC9;--fg-muted:#9AA7A2;--border:#222C28;--border-strong:#36433E;--input-bg:#121A17;--primary:#34D399;--primary-hover:#6EE7B7;--on-primary:#022C22;--primary-strong:#10B981;--primary-soft:#0C2D23;--on-primary-soft:#6EE7B7;--primary-border:#14543F;--accent-text:#34D399;--ring:rgba(110,231,183,.3);--focus:#6EE7B7;--inverse:#E8EFEC;--on-inverse:#0A0F0D;--night:#03251D;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#F87171;--danger-soft:#3A1416;--danger-border:#5C1F22;--on-danger-soft:#FCA5A5;--warning-dot:#FBBF24;--warning-text:#FBBF24;--warning-soft:#3A2A08;--warning-border:#5C4410;--on-warning-soft:#FCD34D;--success-dot:#4ADE80;--success-text:#4ADE80;--success-soft:#0F2A1A;--info-dot:#60A5FA;--info-text:#60A5FA;--info-soft:#12233F;--on-info-soft:#BFDBFE;--neutral-dot:#7D8A85;--hot-text:#FCD34D;--scrim:rgba(0,0,0,.65);--skeleton:#1C2622;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 8px 24px rgba(0,0,0,.45);--tier-1:#FB923C;--tier-2:#60A5FA;--tier-3:#E879F9;--seat-off:#26302B;--seat-off-mark:#4D5A55;color-scheme:dark}
+@media (prefers-color-scheme: dark){[data-mode="system"]{--bg:#0A0F0D;--bg-subtle:#0E1412;--surface:#121A17;--surface-2:#18221E;--surface-3:#212C27;--fg:#E8EFEC;--fg-2:#C3CEC9;--fg-muted:#9AA7A2;--border:#222C28;--border-strong:#36433E;--input-bg:#121A17;--primary:#34D399;--primary-hover:#6EE7B7;--on-primary:#022C22;--primary-strong:#10B981;--primary-soft:#0C2D23;--on-primary-soft:#6EE7B7;--primary-border:#14543F;--accent-text:#34D399;--ring:rgba(110,231,183,.3);--focus:#6EE7B7;--inverse:#E8EFEC;--on-inverse:#0A0F0D;--night:#03251D;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#F87171;--danger-soft:#3A1416;--danger-border:#5C1F22;--on-danger-soft:#FCA5A5;--warning-dot:#FBBF24;--warning-text:#FBBF24;--warning-soft:#3A2A08;--warning-border:#5C4410;--on-warning-soft:#FCD34D;--success-dot:#4ADE80;--success-text:#4ADE80;--success-soft:#0F2A1A;--info-dot:#60A5FA;--info-text:#60A5FA;--info-soft:#12233F;--on-info-soft:#BFDBFE;--neutral-dot:#7D8A85;--hot-text:#FCD34D;--scrim:rgba(0,0,0,.65);--skeleton:#1C2622;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 8px 24px rgba(0,0,0,.45);--tier-1:#FB923C;--tier-2:#60A5FA;--tier-3:#E879F9;--seat-off:#26302B;--seat-off-mark:#4D5A55;color-scheme:dark}}
+.th-root{background:var(--bg);color:var(--fg);font-family:var(--font);min-height:100vh}
+b,strong{font-weight:600}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
+/* === hết tokens === */
+/* === Responsive chung (prototype dựng layout bằng style inline) === */
+@media (max-width:760px){
+main [style*="grid-template-columns"],main[style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr)!important}
+main [style*="display: flex; gap"],main [style*="display: flex; align-items: center; gap"]{flex-wrap:wrap}
+main aside,main section{max-width:100%;box-sizing:border-box}
+main>*{min-width:0}
+main .alert{flex-wrap:wrap}
+main input,main select,main textarea{max-width:100%}
+main [style*="justify-content: space-between"]{flex-wrap:wrap;row-gap:8px}
+main [style*="max-width: 1240px"],main[style*="max-width: 1240px"]{padding-left:16px!important;padding-right:16px!important}
+main table{display:block;overflow-x:auto;max-width:100%;position:relative}
+main div:has(>table),main section:has(>table){max-width:100%;overflow-x:auto}
+}
+/* === hết responsive chung === */
+/* === Ticket Hub shell (sidebar + topbar) === */
+.sbx{width:256px;flex-shrink:0;align-self:flex-start;position:sticky;top:0;height:100vh;box-sizing:border-box;overflow-y:auto;background:var(--bg-subtle);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:12px 8px 0}
+.sbx-brand{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;text-decoration:none;color:var(--fg)}
+.sbx-brand:hover{color:var(--fg)}
+.sbx-mark{width:32px;height:32px;border-radius:8px;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;flex-shrink:0}
+.sbx-t{display:flex;flex-direction:column;line-height:1.3;min-width:0}
+.sbx-t b{font-size:14px;font-weight:700}
+.sbx-t span{font-size:12px;color:var(--fg-muted)}
+.sbx-nav{flex:1;display:flex;flex-direction:column;gap:14px}
+.sbx-g{display:flex;flex-direction:column;gap:1px}
+.sbx-h{font-size:12px;font-weight:600;color:var(--fg-muted);padding:4px 10px}
+.sbx-i{display:flex;align-items:center;gap:10px;min-height:36px;padding:0 10px;border-radius:8px;text-decoration:none;color:var(--fg);font-size:14px;font-weight:500}
+.sbx-i:hover{background:var(--surface-2);color:var(--fg)}
+.sbx-i svg{color:var(--fg-muted);flex-shrink:0}
+.sbx-i[aria-current="page"]{background:var(--primary-soft);color:var(--on-primary-soft);font-weight:600}
+.sbx-i[aria-current="page"] svg{color:var(--on-primary-soft)}
+.tbx{position:sticky;top:0;z-index:20;height:56px;display:flex;align-items:center;gap:8px;padding:0 24px;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.cmdk{display:inline-flex;align-items:center;gap:8px;height:34px;min-width:220px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--fg-muted);font-size:14px;font-family:inherit;cursor:pointer}
+.cmdk:hover{border-color:var(--border-strong)}
+.cmdk kbd{margin-left:auto;font-family:inherit;font-size:12px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2)}
+/* === hết shell === */
+
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}
+a{color:var(--fg)}a:hover{color:var(--fg)}
+button{font-family:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border-radius:8px;font-size:14px;font-weight:500;line-height:1;white-space:nowrap;border:1px solid transparent;cursor:pointer;text-decoration:none;box-sizing:border-box;background:transparent;color:var(--fg)}
+.btn-sm{height:32px;padding:0 12px;gap:6px}
+.btn-default{background:var(--primary);color:var(--on-primary);box-shadow:0 1px 2px rgba(0,0,0,.05)}.btn-default:hover{background:var(--primary-hover);color:var(--on-primary)}
+.btn-outline{background:var(--surface);border-color:var(--border);box-shadow:0 1px 2px rgba(0,0,0,.05)}.btn-outline:hover{background:var(--surface-2)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-destructive{background:var(--danger);color:#FFFFFF}.btn-destructive:hover{background:var(--danger-hover);color:#FFFFFF}
+.input{height:36px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:inherit;font-size:14px;color:var(--fg);background:var(--surface);box-sizing:border-box;outline:none;box-shadow:0 1px 2px rgba(0,0,0,.05);width:100%}
+.lbl{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:500}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{height:40px;padding:0 8px;text-align:left;font-weight:500;color:var(--fg-muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.tbl td{height:48px;padding:0 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tbody tr:last-child td{border-bottom:none}
+.sb{display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:6px;font-size:14px;color:var(--fg-2);text-decoration:none;box-sizing:border-box}
+.sb:hover{background:var(--surface-2);color:var(--fg)}
+.sbs{display:flex;align-items:center;height:28px;padding:0 8px;border-radius:6px;font-size:14px;color:var(--fg-2);text-decoration:none}
+.sbs:hover{background:var(--surface-2);color:var(--fg)}
+.sbs-on,.sbs-on:hover{background:var(--primary-soft);color:var(--on-primary-soft);font-weight:500}
+.sbl{height:32px;display:flex;align-items:center;padding:0 8px;font-size:12px;font-weight:500;color:var(--fg-muted)}
+.ctrl{width:32px;height:32px;border:none;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--fg)}
+.ctrl:hover{background:var(--surface-2)}
+.menu{position:absolute;z-index:30;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);padding:4px;min-width:160px;text-align:left}
+.mi{display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;border:none;border-radius:4px;background:transparent;font-size:14px;color:var(--fg);text-align:left;cursor:pointer;box-sizing:border-box}
+.mi:hover{background:var(--surface-2)}
+.mi-danger,.mi-danger:hover{color:var(--danger-text)}
+.sep{height:1px;background:var(--surface-3);margin:4px -4px}
+.overlay{position:absolute;inset:0;z-index:50;background:var(--scrim);display:flex;justify-content:center;align-items:flex-start;padding-top:100px}
+.dialog{width:100%;max-width:512px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:24px;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1);display:flex;flex-direction:column;gap:16px;position:relative;box-sizing:border-box}
+.dx{position:absolute;top:16px;right:16px;width:24px;height:24px;border:none;background:transparent;border-radius:4px;cursor:pointer;color:var(--fg-muted);display:flex;align-items:center;justify-content:center}
+.dt{margin:0;font-size:18px;font-weight:600;line-height:1.2}
+.dd{margin:0;font-size:14px;color:var(--fg-muted);line-height:1.5}
+.df{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+.btn-sm{height:32px;padding:0 12px;gap:6px}
+.btn-outline{background:var(--surface);border-color:var(--border);box-shadow:0 1px 2px rgba(0,0,0,.05)}.btn-outline:hover{background:var(--surface-2)}
+.btn-ghost:hover{background:var(--surface-2)}
+.btn-link{height:auto;padding:0;color:var(--accent-text);text-decoration:underline;text-underline-offset:3px}.btn-link:hover{color:var(--on-primary-soft)}
+.hint{font-size:12px;font-weight:400;color:var(--fg-muted);line-height:1.5}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--fg-muted)}
+.dialog-lg{max-width:680px}
+.dx:hover{background:var(--surface-2)}
+.df{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+.alert{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;padding:12px 16px;line-height:1.5}
+.alert svg{flex-shrink:0;margin-top:2px}
+.alert-warn{background:var(--warning-soft);border-color:var(--warning-border);color:var(--on-warning-soft)}
+.alert-err{background:var(--danger-soft);border-color:var(--danger-border);color:var(--on-danger-soft)}
+.alert-ok{background:var(--primary-soft);border-color:var(--primary-border);color:var(--on-primary-soft)}
+.alert-info{background:var(--surface-2);border-color:var(--border);color:var(--fg-2)}
+.rd{width:16px;height:16px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;flex-shrink:0}
+.rd-on{border-color:var(--primary-strong)}
+.rd-on::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--primary-strong)}
+.tile{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border);border-radius:8px;padding:12px;background:var(--surface);text-align:left;font-family:inherit;font-size:14px;color:var(--fg);cursor:pointer;box-sizing:border-box}
+.tile-on{border-color:var(--primary-strong);background:var(--primary-soft)}
+.drop{border:1px dashed var(--border-strong);border-radius:8px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:var(--bg-subtle);color:var(--fg-muted)}
+.toast{position:absolute;right:24px;bottom:24px;z-index:60;background:var(--inverse);color:var(--on-inverse);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 15px -3px rgba(0,0,0,.2);font-size:14px}
+/* === shell dùng chung: popover, tìm nhanh, header bảng === */
+.bd{position:fixed;inset:0;z-index:15}
+.sbx{z-index:16}
+.tbl th{background:var(--surface-2);color:var(--fg-2);font-weight:600}
+.tbl thead th:first-child{border-top-left-radius:7px}.tbl thead th:last-child{border-top-right-radius:7px}
+.bc-home{color:var(--fg-muted);text-decoration:none}.bc-home:hover{color:var(--fg);text-decoration:underline}
+.ntf{position:absolute;right:0;top:42px;z-index:30;width:360px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);overflow:hidden}
+.ntf-h{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border)}
+.ntf-i{display:flex;gap:10px;padding:10px 14px;text-decoration:none;color:var(--fg);border-bottom:1px solid var(--border);font-size:14px;line-height:1.4}
+.ntf-i:last-child{border-bottom:none}.ntf-i:hover{background:var(--surface-2);color:var(--fg)}
+.ntf-dot{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.lnk{border:none;background:transparent;padding:0;font:inherit;font-size:13px;color:var(--accent-text);cursor:pointer}
+.lnk:hover{text-decoration:underline}
+.pal-bd{position:fixed;inset:0;z-index:70;background:var(--scrim)}
+.pal{position:fixed;z-index:71;top:12vh;left:50%;transform:translateX(-50%);width:min(560px,92vw);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);overflow:hidden}
+.pal-in{display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;border-bottom:1px solid var(--border);color:var(--fg-muted)}
+.pal-in input{flex:1;border:none;outline:none;background:transparent;font:inherit;font-size:15px;color:var(--fg)}
+.pal-in kbd{font-family:inherit;font-size:12px;padding:1px 6px;border-radius:4px;border:1px solid var(--border);background:var(--surface-2)}
+.pal-l{max-height:360px;overflow:auto;padding:6px}
+.pal-g{font-size:12px;font-weight:600;color:var(--fg-muted);padding:8px 10px 4px}
+.pal-i{display:flex;align-items:center;gap:10px;min-height:38px;padding:0 10px;border-radius:6px;text-decoration:none;color:var(--fg);font-size:14px}
+.pal-i:hover{background:var(--surface-2);color:var(--fg)}
+.pal-e{margin:0;padding:24px;text-align:center;color:var(--fg-muted)}
+.toast-g{position:fixed;right:24px;bottom:24px;z-index:80;background:var(--inverse);color:var(--on-inverse);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-md);font-size:14px}
+/* === hết shell dùng chung === */
+/* === UX pass: dropdown chung, đóng khi click ra ngoài, toolbar 2 nhóm === */
+.tb{display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap}
+.tb-l{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tb-r{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.tb .btn-icon{width:32px}
+.cnt-b{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--primary-soft);color:var(--on-primary-soft);font-size:12px;font-weight:600;box-sizing:border-box}
+.ov-bd{position:absolute;inset:0}
+.overlay>.dialog{z-index:1}
+.csel{position:relative;display:block;min-width:0}
+.csel-b{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;color:var(--fg);font-weight:400}
+.csel-b>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-b>svg{flex-shrink:0;color:var(--fg-muted)}
+.csel-b:hover{border-color:var(--border-strong)}
+.csel-b[aria-expanded="true"]{border-color:var(--focus);box-shadow:0 0 0 3px var(--ring)}
+.csel-b[aria-expanded="true"]>svg{transform:rotate(180deg)}
+.csel-bd{position:fixed;inset:0;z-index:90}
+.csel-p{position:absolute;left:0;top:calc(100% + 4px);z-index:91;min-width:100%;width:max-content;max-width:320px;max-height:264px;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);padding:4px;box-sizing:border-box}
+.csel-up .csel-p{top:auto;bottom:calc(100% + 4px)}
+.csel-o{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:34px;padding:0 8px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:14px;color:var(--fg);text-align:left;cursor:pointer;white-space:nowrap}
+.csel-o:hover{background:var(--surface-2)}
+.csel-o[aria-selected="true"]{font-weight:500}
+.csel-o>svg{color:var(--primary-strong);opacity:0;flex-shrink:0}
+.csel-o[aria-selected="true"]>svg{opacity:1}
+/* === hết UX pass === */
+/* === UX pass 2 === */
+.ov-bd,.bd,.csel-bd,.pal-bd,.sh-bd,.sheet-scrim{border:0;padding:0;margin:0;cursor:default;display:block;-webkit-appearance:none;appearance:none}
+.ov-bd,.bd,.csel-bd{background:transparent}
+.ov-bd:focus,.bd:focus,.csel-bd:focus,.pal-bd:focus,.sh-bd:focus,.sheet-scrim:focus{outline:none}
+.toast,.toast-g{background:var(--surface)!important;color:var(--fg)!important;border:1px solid var(--border);box-shadow:var(--shadow-md)!important;border-radius:10px!important;padding:12px 12px 12px 14px!important}
+.toast .btn,.toast-g .btn{color:var(--fg-muted)!important}
+.menu{min-width:240px;padding:6px}
+.menu .mi{min-height:36px;height:auto;padding:0 12px;gap:10px;white-space:nowrap}
+::placeholder{font-family:var(--font);color:var(--fg-muted);opacity:1}
+.csel-s{display:flex;align-items:center;gap:8px;padding:4px 8px 8px;margin:0 -4px 4px;border-bottom:1px solid var(--border);color:var(--fg-muted)}
+.csel-s input{border:none;outline:none;background:transparent;font:inherit;font-size:14px;color:var(--fg);width:100%;min-width:0}
+.csel-e{padding:10px 8px;color:var(--fg-muted);font-size:13px}
+.csel-s,.fpop-s{position:sticky;top:-4px;z-index:2;background:var(--surface);box-shadow:0 -4px 0 var(--surface)}
+.fpop{max-height:340px;overflow-y:auto}
+/* === hết UX pass 2 === */
+/* === editor sơ đồ ghế (ADR 0030) === */
+.ed{display:flex;gap:12px;align-items:stretch;min-height:640px}
+.rail{width:44px;flex-shrink:0;display:flex;flex-direction:column;gap:4px;padding:6px;border:1px solid var(--border);border-radius:10px;background:var(--surface);box-sizing:border-box}
+.rail-b{width:32px;height:32px;border:none;border-radius:6px;background:transparent;color:var(--fg-2);cursor:pointer;display:grid;place-items:center}
+.rail-b:hover{background:var(--surface-2)}
+.rail-b[aria-pressed="true"]{background:var(--primary-soft);color:var(--on-primary-soft)}
+.rail-b:disabled{opacity:.4;cursor:default;background:transparent}
+.rail-sep{height:1px;background:var(--border);margin:2px 0}
+.cv{position:relative;flex:1;min-width:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;background-color:var(--bg-subtle);background-image:radial-gradient(var(--border-strong) 1px,transparent 1px);background-size:20px 20px}
+.cv-bg{position:absolute;inset:0;border:0;padding:0;background:transparent;cursor:grab}.cv-bg:active{cursor:grabbing}
+.cv-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;overflow:hidden}
+.cv-pan{pointer-events:none}
+.cv-stage{position:relative;width:1000px;height:640px;pointer-events:none}
+.cv-stage .el,.cv-stage .hit,.cv-stage .st-b,.cv-stage .ftb{pointer-events:auto}
+.el{position:absolute;display:grid;place-items:center;border:1px solid transparent;border-radius:6px;font:inherit;font-size:14px;font-weight:600;letter-spacing:.08em;cursor:pointer;padding:0;transform-origin:center}
+.el-stage{background:var(--inverse);color:var(--on-inverse);border-radius:10px 10px 40px 40px}
+.el-aisle{background:transparent;border:1.5px dashed var(--border-strong);color:var(--fg-muted);font-weight:500;letter-spacing:0;font-size:12px}
+.el-label{background:transparent;color:var(--fg-2);font-weight:500;letter-spacing:0;font-size:13px}
+.el-area{background:repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 6px,var(--surface) 6px,var(--surface) 12px);border:1px solid var(--border-strong);color:var(--fg-2);font-weight:500;letter-spacing:0;font-size:12px}
+.el[aria-pressed="true"]{outline:2px solid var(--primary-strong);outline-offset:3px}
+.st{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:1.5px solid transparent;box-sizing:border-box;pointer-events:none}
+.st-b{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;border:none;background:transparent;cursor:pointer;padding:0;z-index:4}
+.st-b:hover{box-shadow:0 0 0 2px var(--focus)}
+.rl{position:absolute;transform:translate(-50%,-50%);font-size:10px;font-weight:600;color:var(--fg-muted);pointer-events:none}
+.hit{position:absolute;border:1.5px dashed transparent;border-radius:8px;background:transparent;cursor:move;padding:0;z-index:2}
+.hit:hover{border-color:var(--border-strong)}
+.hit-n{position:absolute;left:0;top:-20px;font-size:12px;font-weight:600;color:var(--fg-2);white-space:nowrap}
+.selbox{position:absolute;border:1.5px solid var(--primary-strong);border-radius:6px;pointer-events:none;z-index:3}
+.hd{position:absolute;width:8px;height:8px;background:var(--surface);border:1.5px solid var(--primary-strong);border-radius:2px}
+.hd-tl{left:-5px;top:-5px}.hd-tr{right:-5px;top:-5px}.hd-bl{left:-5px;bottom:-5px}.hd-br{right:-5px;bottom:-5px}
+.hd-rot{position:absolute;left:50%;top:-26px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--surface);border:1.5px solid var(--primary-strong)}
+.hd-rot::after{content:"";position:absolute;left:3px;top:10px;width:1.5px;height:14px;background:var(--primary-strong)}
+.ftb{position:absolute;transform:translate(-50%,-100%);display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);z-index:5;margin-top:-34px}
+.ftb-b{width:30px;height:30px;border:none;border-radius:6px;background:transparent;color:var(--fg-2);cursor:pointer;display:grid;place-items:center}
+.ftb-b:hover{background:var(--surface-2)}.ftb-b:disabled{opacity:.4;cursor:default}
+.ftb-danger{color:var(--danger-text)}
+.ftb-sep{width:1px;height:18px;background:var(--border);margin:0 2px}
+.cv-z{position:absolute;right:12px;bottom:12px;display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-sm);z-index:6}
+.cv-zl{min-width:44px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.cv-st{position:absolute;left:12px;bottom:12px;display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--fg-2);z-index:6}
+.cv-hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);padding:6px 12px;border-radius:999px;background:var(--surface);border:1px solid var(--primary-border);color:var(--on-primary-soft);font-size:13px;z-index:6;white-space:nowrap}
+.snap{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;font:inherit;font-size:13px;color:var(--fg-2);cursor:pointer;padding:0 0 0 8px;border-left:1px solid var(--border);margin-left:4px}
+.snap-k{width:26px;height:16px;border-radius:999px;background:var(--surface-3);position:relative}
+.snap-k::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-sm)}
+.snap[aria-pressed="true"] .snap-k{background:var(--primary-strong)}
+.snap[aria-pressed="true"] .snap-k::after{left:12px}
+.ins{width:300px;flex-shrink:0;border:1px solid var(--border);border-radius:10px;background:var(--surface);display:flex;flex-direction:column;overflow:hidden}
+.ins-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border)}
+.ins-h h2{margin:0;font-size:16px;font-weight:600}
+.ins-b{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;overflow:auto}
+.ins-t{margin:6px 0 0;font-size:12px;font-weight:600;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.06em}
+.pr{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+.pr-l{color:var(--fg-muted);font-size:13px}
+.pr-v{font-weight:500;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:8px}
+.stp{display:flex;align-items:center;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.stp-b{width:30px;height:30px;border:none;background:var(--surface);color:var(--fg-2);cursor:pointer;display:grid;place-items:center}
+.stp-b:hover{background:var(--surface-2)}.stp-b:disabled{opacity:.4;cursor:default}
+.stp-v{min-width:56px;text-align:center;font-variant-numeric:tabular-nums;font-weight:500;border-left:1px solid var(--border);border-right:1px solid var(--border);line-height:30px}
+.layers{display:flex;flex-direction:column;gap:2px}
+.ly{display:flex;align-items:center;gap:10px;min-height:34px;padding:0 8px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:14px;color:var(--fg);cursor:pointer}
+.ly:hover{background:var(--surface-2)}
+.ly-i{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.lnk{border:none;background:transparent;padding:0;font:inherit;font-size:13px;color:var(--accent-text);cursor:pointer}
+.lnk:disabled{color:var(--fg-muted);cursor:default}
+/* === hết editor === */
+</style>
+</helmet>
+<div data-mode="{{themeMode}}" style="display: flex; min-height: 100vh; position: relative" class="th-root">
+<sc-if value="{{bdOn}}" hint-placeholder-val="{{ false }}"><button type="button" class="bd" tabindex="-1" aria-hidden="true" onClick="{{closeAll}}"></button></sc-if>
+<sc-if value="{{palOpen}}" hint-placeholder-val="{{ false }}"><button type="button" class="pal-bd" tabindex="-1" aria-hidden="true" onClick="{{closePal}}"></button><div class="pal" role="dialog" aria-modal="true" aria-label="Tìm nhanh"><div class="pal-in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" placeholder="Tìm trang hoặc thao tác…" value="{{palQ}}" onChange="{{onPalQ}}" aria-label="Tìm nhanh"><button type="button" class="lnk" style="color: var(--fg-muted)" onClick="{{closePal}}"><kbd>Esc</kbd></button></div><div class="pal-l"><sc-for list="{{palGroups}}" as="g" hint-placeholder-count="2"><div class="pal-g">{{g.g}}</div><sc-for list="{{g.items}}" as="i" hint-placeholder-count="4"><a href="{{i.href}}" class="pal-i">{{i.label}}<span style="margin-left: auto; font-size: 12px; color: var(--fg-muted)">{{i.hint}}</span></a></sc-for></sc-for><sc-if value="{{palEmpty}}" hint-placeholder-val="{{ false }}"><p class="pal-e">Không tìm thấy “{{palQ}}”</p></sc-if></div></div></sc-if>
+<sc-if value="{{gToastOn}}" hint-placeholder-val="{{ false }}"><div class="toast-g" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke: var(--success-text); flex-shrink: 0"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span>{{gToastMsg}}</span><button type="button" class="btn btn-ghost btn-sm" style="height: 24px; padding: 0 6px" onClick="{{hideGToast}}">Đóng</button></div></sc-if>
+<aside class="sbx" aria-label="Điều hướng quản trị">
+<a class="sbx-brand" href="AdminDashboard.dc.html"><span class="sbx-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2M13 11v2M13 17v2"></path></svg></span><span class="sbx-t"><b>Ticket Hub</b><span>Quản trị hệ thống</span></span></a>
+<nav class="sbx-nav">
+<div class="sbx-g"><div class="sbx-h">Vận hành</div>
+<a href="AdminDashboard.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1"></rect><rect x="14" y="3" width="7" height="5" rx="1"></rect><rect x="14" y="12" width="7" height="9" rx="1"></rect><rect x="3" y="16" width="7" height="5" rx="1"></rect></svg><span>Tổng quan</span></a>
+<a href="AdminEvents.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg><span>Sự kiện</span></a>
+<a href="AdminOrders.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"></path><path d="M8 7h8M8 11h8M8 15h5"></path></svg><span>Đơn hàng &amp; hoàn tiền</span></a>
+<a href="AdminOrganizers.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"></path></svg><span>Organizer</span></a>
+<a href="AdminUsers.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg><span>Người dùng</span></a>
+</div>
+<div class="sbx-g"><div class="sbx-h">Danh mục</div>
+<a href="AdminVenues.dc.html" class="sbx-i" aria-current="page"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.1 6 9.9 4 3.6 6.8a1 1 0 0 0-.6.9V20l6.9-3 4.2 2 6.3-2.8a1 1 0 0 0 .6-.9V4l-6.9 2Z"></path><path d="M9.9 4v13M14.1 6v13"></path></svg><span>Địa điểm &amp; sơ đồ ghế</span></a>
+<a href="AdminRegions.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg><span>Đơn vị hành chính</span></a>
+</div>
+<div class="sbx-g"><div class="sbx-h">Hệ thống</div>
+<a href="AdminPayments.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg><span>Cấu hình thanh toán</span></a>
+<a href="AdminFees.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"></path><circle cx="6.5" cy="6.5" r="2.5"></circle><circle cx="17.5" cy="17.5" r="2.5"></circle></svg><span>Phí nền tảng</span></a>
+<a href="AdminFlags.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"></path></svg><span>Feature flags</span></a>
+<a href="AdminAuditLogs.dc.html" class="sbx-i"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5M12 7v5l4 2"></path></svg><span>Audit log</span></a>
+</div>
+</nav>
+<div style="padding: 8px; position: relative">
+<sc-if value="{{umOpen}}" hint-placeholder-val="{{ false }}"><div class="menu" role="menu" style="left: 8px; right: 8px; bottom: 60px"><div class="ml">{{umEmail}}</div><div class="sep"></div><a href="Profile.dc.html" class="mi" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="5"></circle><path d="M20 21a8 8 0 0 0-16 0"></path></svg>Hồ sơ cá nhân</a><a href="Notifications.dc.html" class="mi" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>Thông báo</a><a href="Main.dc.html" class="mi" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"></path></svg>Về trang mua vé</a><div class="sep"></div><a href="Auth.dc.html" class="mi" role="menuitem"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><path d="m16 17 5-5-5-5M21 12H9"></path></svg>Đăng xuất</a></div></sc-if>
+<button type="button" class="sb" aria-expanded="{{umStr}}" onClick="{{toggleUm}}" style="height: 48px; width: 100%; border: none; background: transparent; cursor: pointer; text-align: left">
+<span style="width: 32px; height: 32px; border-radius: 8px; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--on-primary-soft); flex-shrink: 0">QT</span>
+<span style="display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.3"><span style="font-weight: 600; color: var(--fg)">Quản trị viên</span><span style="font-size: 12px; color: var(--fg-muted)">admin@tickethub.vn</span></span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke: var(--fg-muted)"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>
+</button>
+</div>
+</aside>
+
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<header class="tbx">
+<nav aria-label="Breadcrumb"><ol style="display: flex; align-items: center; gap: 6px; list-style: none; margin: 0; padding: 0; color: var(--fg-muted)"><li><a href="AdminDashboard.dc.html" class="bc-home">Trang chủ</a></li><li style="display: flex; color: var(--fg-muted)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></li>
+<li><a href="AdminVenues.dc.html" style="color: var(--fg-muted); text-decoration: none">Địa điểm</a></li>
+<li style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li>
+<li><a href="AdminVenues.dc.html" style="color: var(--fg-muted); text-decoration: none">Nhà hát Hòa Bình</a></li>
+<li style="display: flex"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></li>
+<li style="color: var(--fg)">Khán phòng chính</li>
+</ol></nav>
+<span style="flex: 1"></span>
+<button type="button" class="cmdk" aria-haspopup="dialog" onClick="{{openPal}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><span>Tìm nhanh…</span><kbd>Ctrl K</kbd></button>
+<button type="button" class="btn btn-ghost btn-icon" aria-label="Đổi giao diện sáng / tối" onClick="{{toggleTheme}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></button>
+<div style="position: relative"><button type="button" class="btn btn-ghost btn-icon" aria-label="Thông báo" aria-haspopup="dialog" aria-expanded="{{ntfStr}}" onClick="{{toggleNtf}}" style="position: relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><sc-if value="{{ntfUnread}}" hint-placeholder-val="{{ true }}"><span style="position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 2px solid var(--bg)"></span></sc-if></button>
+<sc-if value="{{ntfOpen}}" hint-placeholder-val="{{ false }}"><div class="ntf" role="dialog" aria-label="Thông báo"><div class="ntf-h"><span style="font-weight: 600">Thông báo</span><button type="button" class="lnk" onClick="{{ntfRead}}">Đánh dấu đã đọc</button></div>
+<sc-for list="{{ntfItems}}" as="n" hint-placeholder-count="4"><a href="{{n.href}}" class="ntf-i"><span class="ntf-dot" style="background: {{n.dot}}"></span><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-weight: {{n.w}}">{{n.t}}</span><span style="font-size: 12px; color: var(--fg-muted)">{{n.time}}</span></span></a></sc-for>
+</div></sc-if></div>
+</header>
+
+<main style="flex: 1; padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0"><div class="tb"><div class="tb-l" style="flex-direction: column; align-items: flex-start; gap: 2px"><div style="display: flex; align-items: center; gap: 10px"><h1 style="margin: 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em">Khán phòng chính</h1><span class="badge">{{verLabel}}</span><sc-if value="{{dirty}}" hint-placeholder-val="{{ false }}"><span class="badge"><span style="width: 6px; height: 6px; border-radius: 50%; background: var(--warning-dot)"></span>Chưa lưu</span></sc-if></div><span style="color: var(--fg-muted)">Nhà hát Hòa Bình · {{totalSeats}} ghế · {{sectionCount}} khu</span></div><div class="tb-r"><button type="button" class="btn btn-outline btn-sm" aria-pressed="{{previewStr}}" onClick="{{togglePreview}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg>{{previewLabel}}</button><sc-if value="{{editable}}" hint-placeholder-val="{{ true }}"><div style="position: relative"><button type="button" class="btn btn-outline btn-sm" aria-haspopup="menu" aria-expanded="{{xlStr}}" onClick="{{xlToggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M8 13h8M8 17h8"></path></svg>Excel<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><sc-if value="{{xlOpen}}" hint-placeholder-val="{{ false }}"><div class="menu" role="menu" style="right: 0; top: 38px; min-width: 200px"><button type="button" class="mi" role="menuitem" onClick="{{xlImport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m17 8-5-5-5 5M12 3v12"></path></svg>Import Excel</button><button type="button" class="mi" role="menuitem" onClick="{{xlTpl}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M8 13h8M8 17h8"></path></svg>Tải file mẫu</button><div class="sep"></div><button type="button" class="mi" role="menuitem" onClick="{{xlExport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5M12 15V3"></path></svg>Xuất Excel</button></div></sc-if></div><button type="button" class="btn btn-ghost btn-sm" disabled="{{clean}}" onClick="{{revert}}">Huỷ thay đổi</button><button type="button" class="btn btn-default btn-sm" disabled="{{clean}}" onClick="{{saveMap}}">Lưu sơ đồ</button></sc-if></div></div><sc-if value="{{isLocked}}" hint-placeholder-val="{{ false }}"><div class="alert alert-warn" style="align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg><span style="flex: 1">Đang dùng cho 3 sự kiện đã publish nên không sửa được.</span><button type="button" class="btn btn-default btn-sm" onClick="{{makeCopy}}">Tạo bản sao để sửa</button></div></sc-if><div class="ed"><sc-if value="{{showRail}}" hint-placeholder-val="{{ true }}"><div class="rail" role="toolbar" aria-orientation="vertical" aria-label="Công cụ"><button type="button" class="rail-b" title="Chọn" aria-label="Chọn" aria-pressed="{{tool_select}}" disabled="{{ro}}" onClick="{{pick_select}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"></path></svg></button><span class="rail-sep"></span><button type="button" class="rail-b" title="Thêm khu ghế" aria-label="Thêm khu ghế" aria-pressed="{{tool_section}}" disabled="{{ro}}" onClick="{{pick_section}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="8" r="1.6"></circle><circle cx="12" cy="8" r="1.6"></circle><circle cx="18" cy="8" r="1.6"></circle><circle cx="6" cy="15" r="1.6"></circle><circle cx="12" cy="15" r="1.6"></circle><circle cx="18" cy="15" r="1.6"></circle></svg></button><button type="button" class="rail-b" title="Thêm sân khấu" aria-label="Thêm sân khấu" aria-pressed="{{tool_stage}}" disabled="{{ro}}" onClick="{{pick_stage}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="8" rx="2"></rect><path d="M7 17h10M9 20h6"></path></svg></button><button type="button" class="rail-b" title="Thêm lối đi" aria-label="Thêm lối đi" aria-pressed="{{tool_aisle}}" disabled="{{ro}}" onClick="{{pick_aisle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4v16M20 4v16"></path><path d="M12 6v2M12 11v2M12 16v2"></path></svg></button><button type="button" class="rail-b" title="Thêm nhãn" aria-label="Thêm nhãn" aria-pressed="{{tool_label}}" disabled="{{ro}}" onClick="{{pick_label}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5h16v2M9 19h6M12 5v14"></path></svg></button><button type="button" class="rail-b" title="Thêm vùng không bán" aria-label="Thêm vùng không bán" aria-pressed="{{tool_area}}" disabled="{{ro}}" onClick="{{pick_area}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="m3 15 6-6M3 21 21 3M15 21l6-6"></path></svg></button><button type="button" class="rail-b" title="Ẩn / hiện ghế" aria-label="Ẩn / hiện ghế" aria-pressed="{{tool_hide}}" disabled="{{ro}}" onClick="{{pick_hide}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m5 5 14 14"></path></svg></button><span style="flex: 1"></span><button type="button" class="rail-b" title="Hoàn tác" aria-label="Hoàn tác" disabled="{{noUndo}}" onClick="{{undo}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 0 10h-3"></path></svg></button><button type="button" class="rail-b" title="Làm lại" aria-label="Làm lại" disabled="{{noRedo}}" onClick="{{redo}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"></path><path d="M20 9H9a5 5 0 0 0 0 10h3"></path></svg></button></div></sc-if><div class="cv" aria-label="Sơ đồ ghế" onMouseMove="{{dragMove}}" onMouseUp="{{dragEnd}}" onMouseLeave="{{dragEnd}}">
+<button type="button" class="cv-bg" tabindex="-1" aria-hidden="true" onClick="{{clearSel}}" onMouseDown="{{panStart}}"></button>
+<div class="cv-wrap"><div class="cv-pan" style="transform: translate({{panX}}px, {{panY}}px)"><div class="cv-stage" style="zoom: {{zoomS}}">
+<sc-for list="{{els}}" as="e" hint-placeholder-count="4"><button type="button" class="{{e.cls}}" aria-label="{{e.aria}}" aria-pressed="{{e.on}}" onClick="{{e.pick}}" onMouseDown="{{e.drag}}" style="left: {{e.l}}px; top: {{e.t}}px; width: {{e.w}}px; height: {{e.h}}px; transform: rotate({{e.r}}deg)">{{e.text}}</button></sc-for>
+<sc-for list="{{secs}}" as="g" hint-placeholder-count="5">
+<sc-for list="{{g.seats}}" as="p" hint-placeholder-count="20"><span class="st" style="left: {{p.x}}px; top: {{p.y}}px; background: {{p.bg}}; border-color: {{p.bd}}"></span></sc-for>
+<sc-if value="{{g.showRows}}" hint-placeholder-val="{{ false }}"><sc-for list="{{g.rowLabels}}" as="rl" hint-placeholder-count="4"><span class="rl" style="left: {{rl.x}}px; top: {{rl.y}}px">{{rl.t}}</span></sc-for></sc-if>
+<button type="button" class="hit" aria-label="Khu {{g.name}}" aria-pressed="{{g.on}}" onClick="{{g.pick}}" onMouseDown="{{g.drag}}" style="left: {{g.bx}}px; top: {{g.by}}px; width: {{g.bw}}px; height: {{g.bh}}px; border-color: {{g.ring}}"><span class="hit-n" style="opacity: {{g.nameOp}}">{{g.name}}</span></button>
+</sc-for>
+<sc-if value="{{hideMode}}" hint-placeholder-val="{{ false }}"><sc-for list="{{hidable}}" as="p" hint-placeholder-count="20"><button type="button" class="st-b" aria-label="{{p.aria}}" aria-pressed="{{p.hid}}" onClick="{{p.toggle}}" style="left: {{p.x}}px; top: {{p.y}}px"></button></sc-for></sc-if>
+<sc-if value="{{hasSel}}" hint-placeholder-val="{{ false }}"><div class="selbox" style="left: {{box.x}}px; top: {{box.y}}px; width: {{box.w}}px; height: {{box.h}}px"><span class="hd hd-tl"></span><span class="hd hd-tr"></span><span class="hd hd-bl"></span><span class="hd hd-br"></span><span class="hd-rot"></span></div>
+<div class="ftb" role="toolbar" aria-label="Thao tác nhanh" style="left: {{box.cx}}px; top: {{box.ty}}px">
+<button type="button" class="ftb-b" title="Xoay trái 15°" aria-label="Xoay trái 15°" disabled="{{ro}}" onClick="{{rotL}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path><path d="M3 3v5h5"></path></svg></button><button type="button" class="ftb-b" title="Xoay phải 15°" aria-label="Xoay phải 15°" disabled="{{ro}}" onClick="{{rotR}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"></path><path d="M21 3v5h-5"></path></svg></button><span class="ftb-sep"></span><button type="button" class="ftb-b" title="Nhân bản" aria-label="Nhân bản" disabled="{{ro}}" onClick="{{dup}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button><button type="button" class="ftb-b ftb-danger" title="Xoá" aria-label="Xoá" disabled="{{ro}}" onClick="{{askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg></button>
+</div></sc-if>
+</div>
+</div></div><div class="cv-z" role="group" aria-label="Thu phóng"><button type="button" class="ctrl" aria-label="Thu nhỏ" onClick="{{zoomOut}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="cv-zl">{{zoomLabel}}</span><button type="button" class="ctrl" aria-label="Phóng to" onClick="{{zoomIn}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button><button type="button" class="btn btn-ghost btn-sm" onClick="{{zoomFit}}">Vừa khung</button></div>
+<sc-if value="{{hideMode}}" hint-placeholder-val="{{ false }}"><div class="cv-hint">Bấm vào ghế để ẩn hoặc hiện lại · đã ẩn {{hiddenCount}} ghế</div></sc-if>
+<div class="cv-st"><span>{{totalSeats}} ghế</span><span>·</span><span>{{sectionCount}} khu</span><button type="button" class="snap" aria-pressed="{{snapOn}}" onClick="{{toggleSnap}}"><span class="snap-k"></span>Bắt lưới 10px</button></div>
+</div><sc-if value="{{showRail}}" hint-placeholder-val="{{ true }}"><aside class="ins" aria-label="Thuộc tính"><sc-if value="{{noSel}}" hint-placeholder-val="{{ true }}"><div class="ins-h"><h2>Sơ đồ</h2></div><div class="ins-b"><label class="lbl">Tên sơ đồ<input class="input" type="text" value="Khán phòng chính" disabled="{{ro}}"></label><div class="pr"><span class="pr-l">Kích thước</span><span class="pr-v">1000 × 640</span></div><div class="pr"><span class="pr-l">Tổng ghế bán</span><span class="pr-v">{{totalSeats}}</span></div><h3 class="ins-t">Lớp</h3><div class="layers"><sc-for list="{{layers}}" as="ly" hint-placeholder-count="6"><button type="button" class="ly" onClick="{{ly.pick}}"><span class="ly-i" style="background: {{ly.c}}"></span><span style="flex: 1; text-align: left">{{ly.name}}</span><span class="pr-l">{{ly.meta}}</span></button></sc-for></div></div></sc-if><sc-if value="{{selSec}}" hint-placeholder-val="{{ false }}"><div class="ins-h"><h2>{{cur.name}}</h2><span class="badge">{{cur.kindLabel}}</span></div><div class="ins-b"><div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 8px"><label class="lbl">Tên khu<input class="input" type="text" value="{{cur.name}}" disabled="{{ro}}"></label><label class="lbl">Mã<input class="input" type="text" value="{{cur.code}}" disabled="{{ro}}"></label></div><sc-if value="{{cur.grid}}" hint-placeholder-val="{{ true }}"><h3 class="ins-t">Ghế</h3><div class="pr"><span class="pr-l">Số hàng</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm số hàng" disabled="{{ro}}" onClick="{{rowsDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.rows}}</span><button type="button" class="stp-b" aria-label="Tăng số hàng" disabled="{{ro}}" onClick="{{rowsInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Ghế mỗi hàng</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm ghế mỗi hàng" disabled="{{ro}}" onClick="{{nDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.n}}</span><button type="button" class="stp-b" aria-label="Tăng ghế mỗi hàng" disabled="{{ro}}" onClick="{{nInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Hàng bắt đầu</span><span class="pr-v">{{cur.startRow}}</span></div><div class="pr"><span class="pr-l">Độ cong</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm độ cong" disabled="{{ro}}" onClick="{{curveDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.curve}}°</span><button type="button" class="stp-b" aria-label="Tăng độ cong" disabled="{{ro}}" onClick="{{curveInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Khoảng cách ghế</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm khoảng cách ghế" disabled="{{ro}}" onClick="{{gapDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.gap}}px</span><button type="button" class="stp-b" aria-label="Tăng khoảng cách ghế" disabled="{{ro}}" onClick="{{gapInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Ghế đã ẩn</span><span class="pr-v">{{cur.hidden}} <button type="button" class="lnk" disabled="{{ro}}" onClick="{{pick_hide}}">Chọn trên sơ đồ</button></span></div></sc-if><sc-if value="{{cur.imported}}" hint-placeholder-val="{{ false }}"><div class="pr"><span class="pr-l">Nguồn</span><span class="pr-v">Import Excel · {{cur.total}} ghế</span></div></sc-if><h3 class="ins-t">Vị trí</h3><div class="pr"><span class="pr-l">X</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm x" disabled="{{ro}}" onClick="{{xDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.x}}</span><button type="button" class="stp-b" aria-label="Tăng x" disabled="{{ro}}" onClick="{{xInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Y</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm y" disabled="{{ro}}" onClick="{{yDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.y}}</span><button type="button" class="stp-b" aria-label="Tăng y" disabled="{{ro}}" onClick="{{yInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Xoay</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm xoay" disabled="{{ro}}" onClick="{{rotL}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{cur.rot}}°</span><button type="button" class="stp-b" aria-label="Tăng xoay" disabled="{{ro}}" onClick="{{rotR}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Tổng</span><span class="pr-v">{{cur.total}} ghế</span></div><button type="button" class="btn btn-outline" style="color: var(--danger-text)" disabled="{{ro}}" onClick="{{askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>Xoá khu</button></div></sc-if><sc-if value="{{selEl}}" hint-placeholder-val="{{ false }}"><div class="ins-h"><h2>{{ce.typeLabel}}</h2><span class="badge">Không bán</span></div><div class="ins-b"><label class="lbl">Nhãn<input class="input" type="text" value="{{ce.text}}" disabled="{{ro}}"></label><div class="pr"><span class="pr-l">Rộng</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm rộng" disabled="{{ro}}" onClick="{{wDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{ce.w}}px</span><button type="button" class="stp-b" aria-label="Tăng rộng" disabled="{{ro}}" onClick="{{wInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Cao</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm cao" disabled="{{ro}}" onClick="{{hDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{ce.h}}px</span><button type="button" class="stp-b" aria-label="Tăng cao" disabled="{{ro}}" onClick="{{hInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><h3 class="ins-t">Vị trí</h3><div class="pr"><span class="pr-l">X</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm x" disabled="{{ro}}" onClick="{{xDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{ce.x}}</span><button type="button" class="stp-b" aria-label="Tăng x" disabled="{{ro}}" onClick="{{xInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Y</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm y" disabled="{{ro}}" onClick="{{yDec}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{ce.y}}</span><button type="button" class="stp-b" aria-label="Tăng y" disabled="{{ro}}" onClick="{{yInc}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><div class="pr"><span class="pr-l">Xoay</span><div class="stp"><button type="button" class="stp-b" aria-label="Giảm xoay" disabled="{{ro}}" onClick="{{rotL}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path></svg></button><span class="stp-v">{{ce.r}}°</span><button type="button" class="stp-b" aria-label="Tăng xoay" disabled="{{ro}}" onClick="{{rotR}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></button></div></div><button type="button" class="btn btn-outline" style="color: var(--danger-text)" disabled="{{ro}}" onClick="{{askDelete}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"></path></svg>Xoá</button></div></sc-if></aside></sc-if></div></main>
+</div>
+
+
+
+<sc-if value="{{dlgDelete}}" hint-placeholder-val="{{ false }}">
+<div class="overlay"><button type="button" class="ov-bd" tabindex="-1" aria-hidden="true" onClick="{{closeDialog}}"></button>
+<div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlg-sdel" style="max-width: 460px">
+<div style="display: flex; flex-direction: column; gap: 8px"><h2 id="dlg-sdel" class="dt">Xoá {{form.name}}?</h2><p class="dd">Sơ đồ đang được dùng bởi sự kiện đã publish. Thay đổi chỉ áp dụng cho sự kiện tạo sau khi lưu.</p></div>
+<div class="df"><button type="button" class="btn btn-outline" onClick="{{closeDialog}}">Huỷ</button><button type="button" class="btn btn-destructive" onClick="{{confirmDel}}">Xoá khu</button></div>
+</div>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{dlgImport}}" hint-placeholder-val="{{ false }}"><div class="overlay"><button type="button" class="ov-bd" tabindex="-1" aria-hidden="true" onClick="{{closeImport}}"></button><div class="dialog dialog-lg" role="dialog" aria-modal="true" aria-labelledby="d-imp"><button type="button" class="dx" aria-label="Đóng" onClick="{{closeImport}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button><div style="display: flex; flex-direction: column; gap: 8px"><h2 id="d-imp" class="dt">{{impTitle}}</h2><p class="dd">{{impStepLabel}}</p></div><sc-if value="{{impUpload}}" hint-placeholder-val="{{ true }}"><sc-if value="{{impNoFile}}" hint-placeholder-val="{{ true }}"><div class="drop"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke: var(--fg-muted)"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span><button type="button" class="btn btn-link" onClick="{{pickFile}}">Chọn file</button> hoặc kéo thả vào đây</span><span class="hint">.xlsx hoặc .csv · tối đa 5 MB · tối đa 5.000 dòng</span></div></sc-if><sc-if value="{{impHasFile}}" hint-placeholder-val="{{ false }}"><div style="display: flex; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke: var(--accent-text)"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4M8 13h2M14 13h2M8 17h2M14 17h2"></path></svg><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 500">{{impFileName}}</span><span class="hint">{{impTotal}} dòng · 48 KB</span></span><button type="button" class="btn btn-ghost btn-sm" aria-label="Bỏ file" onClick="{{removeFile}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button></div></sc-if><div class="lbl"><span><span>Khi trùng mã</span></span><div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" class="{{impUpdTile}}" role="radio" aria-checked="{{impUpdSel}}" onClick="{{pickUpd}}"><span class="{{impUpdRd}}"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Cập nhật bản ghi có sẵn</span><span class="hint">Ghi đè theo mã</span></span></button><button type="button" class="{{impSkipTile}}" role="radio" aria-checked="{{impSkipSel}}" onClick="{{pickSkip}}"><span class="{{impSkipRd}}"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 500">Bỏ qua dòng trùng</span><span class="hint">Chỉ thêm mới</span></span></button></div></div><div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden"><div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-subtle); border-bottom: 1px solid var(--border)"><span style="font-weight: 500">Cột trong file mẫu <span class="mono hint">{{impTpl}}</span></span><button type="button" class="btn btn-outline btn-sm" onClick="{{downloadTpl}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5M12 15V3"></path></svg>Tải file mẫu</button></div><table class="tbl"><thead><tr><th style="padding-left: 12px">Cột</th><th>Bắt buộc</th><th>Ghi chú</th></tr></thead><tbody><sc-for list="{{impCols}}" as="c" hint-placeholder-count="4"><tr><td class="mono" style="padding-left: 12px; height: 40px">{{c.name}}</td><td style="height: 40px">{{c.req}}</td><td class="hint" style="height: 40px">{{c.note}}</td></tr></sc-for></tbody></table></div><div class="df"><button type="button" class="btn btn-outline" onClick="{{closeImport}}">Huỷ</button><button type="button" class="btn btn-default" disabled="{{impNoFile}}" onClick="{{impCheck}}">Kiểm tra file</button></div></sc-if><sc-if value="{{impPreview}}" hint-placeholder-val="{{ false }}"><div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px"><div style="border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span class="hint">Tổng số dòng</span><span class="num" style="font-size: 20px; font-weight: 600; color: var(--fg)">{{impTotal}}</span></div><div style="border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span class="hint">Hợp lệ</span><span class="num" style="font-size: 20px; font-weight: 600; color: var(--success-text)">{{impValid}}</span></div><div style="border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span class="hint">Lỗi</span><span class="num" style="font-size: 20px; font-weight: 600; color: var(--danger-text)">{{impErr}}</span></div><div style="border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px"><span class="hint">Thêm mới / cập nhật</span><span class="num" style="font-size: 20px; font-weight: 600; color: var(--fg)">{{impSplit}}</span></div></div><div class="alert alert-warn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4M12 17h.01"></path></svg><span>{{impErr}} dòng lỗi bị bỏ qua. Sửa trong file lỗi rồi import lại các dòng đó.</span></div><div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden"><table class="tbl"><thead><tr><th style="padding-left: 12px">Dòng</th><th>Cột</th><th>Giá trị</th><th>Lỗi</th></tr></thead><tbody><sc-for list="{{impErrors}}" as="e" hint-placeholder-count="4"><tr><td class="num" style="padding-left: 12px; height: 40px">{{e.row}}</td><td class="mono" style="height: 40px">{{e.col}}</td><td class="mono" style="height: 40px">{{e.val}}</td><td style="height: 40px; color: var(--danger-text)">{{e.msg}}</td></tr></sc-for></tbody></table></div><div class="df" style="justify-content: space-between"><button type="button" class="btn btn-ghost" onClick="{{downloadErr}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5M12 15V3"></path></svg>Tải file lỗi</button><div style="display: flex; gap: 8px"><button type="button" class="btn btn-outline" onClick="{{impBack}}">Chọn file khác</button><button type="button" class="btn btn-default" onClick="{{impRun}}">Import {{impValid}} dòng hợp lệ</button></div></div></sc-if><sc-if value="{{impDone}}" hint-placeholder-val="{{ false }}"><div style="display: flex; gap: 14px; align-items: flex-start"><span style="width: 40px; height: 40px; border-radius: 50%; background: #15803D; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></span><div style="display: flex; flex-direction: column; gap: 4px"><span style="font-weight: 600; font-size: 16px">Đã import {{impValid}} dòng</span><span class="muted">{{impNew}} thêm mới · {{impUpd}} cập nhật · {{impErr}} dòng lỗi bỏ qua</span></div></div><div class="df"><button type="button" class="btn btn-outline" onClick="{{downloadErr}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5M12 15V3"></path></svg>Tải file lỗi</button><button type="button" class="btn btn-default" onClick="{{closeImport}}">Đóng</button></div></sc-if></div></div></sc-if>
+<sc-if value="{{impToastOn}}" hint-placeholder-val="{{ false }}"><div class="toast" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke: var(--accent-text)"><path d="M20 6 9 17l-5-5"></path></svg><span>{{impToastMsg}}</span><button type="button" class="btn btn-ghost btn-sm" style="height: 24px; padding: 0 6px" onClick="{{hideImpToast}}">Đóng</button></div></sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"locked": {"editor": "boolean", "default": false}, "dialog": {"editor": "enum", "options": ["none", "delete", "import", "importPreview", "importDone"], "default": "none"}, "$preview": {"width": 1280, "height": 1000}, "theme": {"editor": "enum", "options": ["system", "light", "dark"], "default": "system"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: 'B', menu: null, dialog: undefined, form: null };
+  }
+
+  importVals() {
+    const cfg = {"title": "Import ghế cho sơ đồ “Khán phòng chính”", "tpl": "mau-so-do-ghe.xlsx", "file": "khan-phong-chinh.xlsx", "total": 48, "valid": 45, "nNew": 40, "audit": "SEATMAP_IMPORTED", "cols": [{"name": "ma_khu", "req": "Có", "note": "VD: A. Khu chưa có sẽ được tạo"}, {"name": "ten_khu", "req": "Có", "note": "VD: Khu A — Trung tâm"}, {"name": "hang", "req": "Có", "note": "Ký hiệu hàng. VD: B"}, {"name": "ghe_tu", "req": "Có", "note": "Số ghế đầu hàng"}, {"name": "ghe_den", "req": "Có", "note": "Số ghế cuối hàng, ≥ ghe_tu"}, {"name": "x, y", "req": "Không", "note": "Toạ độ hàng trên sơ đồ. Trống = xếp lưới tự động"}], "errors": [{"row": 23, "col": "ghe_den", "val": "10", "msg": "Phải ≥ ghe_tu (12)"}, {"row": 31, "col": "ma_khu", "val": "Z", "msg": "Tên khu khác với các dòng cùng mã"}, {"row": 40, "col": "hang", "val": "B", "msg": "Trùng ghế B1–B14 với dòng 8"}]};
+    const d = this.state.dialog !== undefined ? this.state.dialog : (this.props.dialog ?? 'none');
+    const open = typeof d === 'string' && d.indexOf('import') === 0;
+    const step = this.state.impStep || ({ import: 'upload', importPreview: 'preview', importDone: 'done' }[d] || 'upload');
+    const hasFile = this.state.impFile !== undefined ? this.state.impFile : step !== 'upload';
+    const upd = this.state.impMode !== 'skip';
+    const nNew = upd ? cfg.nNew : cfg.valid;
+    const nUpd = upd ? cfg.valid - cfg.nNew : 0;
+    const go = (s) => () => this.setState({ impStep: s });
+    return {
+      dlgImport: open, impUpload: step === 'upload', impPreview: step === 'preview', impDone: step === 'done',
+      impStepLabel: { upload: 'Bước 1/3 · Chọn file', preview: 'Bước 2/3 · Kiểm tra dữ liệu', done: 'Bước 3/3 · Kết quả' }[step],
+      impTitle: cfg.title, impTpl: cfg.tpl, impCols: cfg.cols, impErrors: cfg.errors, impAudit: cfg.audit,
+      impFileName: cfg.file, impTotal: cfg.total, impValid: cfg.valid, impErr: cfg.total - cfg.valid,
+      impNew: nNew, impUpd: nUpd, impSplit: nNew + ' / ' + nUpd,
+      impHasFile: hasFile, impNoFile: !hasFile,
+      pickFile: () => this.setState({ impFile: true }), removeFile: () => this.setState({ impFile: false }),
+      impUpdTile: upd ? 'tile tile-on' : 'tile', impUpdRd: upd ? 'rd rd-on' : 'rd', impUpdSel: upd ? 'true' : 'false', pickUpd: () => this.setState({ impMode: 'update' }),
+      impSkipTile: upd ? 'tile' : 'tile tile-on', impSkipRd: upd ? 'rd' : 'rd rd-on', impSkipSel: upd ? 'false' : 'true', pickSkip: () => this.setState({ impMode: 'skip' }),
+      impCheck: go('preview'), impBack: () => this.setState({ impStep: 'upload', impFile: false }), impRun: go('done'),
+      openImport: () => this.setState({ dialog: 'import', impStep: 'upload', impFile: false, menu: null }),
+      closeImport: () => this.setState({ dialog: 'none', impStep: undefined, impFile: undefined }),
+      downloadTpl: () => this.setState({ impToast: 'Đã tải ' + cfg.tpl }),
+      downloadErr: () => this.setState({ impToast: 'Đã tải ' + cfg.tpl.replace('.xlsx', '-loi.xlsx') }),
+      impToastOn: !!this.state.impToast, impToastMsg: this.state.impToast || '', hideImpToast: () => this.setState({ impToast: null }),
+    };
+  }
+  renderVals0() { return Object.assign({ themeMode: this.props.theme || 'system' }, this.renderBase()); }
+  renderBase() { return Object.assign({}, this._rv(), this.importVals()); }
+  _rv() {
+    const st = this.state || {};
+    const set = (o) => this.setState(o);
+    const D0 = {
+      secs: [
+        { id: 'A', name: 'Khu A', code: 'A', kind: 'GRID', x: 500, y: 175, rot: 0, rows: 3, n: 14, start: 'A', curve: 20, gap: 14, hidden: [] },
+        { id: 'B', name: 'Khu B', code: 'B', kind: 'GRID', x: 500, y: 250, rot: 0, rows: 5, n: 18, start: 'D', curve: 24, gap: 14, hidden: ['F9', 'F10', 'G9', 'G10'] },
+        { id: 'C', name: 'Khu C', code: 'C', kind: 'GRID', x: 500, y: 365, rot: 0, rows: 4, n: 22, start: 'I', curve: 26, gap: 14, hidden: [] },
+        { id: 'D', name: 'Cánh trái', code: 'D', kind: 'GRID', x: 210, y: 250, rot: 30, rows: 6, n: 7, start: 'M', curve: 0, gap: 14, hidden: [] },
+        { id: 'E', name: 'Cánh phải', code: 'E', kind: 'IMPORTED', x: 790, y: 250, rot: -30, rows: 6, n: 7, start: 'M', curve: 0, gap: 14, hidden: [] },
+      ],
+      els: [
+        { id: 'stage', type: 'STAGE', text: 'SÂN KHẤU', x: 500, y: 80, w: 380, h: 64, r: 0 },
+        { id: 'aisle1', type: 'AISLE', text: 'Lối đi', x: 500, y: 452, w: 420, h: 26, r: 0 },
+        { id: 'area1', type: 'AREA', text: 'Khu đứng · không bán', x: 500, y: 540, w: 360, h: 80, r: 0 },
+        { id: 'door1', type: 'LABEL', text: 'Cửa 1', x: 120, y: 600, w: 80, h: 24, r: 0 },
+        { id: 'door2', type: 'LABEL', text: 'Cửa 2', x: 880, y: 600, w: 80, h: 24, r: 0 },
+      ],
+    };
+    const doc = st.doc || D0;
+    const locked = !!this.props.locked && !st.copied;
+    const preview = !!st.preview;
+    const ro = locked || preview;
+    const tool = st.tool || 'select';
+    const sel = st.sel || null;
+    const z = st.zoom || 60;
+    const snap = st.snap !== false;
+    const hist = st.hist || [];
+    const fut = st.fut || [];
+    const panX = st.panX || 0, panY = st.panY || 0;
+    const commit = (next, extra) => set(Object.assign({ doc: next, hist: hist.concat([doc]).slice(-30), fut: [], dirty: true }, extra || {}));
+    const rowLabel = (start, i) => String.fromCharCode(start.charCodeAt(0) + i);
+    // the one seat generator shared by editor, customer view and backend (ADR 0030)
+    const generateSeats = (g) => {
+      const out = [];
+      const half = ((g.n - 1) * g.gap) / 2;
+      const curve = (g.curve * Math.PI) / 180;
+      const R0 = curve > 0 ? half / Math.sin(curve / 2) : 0;
+      const rad = (g.rot * Math.PI) / 180;
+      for (let r = 0; r < g.rows; r += 1) {
+        for (let c = 0; c < g.n; c += 1) {
+          let lx, ly;
+          if (curve > 0) {
+            const a = ((c - (g.n - 1) / 2) / ((g.n - 1) / 2 || 1)) * (curve / 2);
+            const R = R0 + r * g.gap;
+            lx = R * Math.sin(a); ly = R * Math.cos(a) - R0;
+          } else { lx = c * g.gap - half; ly = r * g.gap; }
+          const x = g.x + lx * Math.cos(rad) - ly * Math.sin(rad);
+          const y = g.y + lx * Math.sin(rad) + ly * Math.cos(rad);
+          out.push({ row: rowLabel(g.start, r), num: c + 1, x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10, r, c });
+        }
+      }
+      return out;
+    };
+    const tierC = { A: 'var(--tier-1)', B: 'var(--tier-2)', C: 'var(--tier-3)', D: 'var(--tier-2)', E: 'var(--tier-2)' };
+    let total = 0;
+    let hiddenTotal = 0;
+    const hidable = [];
+    const secs = doc.secs.map((g) => {
+      const on = sel === 's:' + g.id;
+      const seats = generateSeats(g);
+      const vis = seats.filter((p) => !g.hidden.includes(p.row + p.num));
+      total += vis.length; hiddenTotal += seats.length - vis.length;
+      const xs = seats.map((p) => p.x), ys = seats.map((p) => p.y);
+      const bx = Math.min(...xs) - 10, by = Math.min(...ys) - 10, bw = Math.max(...xs) - bx + 10, bh = Math.max(...ys) - by + 10;
+      if (st.hideMode && on) seats.forEach((p) => { const k = p.row + p.num; const hid = g.hidden.includes(k); hidable.push({ x: p.x, y: p.y, hid: hid ? 'true' : 'false', aria: 'Ghế ' + k + (hid ? ' (đang ẩn)' : ''), toggle: () => commit(Object.assign({}, doc, { secs: doc.secs.map((s) => (s.id === g.id ? Object.assign({}, s, { hidden: hid ? s.hidden.filter((h) => h !== k) : s.hidden.concat([k]) }) : s)) })) }); });
+      const rowsL = [];
+      for (let r = 0; r < g.rows; r += 1) { const p = seats.find((q) => q.r === r && q.c === 0); rowsL.push({ t: p.row, x: p.x - 12 * Math.cos((g.rot * Math.PI) / 180), y: p.y - 12 * Math.sin((g.rot * Math.PI) / 180) }); }
+      return {
+        name: g.name, on: on ? 'true' : 'false', ring: on ? 'transparent' : 'transparent', nameOp: preview ? 0 : 1,
+        bx, by, bw, bh, showRows: on && !preview, rowLabels: rowsL,
+        pick: () => set({ sel: 's:' + g.id, tool: 'select', hideMode: false }),
+        drag: (e) => { if (ro || st.hideMode) return; this._drag = { kind: 'move', id: g.id, list: 'secs', sx: e.clientX, sy: e.clientY, ox: g.x, oy: g.y, base: doc }; },
+        seats: seats.map((p) => {
+          const hid = g.hidden.includes(p.row + p.num);
+          if (preview) return { x: p.x, y: p.y, bg: hid ? 'transparent' : tierC[g.id] || 'var(--tier-2)', bd: 'transparent' };
+          if (hid) return { x: p.x, y: p.y, bg: 'transparent', bd: on ? 'var(--border-strong)' : 'transparent' };
+          return { x: p.x, y: p.y, bg: on ? 'var(--primary-strong)' : 'var(--neutral-dot)', bd: 'transparent' };
+        }),
+        _g: g, _box: { x: bx, y: by, w: bw, h: bh },
+      };
+    });
+    const typeL = { STAGE: 'Sân khấu', AISLE: 'Lối đi', LABEL: 'Nhãn', AREA: 'Vùng không bán' };
+    const els = doc.els.map((e) => ({
+      cls: 'el el-' + e.type.toLowerCase(), aria: typeL[e.type] + ': ' + e.text, on: sel === 'e:' + e.id ? 'true' : 'false', text: e.text,
+      l: e.x - e.w / 2, t: e.y - e.h / 2, w: e.w, h: e.h, r: e.r, pick: () => set({ sel: 'e:' + e.id, tool: 'select', hideMode: false }),
+      drag: (ev) => { if (ro) return; this._drag = { kind: 'move', id: e.id, list: 'els', sx: ev.clientX, sy: ev.clientY, ox: e.x, oy: e.y, base: doc }; },
+    }));
+    const curSec = sel && sel.indexOf('s:') === 0 ? doc.secs.find((g) => 's:' + g.id === sel) : null;
+    const curEl = sel && sel.indexOf('e:') === 0 ? doc.els.find((e) => 'e:' + e.id === sel) : null;
+    const curRow = curSec ? secs[doc.secs.indexOf(curSec)] : null;
+    const box = curRow ? curRow._box : curEl ? { x: curEl.x - curEl.w / 2 - 4, y: curEl.y - curEl.h / 2 - 4, w: curEl.w + 8, h: curEl.h + 8 } : { x: 0, y: 0, w: 0, h: 0 };
+    const upd = (patch) => {
+      if (curSec) commit(Object.assign({}, doc, { secs: doc.secs.map((g) => (g === curSec ? Object.assign({}, g, patch(g)) : g)) }));
+      else if (curEl) commit(Object.assign({}, doc, { els: doc.els.map((e) => (e === curEl ? Object.assign({}, e, patch(e)) : e)) }));
+    };
+    const stp = snap ? 10 : 2;
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const addEl = (type, text, w, h) => { const id = type.toLowerCase() + Date.now(); commit(Object.assign({}, doc, { els: doc.els.concat([{ id, type, text, x: 500, y: 320, w, h, r: 0 }]) }), { sel: 'e:' + id, tool: 'select' }); };
+    const tools = {
+      select: () => set({ tool: 'select', hideMode: false }),
+      section: () => { const id = 'N' + (doc.secs.length + 1); commit(Object.assign({}, doc, { secs: doc.secs.concat([{ id, name: 'Khu mới', code: id, kind: 'GRID', x: 500, y: 300, rot: 0, rows: 3, n: 10, start: 'P', curve: 0, gap: 14, hidden: [] }]) }), { sel: 's:' + id, tool: 'select' }); },
+      stage: () => addEl('STAGE', 'SÂN KHẤU', 240, 50), aisle: () => addEl('AISLE', 'Lối đi', 200, 24),
+      label: () => addEl('LABEL', 'Nhãn mới', 90, 24), area: () => addEl('AREA', 'Vùng không bán', 160, 70),
+      hide: () => { if (curSec && curSec.kind === 'GRID') set({ tool: 'hide', hideMode: true }); else set({ gToast: 'Chọn một khu ghế trước khi ẩn ghế' }); },
+    };
+    const o = {};
+    Object.keys(tools).forEach((k) => { o['tool_' + k] = (k === 'hide' ? !!st.hideMode : tool === k && !st.hideMode) ? 'true' : 'false'; o['pick_' + k] = tools[k]; });
+    const layers = doc.els.filter((e) => e.type === 'STAGE').map((e) => ({ name: e.text, meta: 'Sân khấu', c: 'var(--inverse)', pick: () => set({ sel: 'e:' + e.id }) }))
+      .concat(doc.secs.map((g, i) => ({ name: g.name, meta: (secs[i].seats.length - g.hidden.length) + ' ghế', c: tierC[g.id] || 'var(--tier-2)', pick: () => set({ sel: 's:' + g.id }) })))
+      .concat(doc.els.filter((e) => e.type !== 'STAGE').map((e) => ({ name: e.text, meta: typeL[e.type], c: 'var(--border-strong)', pick: () => set({ sel: 'e:' + e.id }) })));
+    const dialog = st.dialog !== undefined ? st.dialog : (this.props.dialog ?? 'none');
+    return Object.assign(o, {
+      els, secs: secs.map((x) => Object.assign({}, x, { _g: undefined, _box: undefined })), hidable, hideMode: !!st.hideMode && !preview, hiddenCount: curSec ? curSec.hidden.length : hiddenTotal,
+      totalSeats: total.toLocaleString('vi-VN'), sectionCount: doc.secs.length, layers,
+      ro, isLocked: locked, editable: !locked, showRail: !preview, dirty: !!st.dirty, clean: !st.dirty || ro,
+      verLabel: st.copied ? 'Bản nháp v4' : (st.savedOnce ? 'v3 · đã lưu' : 'v3'),
+      makeCopy: () => set({ copied: true, gToast: 'Đã tạo bản sao v4. Sự kiện đã publish vẫn dùng v3.' }),
+      previewStr: preview ? 'true' : 'false', previewLabel: preview ? 'Quay lại sửa' : 'Xem như khách', togglePreview: () => set({ preview: !preview, sel: null, hideMode: false }),
+      hasSel: !!(curSec || curEl) && !preview, noSel: !(curSec || curEl), selSec: !!curSec, selEl: !!curEl,
+      box: { x: box.x, y: box.y, w: box.w, h: box.h, cx: box.x + box.w / 2, ty: box.y },
+      clearSel: () => set({ sel: null, hideMode: false, tool: 'select', menu: null }),
+      cur: curSec ? { name: curSec.name, code: curSec.code, kindLabel: curSec.kind === 'GRID' ? 'Lưới' : 'Từ Excel', grid: curSec.kind === 'GRID', imported: curSec.kind !== 'GRID',
+        rows: curSec.rows, n: curSec.n, startRow: curSec.start + '–' + rowLabel(curSec.start, curSec.rows - 1), curve: curSec.curve, gap: curSec.gap, hidden: curSec.hidden.length,
+        x: curSec.x, y: curSec.y, rot: curSec.rot, total: curRow.seats.length - curSec.hidden.length } : {},
+      ce: curEl ? { typeLabel: typeL[curEl.type], text: curEl.text, w: curEl.w, h: curEl.h, x: curEl.x, y: curEl.y, r: curEl.r } : {},
+      rowsDec: () => upd((g) => ({ rows: clamp(g.rows - 1, 1, 30) })), rowsInc: () => upd((g) => ({ rows: clamp(g.rows + 1, 1, 30) })),
+      nDec: () => upd((g) => ({ n: clamp(g.n - 1, 1, 60) })), nInc: () => upd((g) => ({ n: clamp(g.n + 1, 1, 60) })),
+      curveDec: () => upd((g) => ({ curve: clamp(g.curve - 5, 0, 120) })), curveInc: () => upd((g) => ({ curve: clamp(g.curve + 5, 0, 120) })),
+      gapDec: () => upd((g) => ({ gap: clamp(g.gap - 1, 10, 30) })), gapInc: () => upd((g) => ({ gap: clamp(g.gap + 1, 10, 30) })),
+      wDec: () => upd((e) => ({ w: clamp(e.w - stp, 20, 900) })), wInc: () => upd((e) => ({ w: clamp(e.w + stp, 20, 900) })),
+      hDec: () => upd((e) => ({ h: clamp(e.h - stp, 16, 400) })), hInc: () => upd((e) => ({ h: clamp(e.h + stp, 16, 400) })),
+      xDec: () => upd((g) => ({ x: clamp(g.x - stp, 0, 1000) })), xInc: () => upd((g) => ({ x: clamp(g.x + stp, 0, 1000) })),
+      yDec: () => upd((g) => ({ y: clamp(g.y - stp, 0, 640) })), yInc: () => upd((g) => ({ y: clamp(g.y + stp, 0, 640) })),
+      rotL: () => upd((g) => (curSec ? { rot: (g.rot - 15) % 360 } : { r: (g.r - 15) % 360 })), rotR: () => upd((g) => (curSec ? { rot: (g.rot + 15) % 360 } : { r: (g.r + 15) % 360 })),
+      dup: () => {
+        if (curSec) { const id = curSec.id + '2'; commit(Object.assign({}, doc, { secs: doc.secs.concat([Object.assign({}, curSec, { id, name: curSec.name + ' (bản sao)', code: curSec.code + '2', x: curSec.x + 40, y: curSec.y + 40, kind: 'GRID' })]) }), { sel: 's:' + id }); }
+        else if (curEl) { const id = curEl.id + 'b'; commit(Object.assign({}, doc, { els: doc.els.concat([Object.assign({}, curEl, { id, x: curEl.x + 30, y: curEl.y + 30 })]) }), { sel: 'e:' + id }); }
+      },
+      askDelete: () => set({ dialog: 'delete', form: { name: curSec ? curSec.name : curEl ? curEl.text : '', mode: 'delete' } }),
+      confirmDel: () => {
+        if (curSec) commit(Object.assign({}, doc, { secs: doc.secs.filter((g) => g !== curSec) }), { sel: null, dialog: 'none' });
+        else if (curEl) commit(Object.assign({}, doc, { els: doc.els.filter((e) => e !== curEl) }), { sel: null, dialog: 'none' });
+        else set({ dialog: 'none' });
+      },
+      undo: () => { if (hist.length) set({ doc: hist[hist.length - 1], hist: hist.slice(0, -1), fut: [doc].concat(fut), dirty: true }); },
+      redo: () => { if (fut.length) set({ doc: fut[0], fut: fut.slice(1), hist: hist.concat([doc]), dirty: true }); },
+      noUndo: !hist.length || ro, noRedo: !fut.length || ro,
+      revert: () => set({ doc: undefined, hist: [], fut: [], dirty: false, sel: null, gToast: 'Đã huỷ thay đổi chưa lưu' }),
+      saveMap: () => set({ dirty: false, savedOnce: true, gToast: 'Đã lưu sơ đồ · ' + total.toLocaleString('vi-VN') + ' ghế' }),
+      panX, panY,
+      panStart: (e) => { this._drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, ox: panX, oy: panY }; },
+      dragMove: (e) => {
+        const d = this._drag; if (!d) return;
+        const dx = e.clientX - d.sx, dy = e.clientY - d.sy;
+        if (!d.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+        if (d.kind === 'pan') { d.moved = true; set({ panX: d.ox + dx, panY: d.oy + dy }); return; }
+        const k = z / 100; const q = snap ? 10 : 1;
+        const nx = Math.round((d.ox + dx / k) / q) * q, ny = Math.round((d.oy + dy / k) / q) * q;
+        const moved = Object.assign({}, d.base, { [d.list]: d.base[d.list].map((it) => (it.id === d.id ? Object.assign({}, it, { x: Math.max(0, Math.min(1000, nx)), y: Math.max(0, Math.min(640, ny)) }) : it)) });
+        if (!d.moved) { d.moved = true; set({ doc: moved, hist: ((this.state && this.state.hist) || []).concat([d.base]).slice(-30), fut: [], dirty: true, sel: (d.list === 'secs' ? 's:' : 'e:') + d.id }); }
+        else set({ doc: moved });
+      },
+      dragEnd: () => { this._drag = null; },
+      zoomS: z / 100, zoomLabel: z + '%', zoomIn: () => set({ zoom: Math.min(200, z + 10) }), zoomOut: () => set({ zoom: Math.max(30, z - 10) }), zoomFit: () => set({ zoom: 60, panX: 0, panY: 0 }),
+      snapOn: snap ? 'true' : 'false', toggleSnap: () => set({ snap: !snap }),
+      form: st.form || { name: '' },
+      closeMenu: () => set({ menu: null }),
+      closeDialog: () => set({ dialog: 'none' }),
+      dlgDelete: dialog === 'delete',
+    });
+  }
+
+  renderVals() { const v = this.renderVals0(); return Object.assign(v, this.shellVals(v)); }
+  shellVals(v) {
+    const s = this.state || {};
+    const admin = true;
+    const set = (o) => this.setState(o);
+    const pages = admin
+      ? [['Trang chủ', 'AdminDashboard.dc.html', 'Tổng quan'], ['Sự kiện', 'AdminEvents.dc.html', ''], ['Đơn hàng & hoàn tiền', 'AdminOrders.dc.html', ''], ['Organizer', 'AdminOrganizers.dc.html', ''], ['Người dùng', 'AdminUsers.dc.html', ''], ['Địa điểm & sơ đồ ghế', 'AdminVenues.dc.html', ''], ['Đơn vị hành chính', 'AdminRegions.dc.html', ''], ['Cấu hình thanh toán', 'AdminPayments.dc.html', ''], ['Phí nền tảng', 'AdminFees.dc.html', ''], ['Feature flags', 'AdminFlags.dc.html', ''], ['Audit log', 'AdminAuditLogs.dc.html', '']]
+      : [['Trang chủ', 'OrgDashboard.dc.html', 'Tổng quan'], ['Sự kiện', 'OrgEvents.dc.html', ''], ['Đơn hàng', 'OrgOrders.dc.html', ''], ['Thanh toán & Stripe', 'OrgStripe.dc.html', ''], ['Cài đặt', 'OrgSettings.dc.html', '']];
+    const acts = admin
+      ? [['Duyệt hồ sơ organizer', 'AdminOrganizers.dc.html', 'Organizer'], ['Tạm dừng bán sự kiện', 'AdminEvents.dc.html', 'Sự kiện'], ['Hoàn tiền thủ công', 'AdminOrders.dc.html', 'Đơn hàng'], ['Thêm địa điểm', 'AdminVenues.dc.html', 'Địa điểm'], ['Tạo feature flag', 'AdminFlags.dc.html', 'Flags'], ['Đổi mức phí mặc định', 'AdminFees.dc.html', 'Phí']]
+      : [['Tạo sự kiện', 'OrgEvents.dc.html', 'Sự kiện'], ['Quét vé check-in', 'Checkin.dc.html', 'Check-in'], ['Xem doanh thu sự kiện', 'OrgEventSales.dc.html', 'Sự kiện'], ['Kết nối Stripe', 'OrgStripe.dc.html', 'Thanh toán']];
+    const pq = (s.palQ || '').trim().toLowerCase();
+    const pick = (list) => list.filter((x) => !pq || x[0].toLowerCase().includes(pq)).map(([label, href, hint]) => ({ label, href, hint }));
+    const palGroups = [{ g: 'Trang', items: pick(pages) }, { g: 'Thao tác', items: pick(acts) }].filter((g) => g.items.length);
+    const read = !!s.ntfRead;
+    const N = admin
+      ? [['3 hồ sơ organizer chờ duyệt', 'AdminOrganizers.dc.html', 'var(--warning-dot)', '5 phút trước'], ['Lễ hội Indie Đà Lạt tự tạm dừng bán: Stripe của organizer ngưng nhận thanh toán', 'AdminEvents.dc.html', 'var(--danger)', '1 giờ trước'], ['2 đơn lệch trạng thái với Stripe cần đối soát', 'AdminOrders.dc.html', 'var(--warning-dot)', '3 giờ trước'], ['Hoàn tiền lỗi đơn TR-8E1B4C: giao dịch đang bị khiếu nại', 'AdminOrders.dc.html', 'var(--danger)', 'Hôm qua']]
+      : [['Đêm nhạc Rock Sài Gòn đạt 400 vé', 'OrgEventSales.dc.html', 'var(--success-dot)', '10 phút trước'], ['Khách yêu cầu hoàn đơn TR-7B8E3F', 'OrgOrders.dc.html', 'var(--info-dot)', '2 giờ trước'], ['Stripe cần bổ sung giấy tờ xác minh', 'OrgStripe.dc.html', 'var(--warning-dot)', 'Hôm qua'], ['Hồ sơ ban tổ chức đã được duyệt', 'OrgDashboard.dc.html', 'var(--success-dot)', '20/09']];
+    const cur = s.theme || v.themeMode || 'system';
+    const dark = cur === 'dark' || (cur === 'system' && typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const anyOpen = !!(s.pop || s.menu !== undefined && s.menu !== null || s.facet || s.um || s.bell || s.more || s.provMenu);
+    const out = {
+      themeMode: s.theme || v.themeMode,
+      toggleTheme: () => set({ theme: dark ? 'light' : 'dark' }),
+      palOpen: !!s.pal, openPal: () => set({ pal: true, palQ: '', pop: null }), closePal: () => set({ pal: false }),
+      palQ: s.palQ || '', onPalQ: (e) => set({ palQ: e.target.value }), palGroups, palEmpty: palGroups.length === 0,
+      ntfOpen: s.pop === 'ntf', ntfStr: s.pop === 'ntf' ? 'true' : 'false', toggleNtf: () => set({ pop: s.pop === 'ntf' ? null : 'ntf', um: false, menu: null }),
+      ntfUnread: !read, ntfRead: () => set({ ntfRead: true }),
+      ntfItems: N.map(([t, href, dot, time], i) => ({ t, href, dot: read ? 'var(--border-strong)' : dot, time, w: read ? 400 : 500 })),
+      umOpen: !!s.um, umStr: s.um ? 'true' : 'false', toggleUm: () => set({ um: !s.um, pop: null, bell: false }), umEmail: admin ? 'admin@tickethub.vn' : 'khoa@saigonsound.vn',
+      bdOn: anyOpen && !s.pal, closeAll: () => set({ pop: null, menu: null, facet: false, um: false, bell: false, more: false, provMenu: false }),
+      exportFile: () => set({ gToast: 'Đang chuẩn bị file, trình duyệt sẽ tự tải xuống.' }),
+      gToastOn: !!s.gToast, gToastMsg: s.gToast || '', hideGToast: () => set({ gToast: '' }),
+      retry: () => { set({ vsv: 'loading' }); setTimeout(() => this.setState({ vsv: 'data' }), 900); },
+    };
+    Object.assign(out, {
+      discard: () => set({ gToast: 'Đã huỷ thay đổi chưa lưu' }),
+      saveDone: () => set({ gToast: 'Đã lưu thay đổi' }),
+      toggleSort: () => set({ sortDesc: !s.sortDesc }), sortLabel: s.sortDesc ? 'Mới nhất trước' : 'Sớm nhất trước',
+    }, this.extraVals ? this.extraVals(s, v) : {});
+    if (s.sortDesc && Array.isArray(v.rows)) out.rows = v.rows.slice().reverse();
+    if (this.selDefs) Object.assign(out, this.selVals(s, v));
+    Object.assign(out, {
+      xlOpen: s.pop === 'xl', xlStr: s.pop === 'xl' ? 'true' : 'false', xlToggle: () => set({ pop: s.pop === 'xl' ? null : 'xl' }),
+      xlImport: () => { set({ pop: null }); if (v.openImport) v.openImport(); },
+      xlTpl: () => { set({ pop: null }); if (v.downloadTpl) v.downloadTpl(); },
+      xlExport: () => { set({ pop: null }); (v.exportAll || v.exportFile || out.exportFile)(); },
+    });
+    return this.facetDefs ? Object.assign(out, this.facetBar(this.facetDefs(), s)) : out;
+  }
+  facetBar(defs, s) {
+    const fo = s.pop && String(s.pop).indexOf('f:') === 0 ? s.pop.slice(2) : null;
+    const facets = defs.map((d) => {
+      const opts0 = d.multi ? d.opts : [['', d.anyLabel || 'Tất cả']].concat(d.opts, d.range ? [['custom', 'Tuỳ chọn khoảng ngày…']] : []);
+      const val = s[d.key] !== undefined ? s[d.key] : (d.multi ? [] : (d.def || ''));
+      const has = d.multi ? val.length > 0 : !!val;
+      const fq = ((s.fq || {})[d.key] || '').toLowerCase();
+      const names = d.multi ? d.opts.filter((o) => val.includes(o[0])).map((o) => o[1]) : [val === 'custom' ? '01/11 – 30/11' : ((opts0.find((o) => o[0] === val) || [])[1] || '')];
+      const all = d.multi && val.length === d.opts.length;
+      return {
+        label: d.label, w: (d.w || 200) + 'px', multi: !!d.multi, single: !d.multi, role: d.multi ? 'menuitemcheckbox' : 'menuitemradio',
+        open: fo === d.key, openStr: fo === d.key ? 'true' : 'false',
+        toggle: () => this.setState({ pop: fo === d.key ? null : 'f:' + d.key, menu: null }),
+        has, pills: !has ? [] : (d.multi && names.length > 2 ? [{ t: names.length + ' đã chọn' }] : names.map((t) => ({ t }))),
+        search: !!d.search, fq: (s.fq || {})[d.key] || '', onFq: (e) => this.setState({ fq: Object.assign({}, s.fq, { [d.key]: e.target.value }) }),
+        allMark: all ? 'fbox fbox-on' : (d.multi && val.length ? 'fbox fbox-mix' : 'fbox'), allStr: all ? 'true' : (d.multi && val.length ? 'mixed' : 'false'),
+        toggleAll: () => this.setState({ [d.key]: all ? [] : d.opts.map((o) => o[0]), page: 1 }),
+        opts: opts0.filter((o) => !fq || o[1].toLowerCase().includes(fq)).map(([k, label]) => {
+          const on = d.multi ? val.includes(k) : val === k;
+          return { label, on: on ? 'true' : 'false', mark: d.multi ? (on ? 'fbox fbox-on' : 'fbox') : (on ? 'frad frad-on' : 'frad'),
+            pick: () => this.setState(d.multi ? { [d.key]: on ? val.filter((x) => x !== k) : val.concat([k]), page: 1 } : { [d.key]: k, page: 1, pop: k === 'custom' ? s.pop : null }) };
+        }),
+        custom: !d.multi && val === 'custom',
+      };
+    });
+    const any = defs.some((d) => { const v = s[d.key]; return d.multi ? (v || []).length > 0 : (v !== undefined ? !!v && v !== (d.def || '') : false); });
+    const reset = {};
+    defs.forEach((d) => { reset[d.key] = d.multi ? [] : (d.def || ''); });
+    return {
+      facets, filtered: any || !!(s.q || '').trim(),
+      reset: () => this.setState(Object.assign({ q: '', page: 1, pop: null }, reset)),
+    };
+  }
+  selDefs() { return {"s0": [["Thẳng hàng", "So le", "Vòng cung"], 0]}; }
+  selVals(s, v) {
+    const D = Object.assign({}, this.selDefs ? this.selDefs() : {}, this.selDyn ? this.selDyn(v || {}) : {});
+    const sel = {};
+    Object.keys(D).forEach((id) => {
+      const [opts, def, ph, srch] = D[id];
+      const sv = s.selv || {};
+      const sq = s.selq || {};
+      const cur = sv[id] !== undefined ? sv[id] : def;
+      const open = s.pop === 'sel:' + id;
+      const st2 = s.selUp;
+      const q = (sq[id] || '').trim().toLowerCase();
+      const list = opts.map((t, i) => ({ t, i })).filter((o) => !q || o.t.toLowerCase().includes(q));
+      sel[id] = {
+        v: cur >= 0 ? opts[cur] : (ph || 'Chọn…'), vc: cur >= 0 ? 'var(--fg)' : 'var(--fg-muted)', x: open ? 'true' : 'false', o: open,
+        sr: !!srch || opts.length > 7, q: sq[id] || '', oq: (e) => this.setState({ selq: Object.assign({}, sq, { [id]: e.target.value }) }), none: list.length === 0,
+        top: st2 === id ? 'auto' : 'calc(100% + 4px)', bot: st2 === id ? 'calc(100% + 4px)' : 'auto',
+        t: (e) => { const el = e && e.currentTarget; const r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null; const h = typeof window !== 'undefined' ? window.innerHeight : 9999; const up = !!r && h - r.bottom < 300 && r.top > h - r.bottom; this.setState({ pop: open ? null : 'sel:' + id, selUp: up ? id : null, selq: Object.assign({}, sq, { [id]: '' }) }); }, c: () => this.setState({ pop: null }),
+        l: list.map(({ t, i }) => ({ t, on: i === cur ? 'true' : 'false', pick: () => this.setState({ selv: Object.assign({}, sv, { [id]: i }), pop: null }) })),
+      };
+    });
+    return { sel };
+  }
+}
+</script>
+</body>
+</html>

@@ -16,8 +16,10 @@
 | 4 | Nhánh bù trừ còn lại: phát vé vi phạm UNIQUE → lỗi nghiệp vụ → `TicketIssuanceFailed` → booking `REFUND_REQUESTED` → hoàn 100%; lỗi hạ tầng (DB mất kết nối…) → thử lại, không hoàn. Test webhook đến sai thứ tự | BE | §7.3 (dòng 7, 8), §16.3; ADR 0019 | 2 | Integration test cho cả hai loại lỗi; đối chiếu đủ mọi dòng §7.3 đều có test |
 | 5 | Check-in: `POST /checkins` (organizer sở hữu sự kiện; `UPDATE … SET status = 'USED' WHERE status = 'VALID'`; ghi `check_ins`), `GET /checkin/keys` (JWKS gồm khoá `ACTIVE` và `RETIRED`); quy trình xoay khoá theo `kid` + runbook | BE | §6.4, §7.5, §11.2; BR-09; ADR 0024 | S3 | Check-in lần 2 → `TICKET_ALREADY_USED`; vé thu hồi → `TICKET_REVOKED`; sau xoay khoá vé cũ vẫn check-in được |
 | 6 | Resilience4j cho Stripe (timeout 3 giây, retry chỉ khi có idempotency key, circuit breaker, bulkhead 20); metric nghiệp vụ `tickethub.*`; metric bất biến: ghế trùng (chạy truy vấn §10 định kỳ), payment kẹt, `REFUND_FAILED`, `TicketIssuanceFailed` | BE | §15.1, §16.1 (Business), §16.3; skill springbot mục 9, 11 | 2 | Test với WireMock trễ 5 giây → timeout; lỗi liên tiếp → breaker mở; metric có trên `/actuator/prometheus` |
-| 7 | FE hoàn vé: nút yêu cầu hoàn ở "Đơn của tôi" (hộp xác nhận ghi rõ số tiền nhận lại và phí không hoàn, ẩn khi quá mốc 48 giờ), hiển thị trạng thái hoàn; Admin: danh sách `REFUND_FAILED` + nút hoàn thủ công | FE | §14.2, §14.4 (Checkout); BR-07 | 1, 3 | Component test hộp xác nhận; Playwright: yêu cầu hoàn → vé biến khỏi "Vé của tôi" |
-| 8 | FE check-in PWA: thiết kế ngắn `docs/design/checkin.md`; trang `/checkin/:eventId` quét QR bằng camera (@yudiel/react-qr-scanner), xác minh chữ ký bằng JWKS (thư viện `jose`), gọi server xác nhận; xanh / đỏ + âm thanh; mất mạng thì báo lỗi, không cho vào | FE | §7.5, §14.4 (Check-in); BR-09; ADR 0024 | 5 | Test: QR giả bị từ chối không gọi server; mất mạng → thông báo lỗi; quét được trên điện thoại thật |
+| 6b | Thông báo trong app: `notifications`, `notification_preferences` (Flyway); consumer tạo thông báo từ `TicketsIssued`, `RefundRequested`, `RefundCompleted`, `RefundFailed` (idempotent theo `source_event_id`); `GET /me/notifications`, `unread-count`, đánh dấu đã đọc, cài đặt; loại bắt buộc không tắt được; job ShedLock xoá bản > 90 ngày | BE | §5, §6.5, §11.2, §12 | S3 | Integration test: gửi lại cùng event không tạo trùng; user chỉ đọc được thông báo của mình |
+| 7 | FE hoàn vé (#9, #21, phần hoàn của #29): nút yêu cầu hoàn ở "Đơn của tôi" (hộp xác nhận ghi rõ số tiền nhận lại và phí không hoàn, ẩn khi quá mốc 48 giờ), hiển thị trạng thái hoàn; Admin: danh sách `REFUND_FAILED` + nút hoàn thủ công | FE | §14.2, §14.4 (Checkout); BR-07 | 1, 3 | Component test hộp xác nhận; Playwright: yêu cầu hoàn → vé biến khỏi "Vé của tôi" |
+| 8 | FE check-in PWA (#10): ghi `docs/design/checkin.md` phần prototype chưa có (quyền camera, âm thanh, mất mạng); trang `/checkin/:eventId` quét QR bằng camera (@yudiel/react-qr-scanner), xác minh chữ ký bằng JWKS (thư viện `jose`), gọi server xác nhận; xanh / đỏ + âm thanh; mất mạng thì báo lỗi, không cho vào | FE | §7.5, §14.4 (Check-in); BR-09; ADR 0024 | 5 | Test: QR giả bị từ chối không gọi server; mất mạng → thông báo lỗi; quét được trên điện thoại thật |
+| 8b | FE thông báo: chuông trong khung (popover, số chưa đọc polling 60 giây, "Đánh dấu đã đọc"), trang Thông báo (#20), cài đặt thông báo trong hồ sơ (#19) | FE | §11.2, §12; prototype #19, #20 | 6b, S1-7b | Playwright: mua vé → chuông hiện 1 → mở popover → đánh dấu đã đọc → số về 0 |
 | 9 | CNPG trên k3d thay chart Postgres; object storage tương thích S3 trên staging; WAL archive + base backup hằng ngày; diễn tập PITR (C7) và kill primary (C1), mỗi kịch bản một runbook ở `docs/runbooks/` | Infra | §18, §20.3 (C1, C7); skill infra mục 7 | S3 | PITR đạt RTO ≤ 15 phút, mất ≤ 5 phút dữ liệu; failover < 30 giây |
 | 10 | kube-prometheus-stack: dashboard RED, JVM, HikariCP, nghiệp vụ; Alertmanager → Telegram; alert bất biến (mức cao nhất) và alert burn rate SLO, mỗi alert có link runbook; blackbox exporter; cert-manager + alert cert sắp hết hạn (C9) | Infra | §16.2, §16.3, §20.3 (C9); skill infra mục 8 | 6, 9 | Alert giả lập tới Telegram kèm link runbook; cert ngắn hạn được gia hạn tự động |
 | 11 | Tracing: Micrometer Tracing + OpenTelemetry (OTLP) ở `gateway` và `app` → Jaeger; `traceId` trong log khớp với trace. FE: Sentry + web-vitals | BE, FE, Infra | §16.1; ADR 0010 (phần log) | S3 | Một lần mua vé có trace xuyên Gateway → app trong Jaeger; lỗi JS giả lập có trong Sentry |
@@ -26,8 +28,8 @@
 
 ## Thứ tự
 
-1. BE: 1 → 2 → (3 ‖ 4); 5 và 6 song song với 1–4.
-2. FE: 7 sau 1, 3 (mock trước bằng MSW); 8 sau 5.
+1. BE: 1 → 2 → (3 ‖ 4); 5, 6 và 6b song song với 1–4.
+2. FE: 7 sau 1, 3 (mock trước bằng MSW); 8 sau 5; 8b sau 6b.
 3. Infra: 9 → 10; 11 song song.
 4. 12 → 13.
 
@@ -57,6 +59,8 @@
 - AC-11 (C1): Kill Postgres primary → failover < 30 giây; tạo booking mới vẫn được; có runbook.
 - AC-12: Alert bất biến giả lập (ghế trùng, payment kẹt, `REFUND_FAILED`, `TicketIssuanceFailed`) tới Telegram kèm link runbook; cert ngắn hạn được cert-manager gia hạn, alert bắn trước khi hết hạn (C9).
 - AC-13: Một lần mua vé có trace xuyên Gateway → app trong Jaeger, `traceId` trong log khớp trace; lỗi JS giả lập xuất hiện trong Sentry.
+- AC-14: Phát vé tạo đúng 1 thông báo "vé đã phát" cho người mua; yêu cầu hoàn tạo 1 thông báo; gửi lại cùng event không tạo thêm; `GET /me/notifications` của user khác không thấy thông báo này.
+- AC-15: Chuông hiện số chưa đọc (polling ≤ 60 giây); đánh dấu đã đọc / đọc tất cả cập nhật số; tắt loại "Tạm dừng bán" trong cài đặt thì không nhận loại đó; loại vé và hoàn tiền / huỷ sự kiện không tắt được.
 
 ## Người dùng tự xem (`[USER-REVIEW]`)
 

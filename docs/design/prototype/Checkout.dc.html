@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Ticket Hub — Thanh toán</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+/* === Ticket Hub tokens — nguồn: docs/design/README.md §2. Không sửa tay mã màu trong file, dùng var(--…). === */
+:root,[data-mode]{--font:'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;--bg:#FFFFFF;--bg-subtle:#F6F7F6;--surface:#FFFFFF;--surface-2:#F1F3F2;--surface-3:#E7EBE9;--fg:#0A0F0D;--fg-2:#3D4642;--fg-muted:#5A6461;--border:#E3E7E5;--border-strong:#C5CDC9;--input-bg:#FFFFFF;--primary:#047857;--primary-hover:#065F46;--on-primary:#FFFFFF;--primary-strong:#059669;--primary-soft:#E7F5EF;--on-primary-soft:#065F46;--primary-border:#A7F3D0;--accent-text:#047857;--ring:rgba(4,120,87,.22);--focus:#047857;--inverse:#0A0F0D;--on-inverse:#FFFFFF;--night:#022C22;--on-night:#ECFDF5;--on-night-muted:#A7C9BC;--night-border:#0F4A3B;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#B91C1C;--danger-soft:#FEF2F2;--danger-border:#FECACA;--on-danger-soft:#7F1D1D;--warning-dot:#F59E0B;--warning-text:#B45309;--warning-soft:#FFFBEB;--warning-border:#FDE68A;--on-warning-soft:#78350F;--success-dot:#16A34A;--success-text:#15803D;--success-soft:#F0FDF4;--info-dot:#2563EB;--info-text:#1D4ED8;--info-soft:#EFF6FF;--on-info-soft:#1E3A8A;--neutral-dot:#8A938F;--hot:#FBBF24;--on-hot:#3B2504;--hot-text:#B45309;--scrim:rgba(10,15,13,.5);--skeleton:#ECEFED;--shadow-sm:0 1px 2px rgba(10,15,13,.06);--shadow-md:0 8px 24px rgba(10,15,13,.10);--tier-1:#C2410C;--tier-2:#1D4ED8;--tier-3:#A21CAF;--seat-off:#DCE2DF;--seat-off-mark:#9AA49F;color-scheme:light}
+[data-mode="dark"]{--bg:#0A0F0D;--bg-subtle:#0E1412;--surface:#121A17;--surface-2:#18221E;--surface-3:#212C27;--fg:#E8EFEC;--fg-2:#C3CEC9;--fg-muted:#9AA7A2;--border:#222C28;--border-strong:#36433E;--input-bg:#121A17;--primary:#34D399;--primary-hover:#6EE7B7;--on-primary:#022C22;--primary-strong:#10B981;--primary-soft:#0C2D23;--on-primary-soft:#6EE7B7;--primary-border:#14543F;--accent-text:#34D399;--ring:rgba(110,231,183,.3);--focus:#6EE7B7;--inverse:#E8EFEC;--on-inverse:#0A0F0D;--night:#03251D;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#F87171;--danger-soft:#3A1416;--danger-border:#5C1F22;--on-danger-soft:#FCA5A5;--warning-dot:#FBBF24;--warning-text:#FBBF24;--warning-soft:#3A2A08;--warning-border:#5C4410;--on-warning-soft:#FCD34D;--success-dot:#4ADE80;--success-text:#4ADE80;--success-soft:#0F2A1A;--info-dot:#60A5FA;--info-text:#60A5FA;--info-soft:#12233F;--on-info-soft:#BFDBFE;--neutral-dot:#7D8A85;--hot-text:#FCD34D;--scrim:rgba(0,0,0,.65);--skeleton:#1C2622;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 8px 24px rgba(0,0,0,.45);--tier-1:#FB923C;--tier-2:#60A5FA;--tier-3:#E879F9;--seat-off:#26302B;--seat-off-mark:#4D5A55;color-scheme:dark}
+@media (prefers-color-scheme: dark){[data-mode="system"]{--bg:#0A0F0D;--bg-subtle:#0E1412;--surface:#121A17;--surface-2:#18221E;--surface-3:#212C27;--fg:#E8EFEC;--fg-2:#C3CEC9;--fg-muted:#9AA7A2;--border:#222C28;--border-strong:#36433E;--input-bg:#121A17;--primary:#34D399;--primary-hover:#6EE7B7;--on-primary:#022C22;--primary-strong:#10B981;--primary-soft:#0C2D23;--on-primary-soft:#6EE7B7;--primary-border:#14543F;--accent-text:#34D399;--ring:rgba(110,231,183,.3);--focus:#6EE7B7;--inverse:#E8EFEC;--on-inverse:#0A0F0D;--night:#03251D;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#F87171;--danger-soft:#3A1416;--danger-border:#5C1F22;--on-danger-soft:#FCA5A5;--warning-dot:#FBBF24;--warning-text:#FBBF24;--warning-soft:#3A2A08;--warning-border:#5C4410;--on-warning-soft:#FCD34D;--success-dot:#4ADE80;--success-text:#4ADE80;--success-soft:#0F2A1A;--info-dot:#60A5FA;--info-text:#60A5FA;--info-soft:#12233F;--on-info-soft:#BFDBFE;--neutral-dot:#7D8A85;--hot-text:#FCD34D;--scrim:rgba(0,0,0,.65);--skeleton:#1C2622;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 8px 24px rgba(0,0,0,.45);--tier-1:#FB923C;--tier-2:#60A5FA;--tier-3:#E879F9;--seat-off:#26302B;--seat-off-mark:#4D5A55;color-scheme:dark}}
+.th-root{background:var(--bg);color:var(--fg);font-family:var(--font);min-height:100vh}
+b,strong{font-weight:600}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
+/* === hết tokens === */
+/* === Responsive chung (prototype dựng layout bằng style inline) === */
+@media (max-width:760px){
+main [style*="grid-template-columns"],main[style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr)!important}
+main [style*="display: flex; gap"],main [style*="display: flex; align-items: center; gap"]{flex-wrap:wrap}
+main aside,main section{max-width:100%;box-sizing:border-box}
+main>*{min-width:0}
+main .alert{flex-wrap:wrap}
+main input,main select,main textarea{max-width:100%}
+main [style*="justify-content: space-between"]{flex-wrap:wrap;row-gap:8px}
+main [style*="max-width: 1240px"],main[style*="max-width: 1240px"]{padding-left:16px!important;padding-right:16px!important}
+main table{display:block;overflow-x:auto;max-width:100%;position:relative}
+main div:has(>table),main section:has(>table){max-width:100%;overflow-x:auto}
+}
+/* === hết responsive chung === */
+
+body{margin:0;background:var(--bg-subtle);color:var(--fg);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}
+a{color:var(--fg)}a:hover{color:var(--fg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;line-height:1;white-space:nowrap;border:1px solid transparent;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-ghost{background:transparent;color:var(--fg)}.btn-ghost:hover{background:var(--surface-2);color:var(--fg)}
+.btn-brand{background:var(--primary);color:var(--on-primary)}.btn-brand:hover{background:var(--primary-hover);color:var(--on-primary)}
+.input{height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:inherit;font-size:14px;color:var(--fg);background:var(--surface);box-sizing:border-box;width:100%;outline:none;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.lbl{display:flex;flex-direction:column;gap:8px;font-size:14px;font-weight:500}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.st{width:24px;height:24px;border-radius:50%;background:var(--primary);color:var(--on-primary);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.paytab{height:56px;border-radius:8px;border:1px solid var(--border);background:var(--surface);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:0 12px;font-family:inherit;font-size:13px;font-weight:500;color:var(--fg-2);cursor:pointer}
+.u{color:var(--fg);text-decoration:underline;text-underline-offset:3px}
+/* === khung khách: chia sẻ, liên hệ, toast === */
+.sh-bd{position:fixed;inset:0;z-index:70;background:var(--scrim)}
+.sh{position:fixed;z-index:71;inset:0;margin:auto;height:fit-content;max-height:90vh;overflow:auto;width:min(460px,92vw);background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);padding:24px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box}
+.sh h2{margin:0;font-size:18px;font-weight:600}
+.sh-x{position:absolute;top:14px;right:14px;width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--fg-muted);cursor:pointer;display:grid;place-items:center}
+.sh-x:hover{background:var(--surface-2)}
+.sh-apps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sh-f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500}
+.sh-f .input{width:100%;box-sizing:border-box}
+.toast-g{position:fixed;right:24px;bottom:24px;z-index:80;background:var(--inverse);color:var(--on-inverse);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-md);font-size:14px;max-width:calc(100vw - 48px);box-sizing:border-box}
+.paytab-on{border:2px solid var(--primary-strong)!important;color:var(--on-primary-soft)!important;background:var(--primary-soft)!important}
+/* === hết khung khách === */
+/* === UX pass: dropdown chung, đóng khi click ra ngoài, toolbar 2 nhóm === */
+.tb{display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap}
+.tb-l{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tb-r{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.tb .btn-icon{width:32px}
+.cnt-b{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--primary-soft);color:var(--on-primary-soft);font-size:12px;font-weight:600;box-sizing:border-box}
+.ov-bd{position:absolute;inset:0}
+.overlay>.dialog{z-index:1}
+.csel{position:relative;display:block;min-width:0}
+.csel-b{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;color:var(--fg);font-weight:400}
+.csel-b>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-b>svg{flex-shrink:0;color:var(--fg-muted)}
+.csel-b:hover{border-color:var(--border-strong)}
+.csel-b[aria-expanded="true"]{border-color:var(--focus);box-shadow:0 0 0 3px var(--ring)}
+.csel-b[aria-expanded="true"]>svg{transform:rotate(180deg)}
+.csel-bd{position:fixed;inset:0;z-index:90}
+.csel-p{position:absolute;left:0;top:calc(100% + 4px);z-index:91;min-width:100%;width:max-content;max-width:320px;max-height:264px;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);padding:4px;box-sizing:border-box}
+.csel-up .csel-p{top:auto;bottom:calc(100% + 4px)}
+.csel-o{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:34px;padding:0 8px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:14px;color:var(--fg);text-align:left;cursor:pointer;white-space:nowrap}
+.csel-o:hover{background:var(--surface-2)}
+.csel-o[aria-selected="true"]{font-weight:500}
+.csel-o>svg{color:var(--primary-strong);opacity:0;flex-shrink:0}
+.csel-o[aria-selected="true"]>svg{opacity:1}
+/* === hết UX pass === */
+/* === UX pass 2 === */
+.ov-bd,.bd,.csel-bd,.pal-bd,.sh-bd,.sheet-scrim{border:0;padding:0;margin:0;cursor:default;display:block;-webkit-appearance:none;appearance:none}
+.ov-bd,.bd,.csel-bd{background:transparent}
+.ov-bd:focus,.bd:focus,.csel-bd:focus,.pal-bd:focus,.sh-bd:focus,.sheet-scrim:focus{outline:none}
+.toast,.toast-g{background:var(--surface)!important;color:var(--fg)!important;border:1px solid var(--border);box-shadow:var(--shadow-md)!important;border-radius:10px!important;padding:12px 12px 12px 14px!important}
+.toast .btn,.toast-g .btn{color:var(--fg-muted)!important}
+.menu{min-width:240px;padding:6px}
+.menu .mi{min-height:36px;height:auto;padding:0 12px;gap:10px;white-space:nowrap}
+::placeholder{font-family:var(--font);color:var(--fg-muted);opacity:1}
+.csel-s{display:flex;align-items:center;gap:8px;padding:4px 8px 8px;margin:0 -4px 4px;border-bottom:1px solid var(--border);color:var(--fg-muted)}
+.csel-s input{border:none;outline:none;background:transparent;font:inherit;font-size:14px;color:var(--fg);width:100%;min-width:0}
+.csel-e{padding:10px 8px;color:var(--fg-muted);font-size:13px}
+.csel-p{overflow-x:hidden}
+.csel-ot{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-s,.fpop-s{position:sticky;top:-4px;z-index:2;background:var(--surface);box-shadow:0 -4px 0 var(--surface)}
+.fpop{max-height:340px;overflow-y:auto}
+/* === hết UX pass 2 === */
+</style>
+</helmet>
+<div data-mode="{{themeMode}}" style="min-height: 100vh; display: flex; flex-direction: column" class="th-root">
+<sc-if value="{{shareOpen}}" hint-placeholder-val="{{ false }}"><button type="button" class="sh-bd" tabindex="-1" aria-hidden="true" onClick="{{closeShare}}"></button><div class="sh" role="dialog" aria-modal="true" aria-labelledby="sh-t"><button type="button" class="sh-x" aria-label="Đóng" onClick="{{closeShare}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button><h2 id="sh-t">Chia sẻ sự kiện</h2><div style="display: flex; gap: 8px"><input class="input" type="text" readonly="readonly" value="https://tickethub.vn/e/dem-nhac-rock-sai-gon" aria-label="Liên kết sự kiện" style="flex: 1; min-width: 0"><button type="button" class="btn btn-default" onClick="{{copyLink}}">{{copyLabel}}</button></div><div class="sh-apps"><button type="button" class="btn btn-outline" onClick="{{shareTo}}">Facebook</button><button type="button" class="btn btn-outline" onClick="{{shareTo}}">Zalo</button><button type="button" class="btn btn-outline" onClick="{{shareTo}}">Messenger</button></div><span style="font-size: 13px; color: var(--fg-muted)">Chỉ chia sẻ thông tin sự kiện, vé không chuyển nhượng.</span></div></sc-if>
+<sc-if value="{{contactOpen}}" hint-placeholder-val="{{ false }}"><button type="button" class="sh-bd" tabindex="-1" aria-hidden="true" onClick="{{closeContact}}"></button><div class="sh" role="dialog" aria-modal="true" aria-labelledby="ct-t"><button type="button" class="sh-x" aria-label="Đóng" onClick="{{closeContact}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button><h2 id="ct-t">Liên hệ Saigon Sound Co.</h2><label class="sh-f">Chủ đề<div class="csel"><button type="button" class="input csel-b" aria-haspopup="listbox" aria-expanded="{{sel.s0.x}}" onClick="{{sel.s0.t}}"><span>{{sel.s0.v}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><sc-if value="{{sel.s0.o}}" hint-placeholder-val="{{ false }}"><button type="button" class="csel-bd" tabindex="-1" aria-hidden="true" onClick="{{sel.s0.c}}"></button><div class="csel-p" role="listbox" style="top: {{sel.s0.top}}; bottom: {{sel.s0.bot}}"><sc-if value="{{sel.s0.sr}}" hint-placeholder-val="{{ false }}"><div class="csel-s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" placeholder="Tìm…" aria-label="Tìm" value="{{sel.s0.q}}" onChange="{{sel.s0.oq}}"></div></sc-if><sc-for list="{{sel.s0.l}}" as="o" hint-placeholder-count="4"><button type="button" class="csel-o" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}"><span class="csel-ot">{{o.t}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{sel.s0.none}}" hint-placeholder-val="{{ false }}"><div class="csel-e">Không có kết quả</div></sc-if></div></sc-if></div></label><label class="sh-f"><span>Nội dung <span style="color: var(--danger-text)">*</span></span><textarea class="input" rows="4" style="height: auto; padding: 8px 12px; resize: vertical"></textarea></label><label class="sh-f">Email nhận phản hồi<input class="input" type="email" value="an.nguyen@example.com"></label><div style="display: flex; justify-content: flex-end; gap: 8px"><button type="button" class="btn btn-outline" onClick="{{closeContact}}">Huỷ</button><button type="button" class="btn btn-default" onClick="{{sendContact}}">Gửi</button></div></div></sc-if>
+<sc-if value="{{gToastOn}}" hint-placeholder-val="{{ false }}"><div class="toast-g" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke: var(--success-text); flex-shrink: 0"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span>{{gToastMsg}}</span><button type="button" class="btn btn-ghost btn-sm" style="height: 24px; padding: 0 6px" onClick="{{hideGToast}}">Đóng</button></div></sc-if>
+<header style="height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; padding: 0 16px; flex-shrink: 0">
+<a href="SeatSelect.dc.html" class="btn btn-ghost" aria-label="Quay lại chọn ghế" style="width: 36px; padding: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></a>
+<span style="font-weight: 600">Thanh toán</span>
+<div style="flex-grow: 1"></div>
+<span style="font-size: 13px; color: var(--fg-muted)">Bước 2/2</span>
+<span style="width: 1px; height: 20px; background: var(--surface-3)"></span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: {{timerFg}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>Giữ ghế còn <span style="font-variant-numeric: tabular-nums">{{clock}}</span></span>
+</header>
+
+<main style="flex-grow: 1; max-width: 1040px; width: 100%; margin: 0 auto; padding: 28px 20px 56px; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 24px; align-items: start">
+<div style="display: flex; flex-direction: column; gap: 16px">
+<sc-if value="{{urgent}}" hint-placeholder-val="{{ false }}">
+<div role="alert" style="border: 1px solid var(--danger-border); background: var(--danger-soft); color: var(--on-danger-soft); border-radius: 8px; padding: 12px 14px; font-size: 14px">{{urgentText}}</div>
+</sc-if>
+
+<section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; gap: 10px"><span class="st">1</span><h2 style="margin: 0; font-size: 16px; font-weight: 600">Thông tin nhận vé</h2></div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<label class="lbl">Họ và tên<input class="input" type="text" value="Nguyễn Văn An"></label>
+<label class="lbl">Số điện thoại<input class="input" type="tel" value="0901 234 567"></label>
+</div>
+<label class="lbl">Email<input class="input" type="email" value="an.nguyen@example.com"><span style="font-size: 13px; font-weight: 400; color: var(--fg-muted)">Nhận vé điện tử và hoá đơn</span></label>
+</section>
+
+<section class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; align-items: center; gap: 10px"><span class="st">2</span><h2 style="margin: 0; font-size: 16px; font-weight: 600">Thanh toán</h2></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<button type="button" class="{{pc_card}}" aria-pressed="{{pp_card}}" onClick="{{pk_card}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>Thẻ</button>
+<button type="button" class="{{pc_gpay}}" aria-pressed="{{pp_gpay}}" onClick="{{pk_gpay}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"></rect><path d="M12 18h.01"></path></svg>Google Pay</button>
+<button type="button" class="{{pc_apay}}" aria-pressed="{{pp_apay}}" onClick="{{pk_apay}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"></rect><path d="M12 18h.01"></path></svg>Apple Pay</button>
+</div>
+<sc-if value="{{pmCard}}" hint-placeholder-val="{{ true }}">
+<label class="lbl">Số thẻ
+<div style="position: relative">
+<input class="input" type="text" value="4242 4242 4242 4242" style="padding-right: 120px">
+<span style="position: absolute; right: 10px; top: 10px; display: flex; gap: 4px">
+<span style="height: 20px; padding: 0 5px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; font-weight: 600; color: var(--on-info-soft); display: flex; align-items: center">VISA</span>
+<span style="height: 20px; padding: 0 5px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; font-weight: 600; color: var(--danger-text); display: flex; align-items: center">MC</span>
+<span style="height: 20px; padding: 0 5px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; font-weight: 600; color: var(--info-text); display: flex; align-items: center">AMEX</span>
+</span>
+</div>
+</label>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<label class="lbl">Ngày hết hạn<input class="input" type="text" value="12 / 28"></label>
+<label class="lbl">Mã bảo mật (CVC)<input class="input" type="text" value="123"></label>
+</div>
+<label class="lbl">Quốc gia<div class="csel"><button type="button" class="input csel-b" aria-haspopup="listbox" aria-expanded="{{sel.s1.x}}" onClick="{{sel.s1.t}}"><span>{{sel.s1.v}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><sc-if value="{{sel.s1.o}}" hint-placeholder-val="{{ false }}"><button type="button" class="csel-bd" tabindex="-1" aria-hidden="true" onClick="{{sel.s1.c}}"></button><div class="csel-p" role="listbox" style="top: {{sel.s1.top}}; bottom: {{sel.s1.bot}}"><sc-if value="{{sel.s1.sr}}" hint-placeholder-val="{{ false }}"><div class="csel-s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" placeholder="Tìm…" aria-label="Tìm" value="{{sel.s1.q}}" onChange="{{sel.s1.oq}}"></div></sc-if><sc-for list="{{sel.s1.l}}" as="o" hint-placeholder-count="1"><button type="button" class="csel-o" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}"><span class="csel-ot">{{o.t}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{sel.s1.none}}" hint-placeholder-val="{{ false }}"><div class="csel-e">Không có kết quả</div></sc-if></div></sc-if></div></label>
+</sc-if>
+<sc-if value="{{pmWallet}}" hint-placeholder-val="{{ false }}"><div style="border: 1px dashed var(--border-strong); border-radius: 8px; padding: 16px; color: var(--fg-2)">Bấm <b>Thanh toán</b> để xác nhận bằng {{pmName}}.</div></sc-if>
+<span style="font-size: 12px; color: var(--fg-muted); display: flex; align-items: center; gap: 6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>Xử lý bởi Stripe · Ticket Hub không lưu thông tin thẻ</span>
+</section>
+</div>
+
+<aside class="card" style="padding: 20px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 20px">
+<div style="display: flex; gap: 12px; align-items: center">
+<img src="https://images.unsplash.com/photo-1460723237483-7a6dc9d0b212?w=200&amp;q=70&amp;auto=format&amp;fit=crop" alt="" style="width: 64px; height: 40px; border-radius: 6px; object-fit: cover; flex-shrink: 0; display: block">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 600">Đêm nhạc Rock Sài Gòn</span>
+<span style="font-size: 13px; color: var(--fg-muted)">T7, 15/11/2026 · 20:00</span>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border)">
+<div style="display: flex; justify-content: space-between"><span>VIP · Hàng B · Ghế 7</span><span>2.500.000 ₫</span></div>
+<div style="display: flex; justify-content: space-between"><span>VIP · Hàng B · Ghế 8</span><span>2.500.000 ₫</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--fg-muted)">
+<div style="display: flex; justify-content: space-between"><span>2 vé</span><span>5.000.000 ₫</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span>Trong đó phí nền tảng 5% · không hoàn lại</span><span style="white-space: nowrap">250.000 ₫</span></div>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 14px; border-top: 1px solid var(--border)">
+<span style="font-weight: 600">Tổng thanh toán</span>
+<span style="font-size: 22px; font-weight: 600; letter-spacing: -0.01em">5.000.000 ₫</span>
+</div>
+<label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--fg-2); line-height: 1.5"><input type="checkbox" checked="{{ true }}" style="width: 16px; height: 16px; margin: 2px 0 0; accent-color: var(--primary)">Tôi đồng ý với <a href="Main.dc.html" class="u">Điều khoản</a> và <a href="Main.dc.html" class="u">Chính sách hoàn vé</a>.</label>
+<a href="Success.dc.html" class="btn btn-brand" style="height: 44px; font-size: 15px">Thanh toán 5.000.000 ₫</a>
+<span style="font-size: 12px; color: var(--fg-muted); text-align: center">Mã đơn TR-8F3K2Q</span>
+</aside>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1280, "height": 1100}, "theme": {"editor": "enum", "options": ["system", "light", "dark"], "default": "system"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { secs: 582 };
+  }
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      this.setState((s) => ({ secs: Math.max(0, s.secs - 1) }));
+    }, 1000);
+  }
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+  renderVals0() { return Object.assign({ themeMode: this.props.theme || 'system' }, this.renderBase()); }
+  renderBase() {
+    const s = this.state.secs;
+    const urgent = s < 120;
+    return {
+      clock: String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'),
+      urgent,
+      urgentText: s === 0
+        ? 'Hết thời gian giữ ghế. Ghế đã được nhả.'
+        : 'Còn dưới 2 phút giữ ghế.',
+      timerFg: urgent ? 'var(--danger-text)' : 'var(--fg)',
+    };
+  }
+  renderVals() { const v = this.renderVals0(); return Object.assign(v, this.custVals(v)); }
+  custVals(v) {
+    const s = this.state || {};
+    const set = (o) => this.setState(o);
+    const cur = s.theme || v.themeMode || 'system';
+    const dark = cur === 'dark' || (cur === 'system' && typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const out = {
+      themeMode: s.theme || v.themeMode,
+      toggleTheme: () => set({ theme: dark ? 'light' : 'dark' }),
+      shareOpen: !!s.share, openShare: () => set({ share: true, copied: false }), closeShare: () => set({ share: false }),
+      copyLink: () => set({ copied: true }), copyLabel: s.copied ? 'Đã chép' : 'Chép liên kết',
+      shareTo: () => set({ share: false, gToast: 'Đang mở ứng dụng để chia sẻ' }),
+      contactOpen: !!s.contact, openContact: () => set({ contact: true }), closeContact: () => set({ contact: false }),
+      sendContact: () => set({ contact: false, gToast: 'Đã gửi tin nhắn. Ban tổ chức trả lời qua email.' }),
+      addCal: () => set({ gToast: 'Đã tải file lịch dem-nhac-rock-sai-gon.ics' }),
+      dlPdf: () => set({ gToast: 'Đang tải vé PDF' }),
+      discard: () => set({ gToast: 'Đã khôi phục giá trị đã lưu' }),
+      gToastOn: !!s.gToast, gToastMsg: s.gToast || '', hideGToast: () => set({ gToast: '' }),
+    };
+    if (this.selDefs) Object.assign(out, this.selVals(s, v));
+    return Object.assign(out, this.extraVals ? this.extraVals(s, v) : {});
+  }
+  extraVals(s, v) {
+    const pm = s.pm || 'card';
+    const o = { pmCard: pm === 'card', pmWallet: pm !== 'card', pmName: pm === 'gpay' ? 'Google Pay' : 'Apple Pay' };
+    ['card', 'gpay', 'apay'].forEach((k) => { o['pc_' + k] = pm === k ? 'paytab paytab-on' : 'paytab'; o['pp_' + k] = pm === k ? 'true' : 'false'; o['pk_' + k] = () => this.setState({ pm: k }); });
+    return o;
+  }
+  selDefs() { return {"s0": [["Thông tin sự kiện", "Vé và chỗ ngồi", "Hỗ trợ người khuyết tật", "Khác"], 0], "s1": [["Việt Nam"], 0]}; }
+  selVals(s, v) {
+    const D = Object.assign({}, this.selDefs ? this.selDefs() : {}, this.selDyn ? this.selDyn(v || {}) : {});
+    const sel = {};
+    Object.keys(D).forEach((id) => {
+      const [opts, def, ph, srch] = D[id];
+      const sv = s.selv || {};
+      const sq = s.selq || {};
+      const cur = sv[id] !== undefined ? sv[id] : def;
+      const open = s.pop === 'sel:' + id;
+      const st2 = s.selUp;
+      const q = (sq[id] || '').trim().toLowerCase();
+      const list = opts.map((t, i) => ({ t, i })).filter((o) => !q || o.t.toLowerCase().includes(q));
+      sel[id] = {
+        v: cur >= 0 ? opts[cur] : (ph || 'Chọn…'), vc: cur >= 0 ? 'var(--fg)' : 'var(--fg-muted)', x: open ? 'true' : 'false', o: open,
+        sr: !!srch || opts.length > 7, q: sq[id] || '', oq: (e) => this.setState({ selq: Object.assign({}, sq, { [id]: e.target.value }) }), none: list.length === 0,
+        top: st2 === id ? 'auto' : 'calc(100% + 4px)', bot: st2 === id ? 'calc(100% + 4px)' : 'auto',
+        t: (e) => { const el = e && e.currentTarget; const r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null; const h = typeof window !== 'undefined' ? window.innerHeight : 9999; const up = !!r && h - r.bottom < 300 && r.top > h - r.bottom; this.setState({ pop: open ? null : 'sel:' + id, selUp: up ? id : null, selq: Object.assign({}, sq, { [id]: '' }) }); }, c: () => this.setState({ pop: null }),
+        l: list.map(({ t, i }) => ({ t, on: i === cur ? 'true' : 'false', pick: () => this.setState({ selv: Object.assign({}, sv, { [id]: i }), pop: null }) })),
+      };
+    });
+    return { sel };
+  }
+}
+</script>
+</body>
+</html>

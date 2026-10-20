@@ -77,8 +77,8 @@ Bán vé concert là bài toán có tải **cực kỳ không đều**: ngày th
 | **Guest** | Xem / tìm kiếm sự kiện, xem sơ đồ ghế |
 | **Customer** | Vào phòng chờ, chọn ghế, huỷ booking đang giữ ghế để chọn lại, thanh toán, nhận vé QR (email + trong app), xem lịch sử đơn, yêu cầu hoàn vé |
 | **Organizer** | Đăng ký làm ban tổ chức, kết nối Stripe (nhận tiền), tạo sự kiện, gán hạng vé cho khu ghế, cấu hình giờ mở bán, xem doanh thu realtime, quét vé check-in |
-| **Admin** | Xem / tìm người dùng, khoá / mở khoá tài khoản, duyệt / đình chỉ organizer, tạm dừng hoặc huỷ sự kiện, quản lý địa điểm & sơ đồ ghế, cấu hình phí nền tảng, xem audit log, hoàn tiền thủ công, bật/tắt feature flag |
-| **Hệ thống** | Hết hạn giữ ghế, đối soát thanh toán với Stripe, gửi thông báo |
+| **Admin** | Xem / tìm người dùng, khoá / mở khoá tài khoản, duyệt / đình chỉ organizer, tạm dừng hoặc huỷ sự kiện, quản lý địa điểm & sơ đồ ghế, cấu hình phí nền tảng, xem trạng thái cấu hình thanh toán (chỉ đọc: chế độ Stripe, webhook, event gửi lỗi; secret không hiển thị), xem audit log, hoàn tiền thủ công, bật/tắt feature flag |
+| **Hệ thống** | Hết hạn giữ ghế, đối soát thanh toán với Stripe, gửi thông báo (email và hộp thư trong app cho cả 3 vai trò) |
 
 ---
 
@@ -183,7 +183,7 @@ Giai đoạn 1 — Modular monolith          Giai đoạn 2 — Microservices
 | **Booking** | Tồn kho ghế theo sự kiện, giữ ghế, vòng đời booking | seat_inventory, bookings, booking_items, event_snapshots, sales_by_event | Postgres, Redis (giữ ghế) |
 | **Payment** | Stripe PaymentIntent, webhook, Connect, hoàn tiền, đối soát | payments, refunds, stripe_events, connected_accounts | Postgres |
 | **Ticket** | Phát hành vé QR, check-in, thu hồi vé | tickets, check_ins, signing_keys | Postgres |
-| **Notification** | Gửi email, đẩy realtime | notification_log, templates | Postgres |
+| **Notification** | Gửi email, hộp thư thông báo trong app (số chưa đọc, đánh dấu đã đọc), cài đặt nhận thông báo, đẩy realtime | notification_log, templates, notifications, notification_preferences | Postgres |
 | **Account** | Hồ sơ người dùng (bản sao từ Keycloak), `GET /me`, danh sách người dùng cho Admin, khoá / mở khoá tài khoản, gán role `ORGANIZER` (qua Keycloak Admin API) | user_profiles | Postgres |
 
 ---
@@ -203,6 +203,7 @@ administrative_units (id, code UNIQUE, name, type[TINH|THANH_PHO|PHUONG|XA|DAC_K
 venues          (id, name, address, ward_id → administrative_units, capacity)
 seat_maps       (id, venue_id, name, version, width, height, locked BOOLEAN)
 sections        (id, seat_map_id, code, name, shape_json)
+seat_map_elements (id, seat_map_id, type[STAGE|AISLE|LABEL|AREA], label, shape_json)   -- phần tử không bán
 seats           (id, section_id, row_label, seat_number, x, y)
 events          (id, organizer_id, venue_id, seat_map_id, title, description, category,
                  banner_url, starts_at, ends_at, sale_starts_at,
@@ -216,7 +217,9 @@ tier_sections   (event_id, tier_id, section_id,
 platform_fee_policies (id, fee_bps, effective_from, created_by)   -- lịch sử mức phí nền tảng (BR-06)
 ```
 
-**Sơ đồ ghế** do Admin tạo theo địa điểm; organizer chỉ chọn sơ đồ và gán hạng vé cho khu ghế (`tier_sections`).
+**Sơ đồ ghế** do Admin tạo theo địa điểm bằng editor kéo-thả (ADR 0030); organizer chỉ chọn sơ đồ và gán hạng vé cho khu ghế (`tier_sections`).
+- Khu ghế `GRID` lưu tham số trong `sections.shape_json`: `kind, x, y, rotation, rows, seatsPerRow, curve, rowGap, seatGap, numbering, hiddenSeats`. Khu `IMPORTED` (từ Excel) giữ toạ độ ghế của file, chỉ di chuyển / xoay cả khu. Khi lưu sơ đồ, backend sinh lại `seats.x, y` bằng cùng hàm `generateSeats` với frontend; màn chọn ghế chỉ đọc toạ độ đã lưu.
+- Sân khấu, lối đi, nhãn, vùng đứng là `seat_map_elements` (`shape_json`: `x, y, w, h, rotation`, hình chữ nhật / bo góc / cung), không có ghế và không bán.
 - Khu ghế không được gán hạng vé nào thì **không bán**: không có trong `seat_inventory`, hiển thị màu xám trên sơ đồ.
 - Sơ đồ đã được một sự kiện publish sử dụng thì **bất biến** (`locked = true`). Muốn sửa thì tạo bản sao với `version` mới; sự kiện đã publish vẫn dùng bản cũ.
 
@@ -306,7 +309,17 @@ signing_keys   (key_id, public_key, status[ACTIVE|RETIRED], created_at)  -- priv
 ```
 templates          (code, channel, subject, body_template)
 notification_log   (id, user_id, channel[EMAIL|PUSH], template_code, status, sent_at, error)
+notifications      (id, user_id, type, title, body, link, source_event_id, created_at, read_at NULL,
+                    UNIQUE (user_id, source_event_id))          -- hộp thư trong app; consumer idempotent theo event nguồn
+notification_preferences (user_id, type, email BOOLEAN, in_app BOOLEAN, PRIMARY KEY (user_id, type))
 ```
+
+**Thông báo trong app** tạo từ event nghiệp vụ, cùng consumer với email:
+- Khách: vé đã phát, sắp hết giờ giữ ghế, đã nhận yêu cầu hoàn / đã hoàn, sự kiện bị huỷ hoặc tạm dừng bán.
+- Organizer: hồ sơ được duyệt / từ chối, Stripe cần bổ sung hoặc bị hạn chế, khách yêu cầu hoàn, mốc vé bán.
+- Admin: hồ sơ organizer chờ duyệt, hoàn tiền lỗi, đơn lệch khi đối soát, sự kiện tự tạm dừng (BR-13).
+
+Thông báo về vé, hoàn tiền và huỷ sự kiện luôn gửi (không tắt được trong `notification_preferences`). Hộp thư giữ 90 ngày; job ShedLock xoá bản cũ hơn.
 
 ### 6.6. Account
 
@@ -693,6 +706,8 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | Idempotency | Header `Idempotency-Key` bắt buộc với `POST /bookings`, `POST /payments`, `POST /bookings/{id}/refund`; lưu và xử lý theo §6.7 |
 | Đặt tên | Tài nguyên là danh từ số nhiều, kebab-case: `/ticket-tiers`. Hành động không phải tạo / đọc / sửa / xoá dùng động từ ở cuối path với `POST`: `/events/{id}/publish`, `/organizers/{id}/approve`, `/bookings/{id}/refund` |
 | Thời gian | ISO-8601 UTC |
+| Xuất file | Danh sách quản trị xuất CSV bằng chính endpoint danh sách với `Accept: text/csv`, cùng bộ lọc; tối đa 10.000 dòng; ghi audit log. Gửi kèm `ids=` để chỉ xuất các dòng đã chọn |
+| Thao tác hàng loạt | `POST .../bulk-<hành động>` với body `{ ids: [...] }`, tối đa 100 id; trả kết quả theo từng id (thành công / lý do lỗi), không all-or-nothing |
 
 ### 11.2. Endpoint chính
 
@@ -715,6 +730,11 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | GET | `/api/v1/me` | đã đăng nhập | Hồ sơ người dùng và role |
 | GET | `/api/v1/me/tickets` | customer | Vé của tôi |
 | GET | `/api/v1/me/bookings` | customer | Đơn của tôi (gồm trạng thái hoàn tiền) |
+| GET | `/api/v1/me/notifications?unread=&cursor=` | đã đăng nhập | Hộp thư thông báo (cursor) |
+| GET | `/api/v1/me/notifications/unread-count` | đã đăng nhập | Số chưa đọc cho chuông (polling khi chưa có SSE) |
+| GET | `/api/v1/me/notifications/stream` | đã đăng nhập | SSE: thông báo mới và số chưa đọc |
+| POST | `/api/v1/me/notifications/{id}/read`, `/api/v1/me/notifications/read-all` | đã đăng nhập | Đánh dấu đã đọc |
+| GET/PUT | `/api/v1/me/notification-preferences` | đã đăng nhập | Cài đặt nhận thông báo theo loại (email / trong app) |
 | POST | `/api/v1/organizer/apply` | customer | Đăng ký làm organizer |
 | POST | `/api/v1/organizer/stripe/onboarding-link` | organizer | Link kết nối Stripe |
 | GET | `/api/v1/venues`, `/api/v1/venues/{id}/seat-maps` | organizer | Chọn địa điểm và sơ đồ ghế khi tạo sự kiện |
@@ -724,9 +744,19 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | PUT | `/api/v1/organizer/events/{id}/tier-sections` | organizer (owner) | Gán hạng vé cho khu ghế (khoá sau publish, BR-14) |
 | POST | `/api/v1/organizer/events/{id}/publish` | organizer (owner) | Publish |
 | GET | `/api/v1/organizer/events/{id}/sales` | organizer (owner) | Doanh thu (module booking, jOOQ trên `sales_by_event`) |
+| POST | `/api/v1/organizer/events/{id}/duplicate`, `/api/v1/organizer/events/bulk-duplicate` | organizer (owner) | Nhân bản thành bản nháp (không chép giờ mở bán) |
+| GET | `/api/v1/organizer/dashboard?range=` | organizer | Tổng quan: doanh thu, vé bán theo ngày, đơn gần đây |
+| GET | `/api/v1/organizer/bookings?eventId=&status=&from=&to=&q=` | organizer (owner) | Đơn hàng của các sự kiện của mình |
+| POST | `/api/v1/organizer/bookings/bulk-resend-tickets` | organizer (owner) | Gửi lại email vé cho các đơn đã chọn |
+| GET/PUT | `/api/v1/organizer/profile` | organizer | Hồ sơ công khai, thông tin pháp lý (đổi pháp lý cần Admin duyệt lại) |
 | POST | `/api/v1/checkins` | organizer (owner) | Check-in vé |
 | GET | `/api/v1/checkin/keys` | organizer | Public key (JWKS) để app check-in xác minh chữ ký QR, theo `kid` |
+| GET | `/api/v1/admin/dashboard?range=` | admin | Tổng quan: doanh thu gộp, phí thu được, vé bán, sự kiện đang bán, danh sách "cần xử lý" (hồ sơ chờ duyệt, đơn lệch đối soát, hoàn tiền lỗi, sự kiện tạm dừng, Stripe bị hạn chế), sự kiện sắp mở bán |
+| GET | `/api/v1/admin/events?status=&organizerId=&from=&to=&q=` | admin | Danh sách sự kiện mọi organizer |
+| POST | `/api/v1/admin/events/bulk-suspend` | admin | Tạm dừng bán nhiều sự kiện, một lý do chung (BR-13) |
 | GET | `/api/v1/admin/events/{id}/refund-progress` | admin | Tiến độ hoàn tiền khi huỷ sự kiện: đã hoàn / đang chờ / thất bại |
+| GET | `/api/v1/admin/bookings?status=&organizerId=&needsReconcile=&q=` | admin | Đơn hàng toàn hệ thống, lọc đơn hoàn tiền đang xử lý / cần đối soát |
+| POST | `/api/v1/admin/organizers/bulk-approve` | admin | Duyệt nhiều hồ sơ chờ duyệt |
 | GET | `/api/v1/admin/organizers?status=` | admin | Danh sách organizer, lọc theo trạng thái (vd. chờ duyệt) |
 | POST | `/api/v1/admin/organizers/{id}/approve` | admin | Duyệt organizer |
 | POST | `/api/v1/admin/organizers/{id}/reject` | admin | Từ chối hồ sơ organizer, kèm lý do |
@@ -736,7 +766,14 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | POST | `/api/v1/admin/events/{id}/suspend` | admin | Tạm dừng bán một sự kiện, kèm lý do (BR-13) |
 | POST | `/api/v1/admin/events/{id}/resume` | admin | Mở bán lại sự kiện đang tạm dừng (BR-13) |
 | POST | `/api/v1/admin/events/{id}/cancel` | admin | Huỷ sự kiện, hoàn tiền toàn bộ (BR-08) |
-| CRUD | `/api/v1/admin/venues`, `/admin/seat-maps` | admin | Quản lý địa điểm, sơ đồ ghế |
+| CRUD | `/api/v1/admin/venues`, `/admin/seat-maps` | admin | Quản lý địa điểm, sơ đồ ghế (lưu sơ đồ: backend sinh lại `seats` từ tham số khu, ADR 0030) |
+| POST | `/api/v1/admin/seat-maps/{id}/copy` | admin | Tạo bản sao `version` mới của sơ đồ đã khoá để sửa |
+| POST | `/api/v1/admin/venues/bulk-delete` | admin | Xoá nhiều địa điểm; chỉ xoá được địa điểm chưa có sự kiện |
+| GET | `/api/v1/admin/payment-config` | admin | Cấu hình thanh toán chỉ đọc: chế độ Stripe, publishable key đã che, phiên bản API, ngày xoay khoá, endpoint webhook, tỉ lệ nhận thành công 24 giờ, số organizer theo trạng thái Connect |
+| GET | `/api/v1/admin/stripe-events?failed=true` | admin | Event Stripe gửi lỗi (Stripe API `events?delivery_success=false`) |
+| POST | `/api/v1/admin/stripe-events/{id}/reprocess` | admin | Lấy lại event từ Stripe và xử lý (idempotent theo `stripe_event_id`) |
+| POST | `/api/v1/admin/stripe/webhook-check` | admin | Tự gửi payload thử có chữ ký tới endpoint webhook, trả mã phản hồi |
+| GET | `/api/v1/admin/feature-flags`, POST `/api/v1/admin/feature-flags/{key}/toggle` | admin | Xem / bật tắt flag qua Unleash Admin API; flag quan trọng bắt buộc lý do, ghi audit |
 | GET | `/api/v1/administrative-units?level=&parentId=&q=` | public | Danh mục tỉnh/xã (cache, dùng cho dropdown) |
 | CRUD | `/api/v1/admin/administrative-units` | admin | Quản lý đơn vị hành chính |
 | GET | `/api/v1/admin/imports/templates/{type}` | admin | Tải file mẫu `.xlsx` (`type`: `administrative-units`, `venues`, `seat-maps`) |
@@ -757,6 +794,7 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 - **Fan-out đa pod**: thay đổi trạng thái ghế ở pod bất kỳ → publish lên Redis channel `seat-updates:{eventId}` → mọi pod nhận và đẩy xuống các client đang kết nối với pod đó → không cần sticky session.
 - Heartbeat 15s để giữ kết nối qua proxy / load balancer.
 - Redis Pub/Sub không lưu message nên không phát lại được theo `Last-Event-ID`. Khi kết nối lại, client tải lại snapshot `GET /events/{id}/seats` rồi nghe tiếp.
+- **Thông báo trong app**: Notification ghi `notifications` rồi publish lên `user-notify:{userId}`; `GET /me/notifications/stream` đẩy thông báo mới và số chưa đọc. Kết nối lại thì gọi `unread-count`. Trước khi có SSE (và khi SSE lỗi), chuông gọi `unread-count` mỗi 60 giây.
 
 ---
 
@@ -852,10 +890,12 @@ Yêu cầu cấu hình bắt buộc:
 | Khu vực | Routes |
 |---|---|
 | Public | `/`, `/events`, `/events/:id` |
-| Customer | `/events/:id/queue`, `/events/:id/seats`, `/checkout/:bookingId`, `/me/tickets`, `/me/bookings` |
-| Organizer | `/organizer/apply`, `/organizer/events`, `/organizer/events/new`, `/organizer/events/:id/edit`, `/organizer/events/:id/dashboard` |
+| Customer | `/events/:id/queue`, `/events/:id/seats`, `/checkout/:bookingId`, `/checkout/:bookingId/success`, `/me/tickets`, `/me/tickets/:id`, `/me/bookings`, `/me/profile`, `/me/notifications` |
+| Organizer | `/organizer/apply`, `/organizer` (tổng quan), `/organizer/events`, `/organizer/events/:id/edit`, `/organizer/events/:id/tiers`, `/organizer/events/:id/dashboard`, `/organizer/orders`, `/organizer/payments`, `/organizer/settings` |
 | Check-in (PWA) | `/checkin/:eventId` |
-| Admin | `/admin/users`, `/admin/users/:id`, `/admin/organizers`, `/admin/venues`, `/admin/seat-maps/:id/editor`, `/admin/administrative-units`, `/admin/audit-logs` |
+| Admin | `/admin` (tổng quan), `/admin/events`, `/admin/orders`, `/admin/organizers`, `/admin/users`, `/admin/venues`, `/admin/venues/:id/seat-maps/:mapId`, `/admin/administrative-units`, `/admin/payments`, `/admin/fees`, `/admin/feature-flags`, `/admin/audit-logs` |
+
+Tạo sự kiện mở modal ở `/organizer/events` rồi chuyển tới `/organizer/events/:id/edit`. Chi tiết bản ghi trong màn quản trị mở side sheet, giữ trên URL bằng query (`?order=`, `?event=`, `?user=`). Giao diện từng route: `docs/design/README.md` §4 và prototype.
 
 Bảo vệ route theo role bằng `beforeLoad` của TanStack Router.
 
@@ -1331,6 +1371,7 @@ terraform apply → làm lab → terraform destroy → verify-clean.sh → hôm 
 | 0027 | Phòng chờ | **Lượt vào là key Redis; điều tiết theo số người đang ở trong** | Không có permit bị rò, thu hồi được | Admission JWT; Redisson semaphore |
 | 0028 | Autoscaling | **KEDA cho mọi workload, pre-warm theo metric** | Không chồng HPA, pre-warm theo dữ liệu thật | HPA + KEDA Cron |
 | 0029 | Tách service | **Notification tách đầu tiên, outbox chuyển sang Debezium** | Ít phụ thuộc nhất, học được CDC | Tách Booking / Payment trước |
+| 0030 | Editor sơ đồ ghế | **Kéo-thả theo khu, ghế sinh từ tham số**; sân khấu / lối đi / nhãn là `seat_map_elements` | Dựng được bố cục thật mà không nhập toạ độ từng ghế; editor và màn khách dùng chung hàm sinh ghế | Form + lưới; vẽ tự do từng ghế; seats.io (trả phí) |
 
 ---
 

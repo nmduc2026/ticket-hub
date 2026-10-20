@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Ticket Hub — Trang chủ</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap">
+<style>
+/* === Ticket Hub tokens — nguồn: docs/design/README.md §2. Không sửa tay mã màu trong file, dùng var(--…). === */
+:root,[data-mode]{--font:'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;--bg:#FFFFFF;--bg-subtle:#F6F7F6;--surface:#FFFFFF;--surface-2:#F1F3F2;--surface-3:#E7EBE9;--fg:#0A0F0D;--fg-2:#3D4642;--fg-muted:#5A6461;--border:#E3E7E5;--border-strong:#C5CDC9;--input-bg:#FFFFFF;--primary:#047857;--primary-hover:#065F46;--on-primary:#FFFFFF;--primary-strong:#059669;--primary-soft:#E7F5EF;--on-primary-soft:#065F46;--primary-border:#A7F3D0;--accent-text:#047857;--ring:rgba(4,120,87,.22);--focus:#047857;--inverse:#0A0F0D;--on-inverse:#FFFFFF;--night:#022C22;--on-night:#ECFDF5;--on-night-muted:#A7C9BC;--night-border:#0F4A3B;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#B91C1C;--danger-soft:#FEF2F2;--danger-border:#FECACA;--on-danger-soft:#7F1D1D;--warning-dot:#F59E0B;--warning-text:#B45309;--warning-soft:#FFFBEB;--warning-border:#FDE68A;--on-warning-soft:#78350F;--success-dot:#16A34A;--success-text:#15803D;--success-soft:#F0FDF4;--info-dot:#2563EB;--info-text:#1D4ED8;--info-soft:#EFF6FF;--on-info-soft:#1E3A8A;--neutral-dot:#8A938F;--hot:#FBBF24;--on-hot:#3B2504;--hot-text:#B45309;--scrim:rgba(10,15,13,.5);--skeleton:#ECEFED;--shadow-sm:0 1px 2px rgba(10,15,13,.06);--shadow-md:0 8px 24px rgba(10,15,13,.10);--tier-1:#C2410C;--tier-2:#1D4ED8;--tier-3:#A21CAF;--seat-off:#DCE2DF;--seat-off-mark:#9AA49F;color-scheme:light}
+[data-mode="dark"]{--bg:#0A0F0D;--bg-subtle:#0E1412;--surface:#121A17;--surface-2:#18221E;--surface-3:#212C27;--fg:#E8EFEC;--fg-2:#C3CEC9;--fg-muted:#9AA7A2;--border:#222C28;--border-strong:#36433E;--input-bg:#121A17;--primary:#34D399;--primary-hover:#6EE7B7;--on-primary:#022C22;--primary-strong:#10B981;--primary-soft:#0C2D23;--on-primary-soft:#6EE7B7;--primary-border:#14543F;--accent-text:#34D399;--ring:rgba(110,231,183,.3);--focus:#6EE7B7;--inverse:#E8EFEC;--on-inverse:#0A0F0D;--night:#03251D;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#F87171;--danger-soft:#3A1416;--danger-border:#5C1F22;--on-danger-soft:#FCA5A5;--warning-dot:#FBBF24;--warning-text:#FBBF24;--warning-soft:#3A2A08;--warning-border:#5C4410;--on-warning-soft:#FCD34D;--success-dot:#4ADE80;--success-text:#4ADE80;--success-soft:#0F2A1A;--info-dot:#60A5FA;--info-text:#60A5FA;--info-soft:#12233F;--on-info-soft:#BFDBFE;--neutral-dot:#7D8A85;--hot-text:#FCD34D;--scrim:rgba(0,0,0,.65);--skeleton:#1C2622;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 8px 24px rgba(0,0,0,.45);--tier-1:#FB923C;--tier-2:#60A5FA;--tier-3:#E879F9;--seat-off:#26302B;--seat-off-mark:#4D5A55;color-scheme:dark}
+@media (prefers-color-scheme: dark){[data-mode="system"]{--bg:#0A0F0D;--bg-subtle:#0E1412;--surface:#121A17;--surface-2:#18221E;--surface-3:#212C27;--fg:#E8EFEC;--fg-2:#C3CEC9;--fg-muted:#9AA7A2;--border:#222C28;--border-strong:#36433E;--input-bg:#121A17;--primary:#34D399;--primary-hover:#6EE7B7;--on-primary:#022C22;--primary-strong:#10B981;--primary-soft:#0C2D23;--on-primary-soft:#6EE7B7;--primary-border:#14543F;--accent-text:#34D399;--ring:rgba(110,231,183,.3);--focus:#6EE7B7;--inverse:#E8EFEC;--on-inverse:#0A0F0D;--night:#03251D;--danger:#DC2626;--danger-hover:#B91C1C;--danger-text:#F87171;--danger-soft:#3A1416;--danger-border:#5C1F22;--on-danger-soft:#FCA5A5;--warning-dot:#FBBF24;--warning-text:#FBBF24;--warning-soft:#3A2A08;--warning-border:#5C4410;--on-warning-soft:#FCD34D;--success-dot:#4ADE80;--success-text:#4ADE80;--success-soft:#0F2A1A;--info-dot:#60A5FA;--info-text:#60A5FA;--info-soft:#12233F;--on-info-soft:#BFDBFE;--neutral-dot:#7D8A85;--hot-text:#FCD34D;--scrim:rgba(0,0,0,.65);--skeleton:#1C2622;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 8px 24px rgba(0,0,0,.45);--tier-1:#FB923C;--tier-2:#60A5FA;--tier-3:#E879F9;--seat-off:#26302B;--seat-off-mark:#4D5A55;color-scheme:dark}}
+.th-root{background:var(--bg);color:var(--fg);font-family:var(--font);min-height:100vh}
+b,strong{font-weight:600}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--focus);outline-offset:0}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:0ms!important;animation-duration:0ms!important}}
+/* === hết tokens === */
+/* === Responsive chung (prototype dựng layout bằng style inline) === */
+@media (max-width:760px){
+main [style*="grid-template-columns"],main[style*="grid-template-columns"]{grid-template-columns:minmax(0,1fr)!important}
+main [style*="display: flex; gap"],main [style*="display: flex; align-items: center; gap"]{flex-wrap:wrap}
+main aside,main section{max-width:100%;box-sizing:border-box}
+main>*{min-width:0}
+main .alert{flex-wrap:wrap}
+main input,main select,main textarea{max-width:100%}
+main [style*="justify-content: space-between"]{flex-wrap:wrap;row-gap:8px}
+main [style*="max-width: 1240px"],main[style*="max-width: 1240px"]{padding-left:16px!important;padding-right:16px!important}
+main table{display:block;overflow-x:auto;max-width:100%;position:relative}
+main div:has(>table),main section:has(>table){max-width:100%;overflow-x:auto}
+}
+/* === hết responsive chung === */
+/* === Ticket Hub customer shell === */
+.ftx{background:var(--night);color:var(--on-night);margin-top:auto}
+.ftx-in{max-width:1240px;margin:0 auto;padding:48px 20px 28px;box-sizing:border-box}
+.ftx-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:28px}
+.ftx h2{margin:0 0 10px;font-size:14px;font-weight:600;color:var(--on-night)}
+.ftx a{display:block;padding:4px 0;color:var(--on-night-muted);text-decoration:none;font-size:14px}
+.ftx a:hover{color:var(--on-night);text-decoration:underline}
+.ftx p{margin:12px 0 0;color:var(--on-night-muted);font-size:14px;max-width:36ch;line-height:1.55}
+.ftx .ftx-logo{display:inline-flex;align-items:center;gap:10px;color:var(--on-night);font-weight:700;font-size:17px;padding:0}
+.ftx .ftx-logo:hover{text-decoration:none;color:var(--on-night)}
+.ftx-mark{width:30px;height:30px;border-radius:8px;background:#34D399;color:#022C22;display:grid;place-items:center}
+.ftx .ftx-copy{margin-top:28px;padding-top:16px;border-top:1px solid var(--night-border);max-width:none;font-size:13px}
+@media (max-width:760px){.ftx-grid{grid-template-columns:1fr 1fr}.ftx-brand{grid-column:1/-1}}
+@media (max-width:760px){
+header>div{gap:12px!important;padding:0 16px!important}
+header label{display:none!important}
+header nav>a:not([aria-label]){display:none!important}
+header div:has(>.cat),header nav:has(>.cat){overflow-x:auto;scrollbar-width:none;gap:20px!important;padding:0 16px!important}
+.cat{white-space:nowrap;flex-shrink:0}
+main>*{max-width:100%}
+}
+/* === hết customer shell === */
+/* === Trang chủ === */
+.hx{max-width:1240px;margin:0 auto;padding:24px 20px 0;box-sizing:border-box;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:20px}
+.hx-main,.hx-sm{position:relative;display:block;border-radius:16px;overflow:hidden;background:#0A0F0D;color:#FFFFFF;text-decoration:none;isolation:isolate}
+.hx-main{min-height:480px}
+.hx-main img,.hx-sm img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;transition:transform .6s cubic-bezier(.2,.8,.2,1)}
+.hx-main:hover img,.hx-sm:hover img{transform:scale(1.03)}
+.hx-main::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(2,20,15,.85) 0%,rgba(2,20,15,.45) 50%,rgba(2,20,15,0) 80%)}
+.hx-sm::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(2,20,15,0) 30%,rgba(2,20,15,.88))}
+.hx-main:hover,.hx-sm:hover{color:#FFFFFF}
+.hx-body{position:absolute;left:0;bottom:0;padding:36px;max-width:560px;display:flex;flex-direction:column;gap:10px}
+.hx-eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#6EE7B7}
+.hx-title{margin:0;font-size:48px;line-height:1.08;font-weight:600;letter-spacing:-.03em}
+.hx-meta{margin:0;display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:#E4ECE8}
+.hx-meta span{display:inline-flex;align-items:center;gap:6px}
+.hx-cta{display:flex;align-items:center;gap:12px;margin-top:4px;font-size:14px;color:#E4ECE8}
+.hx-cta b{color:#FFFFFF;font-size:18px;font-weight:600}
+.hx-btn{display:inline-flex;align-items:center;height:48px;padding:0 22px;border-radius:8px;background:#34D399;color:#022C22;font-size:16px;font-weight:600}
+.hx-side{display:grid;grid-template-rows:1fr 1fr;gap:20px}
+.hx-sm-t{position:absolute;left:0;right:0;bottom:0;padding:18px 20px;display:flex;flex-direction:column;gap:4px}
+.hx-sm-t h2{margin:0;font-size:16px;font-weight:600;line-height:1.3}
+.hx-sm-t p{margin:0;font-size:14px;color:#E4ECE8}
+.hx-when{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6EE7B7}
+.dchip{display:inline-flex;align-items:center;min-height:26px;padding:0 8px;border-radius:6px;background:var(--surface);color:var(--fg);font-size:12px;font-weight:600;white-space:nowrap;box-shadow:var(--shadow-sm);font-variant-numeric:tabular-nums}
+.hot{display:inline-flex;align-items:center;gap:5px;min-height:26px;padding:0 9px;border-radius:6px;background:var(--hot);color:var(--on-hot);font-size:12px;font-weight:600;white-space:nowrap}
+.soldout{display:inline-flex;align-items:center;min-height:26px;padding:0 9px;border-radius:6px;background:rgba(10,15,13,.78);color:#FFFFFF;font-size:12px;font-weight:600}
+.hx-main .dchip{position:absolute;left:16px;top:16px}
+.hx-main .hot{position:absolute;right:16px;top:16px}
+.dx{background:var(--night);color:var(--on-night);margin-top:48px}
+.dx-in,.sx{max-width:1240px;margin:0 auto;padding:56px 20px;box-sizing:border-box}
+.sx{padding-bottom:0}
+.shead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+.shead h2{margin:0;font-size:28px;font-weight:600;letter-spacing:-.02em}
+.shead p{margin:4px 0 0;font-size:14px;color:var(--fg-muted)}
+.dx .shead p{color:var(--on-night-muted)}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-text)}
+.dx .eyebrow{color:#6EE7B7}
+.more{display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:600;text-decoration:none;color:var(--fg);white-space:nowrap}
+.dx .more{color:var(--on-night)}
+.more:hover{text-decoration:underline;text-underline-offset:3px}
+.dx-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}
+.dx-card{position:relative;display:flex;flex-direction:column;border-radius:12px;border:1px solid var(--night-border);background:rgba(255,255,255,.06);overflow:hidden;transition:background-color .2s,border-color .2s}
+.dx-card:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28)}
+.dx-media{position:relative;aspect-ratio:16/10;overflow:hidden}
+.dx-media img{width:100%;height:100%;object-fit:cover}
+.cdtag{position:absolute;left:10px;bottom:10px;display:inline-flex;align-items:center;gap:6px;min-height:26px;padding:0 8px;border-radius:6px;background:var(--hot);color:var(--on-hot);font-size:12px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dx-body{flex:1;display:flex;flex-direction:column;gap:4px;padding:14px 16px 16px}
+.dx-body h3{margin:0;font-size:16px;font-weight:600;line-height:1.35}
+.dx-body h3 a{color:var(--on-night);text-decoration:none}
+.dx-body h3 a::after{content:"";position:absolute;inset:0}
+.dx-card:hover h3 a{text-decoration:underline;text-underline-offset:3px}
+.dx-body p{margin:0;font-size:14px;color:var(--on-night-muted)}
+.dx-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:10px;font-size:14px;color:var(--on-night-muted);white-space:nowrap}
+.dx-foot b{color:var(--on-night);font-weight:600}
+.dx-remind{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--on-night);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.dx-remind:hover{background:rgba(255,255,255,.08)}
+.dx-remind[aria-pressed="true"]{background:rgba(52,211,153,.16);border-color:transparent;color:#6EE7B7}
+.chipsx{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.chipx{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--border-strong);background:var(--surface);color:var(--fg);font-family:inherit;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer;white-space:nowrap}
+.chipx:hover{background:var(--surface-2);color:var(--fg)}
+.chipx[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.chipx small{font-size:12px;color:var(--fg-muted);font-weight:600}
+.cgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px 20px}
+.cx{position:relative;display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--fg);min-width:0}
+.cx:hover{color:var(--fg)}
+.cx-media{position:relative;aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.cx-media img{width:100%;height:100%;object-fit:cover;transition:transform .5s cubic-bezier(.2,.8,.2,1)}
+.cx:hover .cx-media img{transform:scale(1.04)}
+.cx-media .dchip{position:absolute;left:10px;top:10px}
+.cx-media .hot,.cx-media .soldout{position:absolute;right:10px;top:10px}
+.cx.is-soldout img{filter:grayscale(.9) brightness(.9)}
+.cx h3{margin:0;font-size:16px;font-weight:600;line-height:1.35}
+.cx:hover h3{text-decoration:underline;text-underline-offset:3px}
+.cx-venue{margin:2px 0 0;font-size:14px;color:var(--fg-muted)}
+.cx-price{margin:4px 0 0;font-size:14px;color:var(--fg-muted)}
+.cx-price b{color:var(--fg);font-size:16px;font-weight:600}
+.cityx{display:flex;flex-wrap:wrap;gap:8px}
+.cityx .chipx{height:44px;padding:0 16px;font-weight:600}
+.promox{max-width:1240px;margin:56px auto;padding:0 20px;box-sizing:border-box}
+.promox-in{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center;padding:40px 44px;border-radius:16px;background:var(--primary-soft)}
+.promox h2{margin:6px 0 0;font-size:30px;font-weight:600;letter-spacing:-.02em}
+.promox p{margin:8px 0 0;color:var(--fg-muted);max-width:52ch}
+.promox .btn{margin-top:20px}
+.statx{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.statx div{display:flex;flex-direction:column;gap:2px;padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--border)}
+.statx b{font-size:24px;font-weight:600;color:var(--accent-text)}
+.statx span{font-size:12px;color:var(--fg-muted)}
+@media (max-width:900px){
+.hx{grid-template-columns:minmax(0,1fr);gap:16px}.hx-main{min-height:0;aspect-ratio:4/5}
+.hx-main::after{background:linear-gradient(180deg,rgba(2,20,15,0) 35%,rgba(2,20,15,.6) 65%,rgba(2,20,15,.9))}
+.hx-body{padding:20px}.hx-title{font-size:32px}
+.hx-side{grid-template-rows:none;gap:12px}.hx-sm{background:transparent;color:var(--fg);display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:center}
+.hx-sm img{position:static;aspect-ratio:1;border-radius:12px}.hx-sm::after{display:none}.hx-sm-t{position:static;padding:0}
+.hx-sm-t p{color:var(--fg-muted)}.hx-when{color:var(--accent-text)}.hx-sm:hover{color:var(--fg)}
+.dx-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.promox-in{grid-template-columns:minmax(0,1fr);padding:28px 20px}
+}
+@media (max-width:600px){.dx-grid,.cgrid{grid-template-columns:minmax(0,1fr)}.shead h2{font-size:24px}}
+/* === hết trang chủ === */
+
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}
+a{color:var(--fg)}a:hover{color:var(--fg)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:36px;padding:0 16px;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;line-height:1;white-space:nowrap;border:1px solid transparent;cursor:pointer;text-decoration:none;box-sizing:border-box}
+.btn-ghost{background:transparent;color:var(--fg)}.btn-ghost:hover{background:var(--surface-2);color:var(--fg)}
+.btn-outline{background:var(--surface);color:var(--fg);border-color:var(--border);box-shadow:0 1px 2px rgba(0,0,0,.05)}.btn-outline:hover{background:var(--surface-2);color:var(--fg)}
+.btn-default{background:var(--primary);color:var(--on-primary)}.btn-default:hover{background:var(--primary-hover);color:var(--on-primary)}
+.btn-icon{width:36px;padding:0;border-radius:999px}
+.input{height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;font-family:inherit;font-size:14px;color:var(--fg);box-sizing:border-box;outline:none}
+.cat{height:44px;display:flex;align-items:center;font-size:14px;color:var(--fg-muted);text-decoration:none;border-bottom:2px solid transparent}
+.cat:hover{color:var(--fg)}
+.cat-on,.cat-on:hover{color:var(--fg);font-weight:500;border-bottom-color:var(--primary-strong)}
+.ev{display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--fg)}.ev:hover{color:var(--fg)}
+.pt{font-family:var(--font);white-space:pre-line;font-weight:600;letter-spacing:-.02em}
+.more{color:var(--fg);text-decoration:none;font-size:14px;font-weight:500}.more:hover{text-decoration:underline}
+.flink{color:var(--fg-2);text-decoration:none;font-size:14px}.flink:hover{color:var(--fg)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+/* === khung khách: chia sẻ, liên hệ, toast === */
+.sh-bd{position:fixed;inset:0;z-index:70;background:var(--scrim)}
+.sh{position:fixed;z-index:71;inset:0;margin:auto;height:fit-content;max-height:90vh;overflow:auto;width:min(460px,92vw);background:var(--surface);color:var(--fg);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-md);padding:24px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box}
+.sh h2{margin:0;font-size:18px;font-weight:600}
+.sh-x{position:absolute;top:14px;right:14px;width:28px;height:28px;border:none;border-radius:6px;background:transparent;color:var(--fg-muted);cursor:pointer;display:grid;place-items:center}
+.sh-x:hover{background:var(--surface-2)}
+.sh-apps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.sh-f{display:flex;flex-direction:column;gap:6px;font-size:14px;font-weight:500}
+.sh-f .input{width:100%;box-sizing:border-box}
+.toast-g{position:fixed;right:24px;bottom:24px;z-index:80;background:var(--inverse);color:var(--on-inverse);border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-md);font-size:14px;max-width:calc(100vw - 48px);box-sizing:border-box}
+.paytab-on{border:2px solid var(--primary-strong)!important;color:var(--on-primary-soft)!important;background:var(--primary-soft)!important}
+/* === hết khung khách === */
+/* === UX pass: dropdown chung, đóng khi click ra ngoài, toolbar 2 nhóm === */
+.tb{display:flex;align-items:flex-start;gap:12px;flex-wrap:nowrap}
+.tb-l{flex:1;min-width:0;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tb-r{display:flex;gap:8px;align-items:center;flex-shrink:0}
+.tb .btn-icon{width:32px}
+.cnt-b{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--primary-soft);color:var(--on-primary-soft);font-size:12px;font-weight:600;box-sizing:border-box}
+.ov-bd{position:absolute;inset:0}
+.overlay>.dialog{z-index:1}
+.csel{position:relative;display:block;min-width:0}
+.csel-b{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;cursor:pointer;color:var(--fg);font-weight:400}
+.csel-b>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-b>svg{flex-shrink:0;color:var(--fg-muted)}
+.csel-b:hover{border-color:var(--border-strong)}
+.csel-b[aria-expanded="true"]{border-color:var(--focus);box-shadow:0 0 0 3px var(--ring)}
+.csel-b[aria-expanded="true"]>svg{transform:rotate(180deg)}
+.csel-bd{position:fixed;inset:0;z-index:90}
+.csel-p{position:absolute;left:0;top:calc(100% + 4px);z-index:91;min-width:100%;width:max-content;max-width:320px;max-height:264px;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow-md);padding:4px;box-sizing:border-box}
+.csel-up .csel-p{top:auto;bottom:calc(100% + 4px)}
+.csel-o{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:34px;padding:0 8px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:14px;color:var(--fg);text-align:left;cursor:pointer;white-space:nowrap}
+.csel-o:hover{background:var(--surface-2)}
+.csel-o[aria-selected="true"]{font-weight:500}
+.csel-o>svg{color:var(--primary-strong);opacity:0;flex-shrink:0}
+.csel-o[aria-selected="true"]>svg{opacity:1}
+/* === hết UX pass === */
+/* === UX pass 2 === */
+.ov-bd,.bd,.csel-bd,.pal-bd,.sh-bd,.sheet-scrim{border:0;padding:0;margin:0;cursor:default;display:block;-webkit-appearance:none;appearance:none}
+.ov-bd,.bd,.csel-bd{background:transparent}
+.ov-bd:focus,.bd:focus,.csel-bd:focus,.pal-bd:focus,.sh-bd:focus,.sheet-scrim:focus{outline:none}
+.toast,.toast-g{background:var(--surface)!important;color:var(--fg)!important;border:1px solid var(--border);box-shadow:var(--shadow-md)!important;border-radius:10px!important;padding:12px 12px 12px 14px!important}
+.toast .btn,.toast-g .btn{color:var(--fg-muted)!important}
+.menu{min-width:240px;padding:6px}
+.menu .mi{min-height:36px;height:auto;padding:0 12px;gap:10px;white-space:nowrap}
+::placeholder{font-family:var(--font);color:var(--fg-muted);opacity:1}
+.csel-s{display:flex;align-items:center;gap:8px;padding:4px 8px 8px;margin:0 -4px 4px;border-bottom:1px solid var(--border);color:var(--fg-muted)}
+.csel-s input{border:none;outline:none;background:transparent;font:inherit;font-size:14px;color:var(--fg);width:100%;min-width:0}
+.csel-e{padding:10px 8px;color:var(--fg-muted);font-size:13px}
+.csel-p{overflow-x:hidden}
+.csel-ot{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csel-s,.fpop-s{position:sticky;top:-4px;z-index:2;background:var(--surface);box-shadow:0 -4px 0 var(--surface)}
+.fpop{max-height:340px;overflow-y:auto}
+/* === hết UX pass 2 === */
+</style>
+</helmet>
+<div data-mode="{{themeMode}}" style="min-height: 100vh; display: flex; flex-direction: column" class="th-root">
+<sc-if value="{{shareOpen}}" hint-placeholder-val="{{ false }}"><button type="button" class="sh-bd" tabindex="-1" aria-hidden="true" onClick="{{closeShare}}"></button><div class="sh" role="dialog" aria-modal="true" aria-labelledby="sh-t"><button type="button" class="sh-x" aria-label="Đóng" onClick="{{closeShare}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button><h2 id="sh-t">Chia sẻ sự kiện</h2><div style="display: flex; gap: 8px"><input class="input" type="text" readonly="readonly" value="https://tickethub.vn/e/dem-nhac-rock-sai-gon" aria-label="Liên kết sự kiện" style="flex: 1; min-width: 0"><button type="button" class="btn btn-default" onClick="{{copyLink}}">{{copyLabel}}</button></div><div class="sh-apps"><button type="button" class="btn btn-outline" onClick="{{shareTo}}">Facebook</button><button type="button" class="btn btn-outline" onClick="{{shareTo}}">Zalo</button><button type="button" class="btn btn-outline" onClick="{{shareTo}}">Messenger</button></div><span style="font-size: 13px; color: var(--fg-muted)">Chỉ chia sẻ thông tin sự kiện, vé không chuyển nhượng.</span></div></sc-if>
+<sc-if value="{{contactOpen}}" hint-placeholder-val="{{ false }}"><button type="button" class="sh-bd" tabindex="-1" aria-hidden="true" onClick="{{closeContact}}"></button><div class="sh" role="dialog" aria-modal="true" aria-labelledby="ct-t"><button type="button" class="sh-x" aria-label="Đóng" onClick="{{closeContact}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button><h2 id="ct-t">Liên hệ Saigon Sound Co.</h2><label class="sh-f">Chủ đề<div class="csel"><button type="button" class="input csel-b" aria-haspopup="listbox" aria-expanded="{{sel.s0.x}}" onClick="{{sel.s0.t}}"><span>{{sel.s0.v}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button><sc-if value="{{sel.s0.o}}" hint-placeholder-val="{{ false }}"><button type="button" class="csel-bd" tabindex="-1" aria-hidden="true" onClick="{{sel.s0.c}}"></button><div class="csel-p" role="listbox" style="top: {{sel.s0.top}}; bottom: {{sel.s0.bot}}"><sc-if value="{{sel.s0.sr}}" hint-placeholder-val="{{ false }}"><div class="csel-s"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg><input type="text" placeholder="Tìm…" aria-label="Tìm" value="{{sel.s0.q}}" onChange="{{sel.s0.oq}}"></div></sc-if><sc-for list="{{sel.s0.l}}" as="o" hint-placeholder-count="4"><button type="button" class="csel-o" role="option" aria-selected="{{o.on}}" onClick="{{o.pick}}"><span class="csel-ot">{{o.t}}</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg></button></sc-for><sc-if value="{{sel.s0.none}}" hint-placeholder-val="{{ false }}"><div class="csel-e">Không có kết quả</div></sc-if></div></sc-if></div></label><label class="sh-f"><span>Nội dung <span style="color: var(--danger-text)">*</span></span><textarea class="input" rows="4" style="height: auto; padding: 8px 12px; resize: vertical"></textarea></label><label class="sh-f">Email nhận phản hồi<input class="input" type="email" value="an.nguyen@example.com"></label><div style="display: flex; justify-content: flex-end; gap: 8px"><button type="button" class="btn btn-outline" onClick="{{closeContact}}">Huỷ</button><button type="button" class="btn btn-default" onClick="{{sendContact}}">Gửi</button></div></div></sc-if>
+<sc-if value="{{gToastOn}}" hint-placeholder-val="{{ false }}"><div class="toast-g" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="stroke: var(--success-text); flex-shrink: 0"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg><span>{{gToastMsg}}</span><button type="button" class="btn btn-ghost btn-sm" style="height: 24px; padding: 0 6px" onClick="{{hideGToast}}">Đóng</button></div></sc-if>
+<header style="background: var(--surface); border-bottom: 1px solid var(--border)">
+<div style="max-width: 1240px; margin: 0 auto; padding: 0 20px; height: 64px; display: flex; align-items: center; gap: 28px; box-sizing: border-box">
+<a href="Main.dc.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--fg); font-weight: 700; font-size: 17px; letter-spacing: -0.01em">
+<span style="width: 28px; height: 28px; border-radius: 6px; background: var(--primary-strong); display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"></path><path d="M13 6v2M13 11v2M13 16v2"></path></svg></span>
+Ticket Hub
+</a>
+<label style="flex: 1; max-width: 460px; position: relative; display: flex; align-items: center">
+<span class="sr">Tìm kiếm sự kiện</span>
+<svg style="stroke: var(--fg-muted); position: absolute; left: 12px" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+<input class="input" type="search" placeholder="Tìm sự kiện, nghệ sĩ, địa điểm" style="width: 100%; padding-left: 36px; background: var(--surface-2); border-color: var(--border)">
+</label>
+<div style="flex-grow: 1"></div>
+<nav style="display: flex; align-items: center; gap: 4px">
+<a href="OrganizerApply.dc.html" class="btn btn-ghost">Bán vé cùng Ticket Hub</a>
+<a href="MyTickets.dc.html" class="btn btn-ghost"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"></path></svg>Vé của tôi</a>
+<button type="button" class="btn btn-ghost" style="width: 36px; padding: 0" aria-label="Đổi giao diện sáng / tối" onClick="{{toggleTheme}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg></button>
+<a href="Notifications.dc.html" class="btn btn-ghost" aria-label="Thông báo (3 chưa đọc)" style="width: 36px; padding: 0; position: relative"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span style="position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 2px solid var(--bg)"></span></a>
+<a href="Profile.dc.html" aria-label="Tài khoản" style="margin-left: 8px; width: 32px; height: 32px; border-radius: 50%; background: var(--primary-soft); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--on-primary-soft); text-decoration: none">AN</a>
+</nav>
+</div>
+<nav aria-label="Danh mục" style="max-width: 1240px; margin: 0 auto; padding: 0 20px; display: flex; gap: 28px; box-sizing: border-box">
+<a href="EventList.dc.html" class="cat cat-on">Tất cả</a>
+<a href="EventList.dc.html" class="cat">Nhạc sống</a>
+<a href="EventList.dc.html" class="cat">Sân khấu &amp; Nghệ thuật</a>
+<a href="EventList.dc.html" class="cat">Hài kịch</a>
+<a href="EventList.dc.html" class="cat">Thể thao</a>
+<a href="EventList.dc.html" class="cat">Hội thảo &amp; Workshop</a>
+<a href="EventList.dc.html" class="cat">Lễ hội</a>
+</nav>
+</header>
+<main style="flex-grow: 1">
+<h1 class="sr">Khám phá sự kiện</h1>
+<section class="hx" aria-label="Sự kiện tiêu điểm">
+<a href="EventDetail.dc.html" class="hx-main">
+<img src="{{hero.img}}" alt="{{hero.alt}}">
+<span class="dchip">{{hero.date}}</span>
+<span class="hot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Sắp hết vé</span>
+<div class="hx-body">
+<span class="hx-eyebrow">Tiêu điểm · Nhạc sống</span>
+<h2 class="hx-title">{{hero.title}}</h2>
+<p class="hx-meta"><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>{{hero.time}} · Mở cửa 19:00</span><span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>{{hero.venue}}</span></p>
+<div class="hx-cta"><span class="hx-btn">Chọn ghế</span><span>Từ <b>{{hero.price}}</b></span></div>
+</div>
+</a>
+<div class="hx-side">
+<sc-for list="{{side}}" as="s" hint-placeholder-count="2">
+<a href="EventDetail.dc.html" class="hx-sm"><img src="{{s.img}}" alt=""><div class="hx-sm-t"><span class="hx-when">{{s.date}} · {{s.time}}</span><h2>{{s.title}}</h2><p>{{s.venue}}</p></div></a>
+</sc-for>
+</div>
+</section>
+
+<section class="dx" aria-labelledby="h-drops">
+<div class="dx-in">
+<div class="shead"><div><span class="eyebrow">Flash sale</span><h2 id="h-drops" style="margin-top: 6px">Sắp mở bán</h2><p>Bật nhắc để nhận thông báo 15 phút trước khi phòng chờ mở.</p></div><a href="EventList.dc.html" class="more">Xem tất cả<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></div>
+<div class="dx-grid">
+<sc-for list="{{drops}}" as="d" hint-placeholder-count="4">
+<article class="dx-card">
+<div class="dx-media"><img src="{{d.img}}" alt=""><span class="cdtag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>Mở bán sau {{d.cd}}</span></div>
+<div class="dx-body">
+<h3><a href="EventDetail.dc.html">{{d.title}}</a></h3>
+<p>{{d.date}} · {{d.venue}}</p>
+<div class="dx-foot"><span>Từ <b>{{d.price}}</b></span><button type="button" class="dx-remind" aria-pressed="{{d.on}}" aria-label="{{d.aria}}" onClick="{{d.toggle}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>{{d.label}}</button></div>
+</div>
+</article>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section class="sx" aria-labelledby="h-hot">
+<div class="shead"><h2 id="h-hot">Nổi bật tuần này</h2><a href="EventList.dc.html" class="more">Xem tất cả<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg></a></div>
+<div class="chipsx" role="group" aria-label="Lọc nhanh">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5"><button type="button" class="chipx" aria-pressed="{{c.on}}" onClick="{{c.pick}}">{{c.label}}</button></sc-for>
+</div>
+<div class="cgrid">
+<sc-for list="{{cards}}" as="e" hint-placeholder-count="8">
+<a href="EventDetail.dc.html" class="{{e.cls}}">
+<div class="cx-media"><img src="{{e.img}}" alt="{{e.alt}}" loading="lazy"><span class="dchip">{{e.date}}</span>
+<sc-if value="{{e.hot}}" hint-placeholder-val="{{ false }}"><span class="hot"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>Sắp hết vé</span></sc-if>
+<sc-if value="{{e.soldout}}" hint-placeholder-val="{{ false }}"><span class="soldout">Hết vé</span></sc-if>
+</div>
+<div><h3>{{e.title}}</h3><p class="cx-venue">{{e.time}} · {{e.venue}}</p><p class="cx-price">Từ <b>{{e.price}}</b></p></div>
+</a>
+</sc-for>
+</div>
+</section>
+
+<section class="sx" aria-labelledby="h-city">
+<div class="shead"><h2 id="h-city">Theo thành phố</h2></div>
+<div class="cityx"><sc-for list="{{cities}}" as="c" hint-placeholder-count="6"><a href="EventList.dc.html" class="chipx"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>{{c.name}}<small>{{c.count}}</small></a></sc-for></div>
+</section>
+
+<section class="promox" aria-labelledby="h-org">
+<div class="promox-in">
+<div><span class="eyebrow">Dành cho ban tổ chức</span><h2 id="h-org">Bán vé có sơ đồ ghế, không lo quá tải khi mở bán</h2><p>Phòng chờ ảo khi đông, nhận tiền qua Stripe, check-in bằng QR.</p><a href="OrganizerApply.dc.html" class="btn btn-default btn-lg">Đăng ký ban tổ chức</a></div>
+<div class="statx"><div><b>5%</b><span>Phí mỗi vé, không phí cố định</span></div><div><b>0</b><span>Ghế bán trùng</span></div><div><b>QR</b><span>Check-in tại cổng</span></div></div>
+</div>
+</section>
+</main>
+<footer class="ftx">
+<div class="ftx-in">
+<div class="ftx-grid">
+<div class="ftx-brand"><a href="Main.dc.html" class="ftx-logo"><span class="ftx-mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"></path><path d="M13 5v2M13 11v2M13 17v2"></path></svg></span>Ticket Hub</a><p>Vé sự kiện có sơ đồ ghế. Thanh toán qua Stripe, vé QR gửi ngay sau khi mua.</p></div>
+<div><h2>Khách hàng</h2><a href="MyTickets.dc.html">Vé của tôi</a><a href="MyBookings.dc.html">Đơn hàng của tôi</a><a href="Main.dc.html">Chính sách hoàn vé</a></div>
+<div><h2>Ban tổ chức</h2><a href="OrganizerApply.dc.html">Đăng ký bán vé</a><a href="OrgDashboard.dc.html">Bảng điều khiển</a></div>
+<div><h2>Ticket Hub</h2><a href="Main.dc.html">Giới thiệu</a><a href="Main.dc.html">Điều khoản</a><a href="Main.dc.html">Bảo mật</a></div>
+</div>
+<p class="ftx-copy">© 2026 Ticket Hub</p>
+</div>
+</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1280, "height": 1900}, "theme": {"editor": "enum", "options": ["system", "light", "dark"], "default": "system"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { chip: 0, reminded: ['edm'], tick: 0 };
+  }
+  componentDidMount() { this.timer = setInterval(() => this.setState({ tick: this.state.tick + 1 }), 1000); }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals0() { return Object.assign({ themeMode: this.props.theme || 'system' }, this.renderBase()); }
+  renderBase() {
+    // Ảnh mẫu: Unsplash. Tên sự kiện, nghệ sĩ là dữ liệu giả.
+    const img = (id, w) => 'https://images.unsplash.com/photo-' + id + '?w=' + w + '&q=70&auto=format&fit=crop';
+    const pad = (n) => String(n).padStart(2, '0');
+    const cdText = (sec) => {
+      const d = Math.floor(sec / 86400), h = Math.floor(sec / 3600) % 24, m = Math.floor(sec / 60) % 60, s = sec % 60;
+      return d > 0 ? d + ' ngày ' + h + ' giờ' : pad(h) + ':' + pad(m) + ':' + pad(s);
+    };
+    const E = {
+      rock: { title: 'Đêm nhạc Rock Sài Gòn', date: 'T7, 15/11', time: '20:00', venue: 'Nhà hát Hòa Bình, TP.HCM', price: '800.000 ₫', img: '1460723237483-7a6dc9d0b212', alt: 'Ca sĩ hát và chơi guitar dưới ánh đèn đỏ', hot: true },
+      symphony: { title: 'Hòa nhạc Mùa Thu', date: 'CN, 22/11', time: '19:30', venue: 'Nhà hát Lớn, Hà Nội', price: '600.000 ₫', img: '1465847899084-d164df4dedc6', alt: 'Dàn violin trong dàn nhạc giao hưởng' },
+      jazz: { title: 'Live Jazz cuối tuần', date: 'T7, 13/12', time: '20:30', venue: 'Phòng trà Bến Thành, TP.HCM', price: '500.000 ₫', img: '1511192336575-5a79af67a629', alt: 'Nghệ sĩ thổi kèn trumpet' },
+      indie: { title: 'Lễ hội Indie Đà Lạt', date: 'CN, 29/11', time: '17:00', venue: 'Quảng trường Lâm Viên, Đà Lạt', price: '450.000 ₫', img: '1506157786151-b8491531f063', alt: 'Đám đông trước sân khấu lễ hội' },
+      standup: { title: 'Đêm hài độc thoại', date: 'T7, 06/12', time: '20:00', venue: 'NVH Thanh niên, TP.HCM', price: '350.000 ₫', img: '1485579149621-3123dd979885', alt: 'Micro cổ điển trên sân khấu' },
+      musical: { title: 'Nhạc kịch Giáng Sinh', date: 'T5, 24/12', time: '19:00', venue: 'Nhà hát Hòa Bình, TP.HCM', price: '700.000 ₫', img: '1503095396549-807759245b35', alt: 'Bóng diễn viên trước rèm nhung đỏ', soldout: true },
+      countdown: { title: 'Countdown 2027', date: 'T5, 31/12', time: '21:00', venue: 'Công viên Biển Đông, Đà Nẵng', price: '400.000 ₫', img: '1533174072545-7a4b6ad7a6c3', alt: 'Pháo giấy bay trên đám đông', drop: 3 * 86400 + 2 * 3600 },
+      edm: { title: 'EDM Festival mùa xuân', date: 'CN, 10/01', time: '18:00', venue: 'SVĐ Mỹ Đình, Hà Nội', price: '1.200.000 ₫', img: '1514525253161-7a46d19cd819', alt: 'Sân khấu EDM với laser nhiều màu', drop: 4 * 3600 + 12 * 60 + 33 },
+      hiphop: { title: 'Hip-hop Night', date: 'T7, 29/11', time: '19:30', venue: 'Nhà thi đấu Phú Thọ, TP.HCM', price: '650.000 ₫', img: '1493225457124-a3eb161ffa5f', alt: 'Nghệ sĩ giơ tay trong khói sân khấu', drop: 86400 + 7 * 3600 },
+      acoustic: { title: 'Acoustic chiều Chủ nhật', date: 'CN, 16/11', time: '16:00', venue: 'Không gian sáng tạo Q.3, TP.HCM', price: '250.000 ₫', img: '1508700115892-45ecd05ae2ad', alt: 'Tường gạch với chữ neon', drop: 5 * 86400 + 8 * 3600 },
+    };
+    const t = this.state.tick;
+    const rem = this.state.reminded;
+    const toggle = (k) => () => this.setState({ reminded: rem.includes(k) ? rem.filter((x) => x !== k) : [...rem, k] });
+    const chipLabels = ['Tất cả', 'Hôm nay', 'Cuối tuần này', 'Dưới 500.000 ₫', 'Còn vé'];
+    return {
+      hero: { ...E.rock, img: img('1459749411175-04bf5292ceea', 1600), alt: 'Khán giả giơ tay trước sân khấu ánh vàng' },
+      side: ['symphony', 'jazz'].map((k) => ({ ...E[k], img: img(E[k].img, 800) })),
+      drops: ['edm', 'hiphop', 'countdown', 'acoustic'].map((k) => {
+        const on = rem.includes(k);
+        return { ...E[k], img: img(E[k].img, 600), cd: cdText(Math.max(0, E[k].drop - t)), on: on ? 'true' : 'false', label: on ? 'Đã bật nhắc' : 'Nhắc tôi', aria: (on ? 'Tắt nhắc: ' : 'Nhắc tôi khi mở bán: ') + E[k].title, toggle: toggle(k) };
+      }),
+      chips: chipLabels.map((label, i) => ({ label, on: this.state.chip === i ? 'true' : 'false', pick: () => this.setState({ chip: i }) })),
+      cards: ['rock', 'indie', 'standup', 'musical', 'symphony', 'jazz', 'countdown', 'edm'].map((k) => ({ ...E[k], img: img(E[k].img, 800), hot: !!E[k].hot, soldout: !!E[k].soldout, cls: E[k].soldout ? 'cx is-soldout' : 'cx' })),
+      cities: [['TP. Hồ Chí Minh', 128], ['Hà Nội', 96], ['Đà Nẵng', 34], ['Đà Lạt', 21], ['Cần Thơ', 12], ['Huế', 9]].map(([name, count]) => ({ name, count })),
+    };
+  }
+  renderVals() { const v = this.renderVals0(); return Object.assign(v, this.custVals(v)); }
+  custVals(v) {
+    const s = this.state || {};
+    const set = (o) => this.setState(o);
+    const cur = s.theme || v.themeMode || 'system';
+    const dark = cur === 'dark' || (cur === 'system' && typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const out = {
+      themeMode: s.theme || v.themeMode,
+      toggleTheme: () => set({ theme: dark ? 'light' : 'dark' }),
+      shareOpen: !!s.share, openShare: () => set({ share: true, copied: false }), closeShare: () => set({ share: false }),
+      copyLink: () => set({ copied: true }), copyLabel: s.copied ? 'Đã chép' : 'Chép liên kết',
+      shareTo: () => set({ share: false, gToast: 'Đang mở ứng dụng để chia sẻ' }),
+      contactOpen: !!s.contact, openContact: () => set({ contact: true }), closeContact: () => set({ contact: false }),
+      sendContact: () => set({ contact: false, gToast: 'Đã gửi tin nhắn. Ban tổ chức trả lời qua email.' }),
+      addCal: () => set({ gToast: 'Đã tải file lịch dem-nhac-rock-sai-gon.ics' }),
+      dlPdf: () => set({ gToast: 'Đang tải vé PDF' }),
+      discard: () => set({ gToast: 'Đã khôi phục giá trị đã lưu' }),
+      gToastOn: !!s.gToast, gToastMsg: s.gToast || '', hideGToast: () => set({ gToast: '' }),
+    };
+    if (this.selDefs) Object.assign(out, this.selVals(s, v));
+    return Object.assign(out, this.extraVals ? this.extraVals(s, v) : {});
+  }
+  selDefs() { return {"s0": [["Thông tin sự kiện", "Vé và chỗ ngồi", "Hỗ trợ người khuyết tật", "Khác"], 0]}; }
+  selVals(s, v) {
+    const D = Object.assign({}, this.selDefs ? this.selDefs() : {}, this.selDyn ? this.selDyn(v || {}) : {});
+    const sel = {};
+    Object.keys(D).forEach((id) => {
+      const [opts, def, ph, srch] = D[id];
+      const sv = s.selv || {};
+      const sq = s.selq || {};
+      const cur = sv[id] !== undefined ? sv[id] : def;
+      const open = s.pop === 'sel:' + id;
+      const st2 = s.selUp;
+      const q = (sq[id] || '').trim().toLowerCase();
+      const list = opts.map((t, i) => ({ t, i })).filter((o) => !q || o.t.toLowerCase().includes(q));
+      sel[id] = {
+        v: cur >= 0 ? opts[cur] : (ph || 'Chọn…'), vc: cur >= 0 ? 'var(--fg)' : 'var(--fg-muted)', x: open ? 'true' : 'false', o: open,
+        sr: !!srch || opts.length > 7, q: sq[id] || '', oq: (e) => this.setState({ selq: Object.assign({}, sq, { [id]: e.target.value }) }), none: list.length === 0,
+        top: st2 === id ? 'auto' : 'calc(100% + 4px)', bot: st2 === id ? 'calc(100% + 4px)' : 'auto',
+        t: (e) => { const el = e && e.currentTarget; const r = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null; const h = typeof window !== 'undefined' ? window.innerHeight : 9999; const up = !!r && h - r.bottom < 300 && r.top > h - r.bottom; this.setState({ pop: open ? null : 'sel:' + id, selUp: up ? id : null, selq: Object.assign({}, sq, { [id]: '' }) }); }, c: () => this.setState({ pop: null }),
+        l: list.map(({ t, i }) => ({ t, on: i === cur ? 'true' : 'false', pick: () => this.setState({ selv: Object.assign({}, sv, { [id]: i }), pop: null }) })),
+      };
+    });
+    return { sel };
+  }
+}
+</script>
+</body>
+</html>

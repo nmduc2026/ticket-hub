@@ -9,6 +9,7 @@
 - Bất biến số 1: **không bao giờ bán 1 ghế cho 2 người** (oversell). Đã trừ tiền thì phải có vé hoặc được hoàn tiền tự động.
 - Quy tắc nghiệp vụ có mã BR-xx (`overview.md` §3). Khi viết requirement, test hay code, trích đúng mã BR.
 - Trạng thái: mới có bản thiết kế, chưa có code. Lộ trình 9 sprint, hạn 18/12/2026: `docs/plans/2026-10-19-roadmap.md`.
+- Giao diện: `docs/design/README.md` (token, quy ước, danh sách màn theo sprint) + prototype `docs/design/prototype/` (canvas: https://claude.ai/artifact/13t7cm5BAqJ63AZa18fDgU). Code FE bám theo màn prototype tương ứng.
 
 ## Tech stack
 - Backend: Java 21 (virtual threads), Spring Boot, Spring MVC REST, Spring Modulith, Maven
@@ -82,7 +83,7 @@ Monorepo (`overview.md` §22):
 |---|---|
 | Mọi code | `ticket-hub-coding-conventions` |
 | Backend (`backend/`) | `ticket-hub-springbot-conventions` (gồm quy trình và mẫu báo cáo) |
-| Frontend (`frontend/`) | `ticket-hub-react-conventions` (gồm quy trình và mẫu báo cáo); giao diện, thiết kế màn hình: `ui-ux` |
+| Frontend (`frontend/`) | `ticket-hub-react-conventions` (gồm quy trình, component dùng chung theo prototype và mẫu báo cáo); màn chưa có trong prototype: `ui-ux` |
 | Hạ tầng (`infra/`, `.github/`, Dockerfile, AWS) | `ticket-hub-infra-conventions` |
 | Test | `ticket-hub-testcase-rule` |
 | Plan, ADR, review cuối sprint | `tech-lead` |
