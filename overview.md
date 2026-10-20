@@ -742,6 +742,7 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | GET | `/api/v1/venues`, `/api/v1/venues/{id}/seat-maps` | organizer | Chọn địa điểm và sơ đồ ghế khi tạo sự kiện |
 | GET | `/api/v1/organizer/events`, `/api/v1/organizer/events/{id}` | organizer (owner) | Danh sách / chi tiết sự kiện của mình |
 | POST/PUT | `/api/v1/organizer/events` | organizer | Tạo / sửa sự kiện (sau publish chỉ sửa thông tin hiển thị, BR-14) |
+| POST | `/api/v1/organizer/events/{id}/banner` | organizer (owner) | Tải ảnh banner (multipart `file`, jpg / png / webp, tối đa 2 MB; loại file nhận diện theo nội dung); sửa được cả sau publish |
 | CRUD | `/api/v1/organizer/events/{id}/ticket-tiers` | organizer (owner) | Hạng vé và giá (khoá sau publish, BR-14) |
 | PUT | `/api/v1/organizer/events/{id}/tier-sections` | organizer (owner) | Gán hạng vé cho khu ghế (khoá sau publish, BR-14) |
 | POST | `/api/v1/organizer/events/{id}/publish` | organizer (owner) | Publish |

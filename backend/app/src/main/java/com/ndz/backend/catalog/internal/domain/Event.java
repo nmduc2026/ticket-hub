@@ -100,9 +100,7 @@ public class Event {
 	 * thông tin bán vé khác bản đang lưu bị từ chối (BR-14).
 	 */
 	public void update(EventContent content) {
-		if (!DISPLAY_EDITABLE.contains(status)) {
-			throw locked("Sự kiện đã kết thúc hoặc đã huỷ, không sửa được");
-		}
+		requireDisplayEditable();
 		if (status != EventStatus.DRAFT && !content.sameSalesInfoAs(this)) {
 			// BR-14: giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, giới hạn vé bị khoá sau publish
 			throw locked("Sau khi publish chỉ sửa được tiêu đề, mô tả, ảnh banner và danh mục");
@@ -113,12 +111,19 @@ public class Event {
 		applyDisplayInfo(content);
 	}
 
-	/** Đổi ảnh banner: là thông tin hiển thị nên sửa được sau publish. */
-	public void changeBanner(String bannerUrl) {
+	/** Ném {@code EVENT_LOCKED} nếu sự kiện đã kết thúc hoặc đã huỷ (không còn sửa gì được). */
+	public void requireDisplayEditable() {
 		if (!DISPLAY_EDITABLE.contains(status)) {
 			throw locked("Sự kiện đã kết thúc hoặc đã huỷ, không sửa được");
 		}
+	}
+
+	/** Đổi ảnh banner: là thông tin hiển thị nên sửa được sau publish. Trả về địa chỉ ảnh cũ (có thể null). */
+	public String changeBanner(String bannerUrl) {
+		requireDisplayEditable();
+		String previous = this.bannerUrl;
 		this.bannerUrl = bannerUrl;
+		return previous;
 	}
 
 	/** Hạng vé, giá và gán khu chỉ thay đổi được khi còn là nháp (BR-14). */

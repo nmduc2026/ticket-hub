@@ -29,4 +29,5 @@ export * from './ticketTierRequest';
 export * from './tierSectionAssignment';
 export * from './tierSectionAssignmentRequest';
 export * from './tierSectionsRequest';
+export * from './uploadEventBannerBody';
 export * from './venue';

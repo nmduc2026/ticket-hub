@@ -19,7 +19,7 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 |---|---|---|
 | 1 | Hồ sơ cá nhân (màn #19) còn thiếu: ảnh đại diện, số điện thoại, ngày sinh, thành phố, tài khoản liên kết, danh sách phiên, xoá tài khoản | `user_profiles` (§6.6) chưa có các cột này và chưa có API. Hiện chỉ hiển thị thông tin từ `GET /me`; đổi email, mật khẩu, phiên dẫn sang trang tài khoản Keycloak. Cần quyết định thêm trường hay để Keycloak giữ |
 | 2 | Chạy `app`, `gateway`, `frontend` dạng container trong compose profile `core` | Cần chốt hostname Keycloak (trình duyệt dùng `localhost:8180`, container dùng `keycloak:8080`). Hiện CI và dev chạy `app` / `gateway` bằng `java -jar` / `mvnw` |
-| 3 | Orval 7.13 chưa sinh file Zod | Spec mới có `GET`. Kiểm lại khi có endpoint nhận body (Sprint 2); Orval 8 cần Node ≥ 22.18 (máy dev đang Node 20) |
+| 3 | Orval 7.13: Zod đã sinh được từ Sprint 2 (khi có endpoint nhận body) | Orval 8 cần Node ≥ 22.18 (máy dev đang Node 20); nâng khi nâng Node |
 | 4 | Spring Cloud 2025.1.3 build cho Boot 4.0.x, đang chạy trên Boot 4.1.1 | Test Gateway xanh. Nâng khi có release train cho Boot 4.1 |
 | 5 | Ghi đè phiên bản `tomcat` 11.0.27 và `jackson-bom` 3.1.8 trong `backend/pom.xml` | Để hết CVE CRITICAL; bỏ khi Spring Boot cập nhật |
 | 6 | Máy dev dùng npm 10.8, lỗi khi phân giải peer dependency của Vite 8 | Dùng `npx -y npm@11 install`; Dockerfile và CI đã cài npm 11 |

@@ -44,7 +44,9 @@ class OpenApiContractTests {
 	void writesTheContractForTheFrontendGenerator() throws Exception {
 		String json = mockMvc.perform(get("/v3/api-docs")).andReturn().getResponse().getContentAsString();
 		JsonMapper mapper = JsonMapper.builder().build();
-		String pretty = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(json)) + "\n";
+		// Luôn LF để file giống nhau trên Windows và Linux (CI so sánh nội dung).
+		String pretty = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(mapper.readTree(json))
+				.replace("\r\n", "\n") + "\n";
 
 		Files.createDirectories(CONTRACT_FILE.getParent());
 		if (!Files.exists(CONTRACT_FILE) || !Files.readString(CONTRACT_FILE).equals(pretty)) {

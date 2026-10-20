@@ -31,7 +31,8 @@ import type {
   TicketTier,
   TicketTierRequest,
   TierSectionAssignment,
-  TierSectionsRequest
+  TierSectionsRequest,
+  UploadEventBannerBody
 } from '../../model';
 
 import { apiFetch } from '../../../../lib/api-client';
@@ -890,6 +891,93 @@ export const useCreateTicketTier = <TError = unknown,
       > => {
 
       const mutationOptions = getCreateTicketTierMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
+ * @summary Tải ảnh banner
+ */
+export type uploadEventBannerResponse422 = {
+  data: OrganizerEventDetail
+  status: 422
+}
+    
+;
+export type uploadEventBannerResponseError = (uploadEventBannerResponse422) & {
+  headers: Headers;
+};
+
+export type uploadEventBannerResponse = (uploadEventBannerResponseError)
+
+export const getUploadEventBannerUrl = (eventId: string,) => {
+
+
+  
+
+  return `/api/v1/organizer/events/${eventId}/banner`
+}
+
+export const uploadEventBanner = async (eventId: string,
+    uploadEventBannerBody: UploadEventBannerBody, options?: RequestInit): Promise<uploadEventBannerResponse> => {
+    const formData = new FormData();
+formData.append(`file`, uploadEventBannerBody.file)
+
+  return apiFetch<uploadEventBannerResponse>(getUploadEventBannerUrl(eventId),
+  {      
+    ...options,
+    method: 'POST'
+    ,
+    body: 
+      formData,
+  }
+);}
+
+
+
+
+export const getUploadEventBannerMutationOptions = <TError = OrganizerEventDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEventBanner>>, TError,{eventId: string;data: UploadEventBannerBody}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof uploadEventBanner>>, TError,{eventId: string;data: UploadEventBannerBody}, TContext> => {
+
+const mutationKey = ['uploadEventBanner'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadEventBanner>>, {eventId: string;data: UploadEventBannerBody}> = (props) => {
+          const {eventId,data} = props ?? {};
+
+          return  uploadEventBanner(eventId,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadEventBannerMutationResult = NonNullable<Awaited<ReturnType<typeof uploadEventBanner>>>
+    export type UploadEventBannerMutationBody = UploadEventBannerBody
+    export type UploadEventBannerMutationError = OrganizerEventDetail
+
+    /**
+ * @summary Tải ảnh banner
+ */
+export const useUploadEventBanner = <TError = OrganizerEventDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEventBanner>>, TError,{eventId: string;data: UploadEventBannerBody}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof uploadEventBanner>>,
+        TError,
+        {eventId: string;data: UploadEventBannerBody},
+        TContext
+      > => {
+
+      const mutationOptions = getUploadEventBannerMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

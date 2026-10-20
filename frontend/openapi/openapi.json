@@ -347,6 +347,51 @@
         }
       }
     },
+    "/api/v1/organizer/events/{eventId}/banner" : {
+      "post" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Tải ảnh banner",
+        "description" : "jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)",
+        "operationId" : "uploadEventBanner",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "422" : {
+            "description" : "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/venues" : {
       "get" : {
         "tags" : [ "venue-controller" ],
@@ -675,63 +720,63 @@
           "float" : {
             "type" : "boolean"
           },
-          "container" : {
-            "type" : "boolean"
-          },
           "number" : {
             "type" : "boolean"
           },
-          "string" : {
+          "container" : {
             "type" : "boolean"
           },
-          "object" : {
-            "type" : "boolean"
-          },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
+          "bigInteger" : {
             "type" : "boolean"
           },
           "nodeType" : {
             "type" : "string",
             "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
           },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
           "bigDecimal" : {
             "type" : "boolean"
           },
-          "bigInteger" : {
+          "integralNumber" : {
             "type" : "boolean"
           },
-          "boolean" : {
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "floatingPointNumber" : {
+            "type" : "boolean"
+          },
+          "missingNode" : {
+            "type" : "boolean"
+          },
+          "string" : {
+            "type" : "boolean"
+          },
+          "int" : {
+            "type" : "boolean"
+          },
+          "short" : {
             "type" : "boolean"
           },
           "double" : {
             "type" : "boolean"
           },
-          "int" : {
+          "binary" : {
+            "type" : "boolean"
+          },
+          "object" : {
+            "type" : "boolean"
+          },
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "long" : {
             "type" : "boolean"
           },
           "textual" : {
             "type" : "boolean",
             "deprecated" : true
           },
-          "binary" : {
-            "type" : "boolean"
-          },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "short" : {
-            "type" : "boolean"
-          },
-          "long" : {
-            "type" : "boolean"
-          },
-          "floatingPointNumber" : {
+          "boolean" : {
             "type" : "boolean"
           },
           "embeddedValue" : {

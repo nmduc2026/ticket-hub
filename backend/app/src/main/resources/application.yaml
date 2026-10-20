@@ -8,6 +8,11 @@ spring:
   threads:
     virtual:
       enabled: true
+  servlet:
+    multipart:
+      # Trần cứng bảo vệ server; giới hạn nghiệp vụ của banner (2 MB) kiểm ở service để trả 422 IMAGE_TOO_LARGE.
+      max-file-size: 5MB
+      max-request-size: 6MB
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/tickethub}
     username: ${DB_USER:tickethub}
@@ -53,3 +58,13 @@ tickethub:
     issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/tickethub}
     jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/tickethub/protocol/openid-connect/certs}
     audience: tickethub-api
+
+  storage:
+    # Dev: Adobe S3Mock ở compose profile core. Môi trường thật bỏ endpoint, dùng IAM role và URL của CloudFront.
+    endpoint: ${STORAGE_ENDPOINT:http://localhost:9090}
+    region: ap-southeast-1
+    bucket: ${STORAGE_BUCKET:tickethub-media}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:http://localhost:9090/tickethub-media}
+    access-key: ${STORAGE_ACCESS_KEY:dev-access-key}
+    secret-key: ${STORAGE_SECRET_KEY:dev-secret-key}
+    max-banner-size: 2MB

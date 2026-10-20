@@ -132,3 +132,15 @@ export const createTicketTierBody = zod.object({
   "priceMinor": zod.number().min(createTicketTierBodyPriceMinorMin).optional().describe('Đơn vị nhỏ nhất của tiền tệ; VND không nhân 100 (50.000đ là 50000)')
 })
 
+/**
+ * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
+ * @summary Tải ảnh banner
+ */
+export const uploadEventBannerParams = zod.object({
+  "eventId": zod.uuid()
+})
+
+export const uploadEventBannerBody = zod.object({
+  "file": zod.instanceof(File)
+})
+

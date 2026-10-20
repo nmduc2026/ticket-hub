@@ -1,5 +1,6 @@
 package com.ndz.backend.catalog.internal.web;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +22,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.ndz.backend.catalog.internal.application.EventBannerService;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService.Assignment;
 import com.ndz.backend.catalog.internal.application.OrganizerEventService.EventFilter;
@@ -46,9 +51,11 @@ import com.ndz.backend.shared.CurrentUser;
 class OrganizerEventController {
 
 	private final OrganizerEventService service;
+	private final EventBannerService banners;
 
-	OrganizerEventController(OrganizerEventService service) {
+	OrganizerEventController(OrganizerEventService service, EventBannerService banners) {
 		this.service = service;
+		this.banners = banners;
 	}
 
 	@Operation(operationId = "listOrganizerEvents", summary = "Danh sách sự kiện của tôi")
@@ -82,6 +89,14 @@ class OrganizerEventController {
 	@PutMapping("/{eventId}")
 	Detail update(@PathVariable UUID eventId, @Valid @RequestBody EventRequest request) {
 		return Detail.from(service.update(CurrentUser.require().id(), eventId, request.toContent()));
+	}
+
+	@Operation(operationId = "uploadEventBanner", summary = "Tải ảnh banner",
+			description = "jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)")
+	@ApiResponse(responseCode = "422", description = "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE")
+	@PostMapping(path = "/{eventId}/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	Detail uploadBanner(@PathVariable UUID eventId, @RequestPart("file") MultipartFile file) throws IOException {
+		return Detail.from(banners.upload(CurrentUser.require().id(), eventId, file.getBytes()));
 	}
 
 	// ---- Hạng vé ----
