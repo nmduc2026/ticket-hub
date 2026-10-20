@@ -341,7 +341,7 @@ user_profiles  (user_id PK = Keycloak sub, email, full_name, username,
 
 ```
 idempotency_keys (scope, user_id, key, request_hash, status[IN_PROGRESS|COMPLETED],
-                  response_status, response_body, created_at, expires_at,
+                  response_status, response_body, response_content_type, created_at, expires_at,
                   PRIMARY KEY (scope, user_id, key))
 ```
 
@@ -351,7 +351,9 @@ idempotency_keys (scope, user_id, key, request_hash, status[IN_PROGRESS|COMPLETE
   - Đã `COMPLETED` với cùng `request_hash` → trả lại nguyên response lần đầu.
   - Đang `IN_PROGRESS` → `409 REQUEST_IN_PROGRESS`.
   - Cùng key nhưng body khác → `422 IDEMPOTENCY_KEY_REUSED`.
-- Bản ghi giữ 24 giờ rồi được job dọn.
+- Thiếu header hoặc key sai định dạng (1–128 ký tự in được) → `400 IDEMPOTENCY_KEY_REQUIRED` / `IDEMPOTENCY_KEY_INVALID`. `request_hash` tính trên phương thức, đường dẫn, query và body.
+- Response `5xx` không được lưu (bản ghi bị nhả để client gửi lại); mọi response khác, kể cả lỗi nghiệp vụ 4xx, được lưu và phát lại. Bản `IN_PROGRESS` quá 2 phút (tiến trình chết giữa chừng) được claim lại.
+- Bản ghi giữ 24 giờ rồi được job dọn (ShedLock).
 
 ---
 

@@ -29,6 +29,7 @@
 		<!-- Release train 2025.1 build cho Boot 4.0.x; chạy trên Boot 4.1 được kiểm bằng test của gateway. -->
 		<spring-cloud.version>2025.1.3</spring-cloud.version>
 		<wiremock.version>3.13.1</wiremock.version>
+		<shedlock.version>7.10.1</shedlock.version>
 	</properties>
 
 	<dependencyManagement>
@@ -46,6 +47,16 @@
 				<version>${spring-cloud.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>net.javacrumbs.shedlock</groupId>
+				<artifactId>shedlock-spring</artifactId>
+				<version>${shedlock.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>net.javacrumbs.shedlock</groupId>
+				<artifactId>shedlock-provider-jdbc-template</artifactId>
+				<version>${shedlock.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.wiremock</groupId>

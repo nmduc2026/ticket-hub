@@ -1,15 +1,9 @@
 package com.ndz.backend.shared;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -19,6 +13,9 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+
+import com.ndz.backend.shared.idempotency.IdempotencyFilter;
 
 /**
  * `app` là OAuth2 Resource Server (overview.md §13.1, §13.3): stateless, không CSRF (Gateway kiểm), kiểm chữ ký,
@@ -30,18 +27,20 @@ import org.springframework.security.web.SecurityFilterChain;
 class ResourceServerConfiguration {
 
 	@Bean
-	SecurityFilterChain resourceServerFilterChain(HttpSecurity http) {
+	SecurityFilterChain resourceServerFilterChain(HttpSecurity http, IdempotencyFilter idempotencyFilter) {
 		http
 				.authorizeHttpRequests(requests -> requests
 						.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRolesConverter()))
-						.authenticationEntryPoint((request, response, ex) -> writeProblem(response,
+						.authenticationEntryPoint((request, response, ex) -> ProblemWriter.write(response,
 								HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Chưa đăng nhập hoặc token không hợp lệ")))
 				.exceptionHandling(exceptions -> exceptions
-						.accessDeniedHandler((request, response, ex) -> writeProblem(response, HttpStatus.FORBIDDEN,
+						.accessDeniedHandler((request, response, ex) -> ProblemWriter.write(response, HttpStatus.FORBIDDEN,
 								"FORBIDDEN", "Không đủ quyền thực hiện thao tác này")))
+				// Sau xác thực và phân quyền theo đường dẫn, trước controller: tra Idempotency-Key trước mọi xử lý nghiệp vụ.
+				.addFilterAfter(idempotencyFilter, AuthorizationFilter.class)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.csrf(AbstractHttpConfigurer::disable);
 		return http.build();
@@ -55,17 +54,6 @@ class ResourceServerConfiguration {
 				JwtValidators.createDefaultWithIssuer(properties.issuerUri()),
 				new AudienceValidator(properties.audience())));
 		return decoder;
-	}
-
-	/** Lỗi bảo mật xảy ra trước controller nên không qua {@code GlobalExceptionHandler}; trả cùng định dạng Problem Details. */
-	private static void writeProblem(HttpServletResponse response, HttpStatus status, String code, String detail)
-			throws IOException {
-		response.setStatus(status.value());
-		response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
-		response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-		response.getWriter().write("""
-				{"type":"about:blank","title":"%s","status":%d,"detail":"%s","code":"%s"}"""
-				.formatted(status.getReasonPhrase(), status.value(), detail, code));
 	}
 
 }

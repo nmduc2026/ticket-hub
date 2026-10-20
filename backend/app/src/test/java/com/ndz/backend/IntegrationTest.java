@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Import;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import({ TestcontainersConfiguration.class, TestSecurityConfiguration.class, ProbeController.class,
-		AdminProbeController.class })
+		AdminProbeController.class, IdempotencyProbeController.class })
 public @interface IntegrationTest {
 
 }
