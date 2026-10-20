@@ -89,7 +89,7 @@ public class EventLifecycleService {
 		VenueInfo venue = catalog.venueInfo(event.getVenueId()).orElseThrow();
 		publisher.publishEvent(new EventPublished(Uuid7.next(clock), now, event.getId(), organizerId, event.getTitle(),
 				event.getDescription(), event.getCategory(), event.getBannerUrl(), event.getVenueId(), venue.name(),
-				venue.cityName(), event.getSeatMapId(), event.getStartsAt(), event.getEndsAt(),
+				venue.cityId(), venue.cityName(), event.getSeatMapId(), event.getStartsAt(), event.getEndsAt(),
 				event.getSaleStartsAt(), event.getMaxTicketsPerUser(), feeBps, event.isHighDemand()));
 		log.info("Sự kiện {} đã publish, phí nền tảng {} bps", event.getId(), feeBps);
 		return eventService.get(organizerId, eventId);

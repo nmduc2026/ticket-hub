@@ -87,6 +87,9 @@ class BffLoginFlowTests {
 		IDP_AND_APP.stubFor(get(urlPathEqualTo("/api/v1/me")).willReturn(aResponse().withStatus(200).withBody("{}")));
 		IDP_AND_APP.stubFor(post(urlPathEqualTo("/api/v1/bookings")).willReturn(aResponse().withStatus(201)));
 		IDP_AND_APP.stubFor(post(urlPathEqualTo("/api/v1/webhooks/stripe")).willReturn(aResponse().withStatus(200)));
+		IDP_AND_APP.stubFor(get(urlPathEqualTo("/api/v1/events")).willReturn(aResponse().withStatus(200).withBody("{}")));
+		IDP_AND_APP.stubFor(
+				get(urlPathEqualTo("/api/v1/events/42/seats")).willReturn(aResponse().withStatus(200).withBody("{}")));
 	}
 
 	@Test
@@ -125,6 +128,20 @@ class BffLoginFlowTests {
 		String location = login("//evil.example/steal");
 
 		assertThat(location).isEqualTo("http://localhost:" + port + "/");
+	}
+
+	@Test
+	void publicEventApiIsReachableWithoutLoginAndWithoutBearerToken() throws Exception {
+		HttpResponse<String> list = sendWithoutCookies(navigate("/api/v1/events?q=rock"));
+		HttpResponse<String> seats = sendWithoutCookies(navigate("/api/v1/events/42/seats"));
+		HttpResponse<String> privateApi = sendWithoutCookies(
+				navigate("/api/v1/organizer/events").header("X-Requested-With", "XMLHttpRequest"));
+
+		assertThat(list.statusCode()).isEqualTo(200);
+		assertThat(seats.statusCode()).isEqualTo(200);
+		assertThat(privateApi.statusCode()).isEqualTo(401);
+		assertThat(IDP_AND_APP.findAll(getRequestedFor(urlPathEqualTo("/api/v1/events"))).get(0)
+				.containsHeader("Authorization")).isFalse();
 	}
 
 	@Test

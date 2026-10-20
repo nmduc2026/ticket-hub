@@ -10,7 +10,7 @@ import com.ndz.backend.shared.events.IntegrationEvent;
  * Booking lấy qua interface công khai của Catalog. {@code platformFeeBps} đã chốt lúc publish (ADR 0023).
  */
 public record EventPublished(UUID messageId, Instant occurredAt, UUID eventId, UUID organizerId, String title,
-		String description, String category, String bannerUrl, UUID venueId, String venueName, String cityName,
+		String description, String category, String bannerUrl, UUID venueId, String venueName, UUID cityId, String cityName,
 		UUID seatMapId, Instant startsAt, Instant endsAt, Instant saleStartsAt, int maxTicketsPerUser,
 		int platformFeeBps, boolean highDemand) implements IntegrationEvent {
 }

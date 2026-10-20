@@ -20,10 +20,13 @@ public final class CatalogViews {
 	public record ElementRow(UUID id, UUID seatMapId, String type, String label, String shapeJson) {
 	}
 
+	public record UnitRow(UUID id, String code, String name, String type, int level, UUID parentId) {
+	}
+
 	public record OrganizerInfo(String status, boolean payoutReady) {
 	}
 
-	public record VenueInfo(String name, String cityName) {
+	public record VenueInfo(String name, UUID cityId, String cityName) {
 	}
 
 }

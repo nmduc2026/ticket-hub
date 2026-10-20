@@ -5,9 +5,12 @@
  * OpenAPI spec version: v1
  */
 
+export * from './administrativeUnit';
 export * from './eventRequest';
+export * from './eventSeats';
 export * from './jsonNode';
 export * from './jsonNodeNodeType';
+export * from './listAdministrativeUnitsParams';
 export * from './listOrganizerEventsParams';
 export * from './listOrganizerEventsStatusItem';
 export * from './meResponse';
@@ -21,9 +24,17 @@ export * from './organizerEventSummary';
 export * from './organizerEventSummaryStatus';
 export * from './problemDetail';
 export * from './problemDetailProperties';
+export * from './publicEventDetail';
+export * from './publicEventPage';
+export * from './publicEventSummary';
+export * from './publicTier';
+export * from './searchEventsParams';
 export * from './seatMap';
 export * from './seatMapElement';
+export * from './seatMapElementState';
 export * from './seatMapSection';
+export * from './seatMapSectionState';
+export * from './seatState';
 export * from './ticketTier';
 export * from './ticketTierRequest';
 export * from './tierSectionAssignment';

@@ -3,6 +3,7 @@ package com.ndz.backend.shared;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -33,6 +34,10 @@ class ResourceServerConfiguration {
 						.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
 						// Hợp đồng API (OpenAPI) là nguồn sinh client cho frontend; không chứa dữ liệu.
 						.requestMatchers("/v3/api-docs/**").permitAll()
+						// API công khai cho khách chưa đăng nhập: xem sự kiện, sơ đồ ghế, danh mục tỉnh / xã.
+						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats",
+								"/api/v1/administrative-units")
+						.permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRolesConverter()))

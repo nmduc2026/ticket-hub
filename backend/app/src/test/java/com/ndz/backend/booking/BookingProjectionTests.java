@@ -156,7 +156,7 @@ class BookingProjectionTests {
 		UUID booking = Uuid7.next();
 		insertHeldSeat(eventId, booking);
 		EventPublished again = new EventPublished(Uuid7.next(), Instant.now(), eventId, TestTokens.ORGANIZER_ID,
-				"Giữ nguyên", null, null, null, UUID.fromString(VENUE), "Sài Gòn Arena", "Thành phố Hồ Chí Minh",
+				"Giữ nguyên", null, null, null, UUID.fromString(VENUE), "Sài Gòn Arena", UUID.fromString("00000000-0000-7000-8000-0000000a0001"), "Thành phố Hồ Chí Minh",
 				UUID.fromString(SEAT_MAP), SALE_STARTS.plusSeconds(86_400), EVENT_ENDS, SALE_STARTS, 6, 500, false);
 
 		transaction.executeWithoutResult(status -> publisher.publishEvent(again)); // message mới, cùng sự kiện
@@ -227,7 +227,7 @@ class BookingProjectionTests {
 		return new EventPublished(messageId,
 				((java.sql.Timestamp) snapshot.get("last_event_at")).toInstant(), eventId, TestTokens.ORGANIZER_ID,
 				(String) snapshot.get("title"), null, null, null, UUID.fromString(VENUE), "Sài Gòn Arena",
-				"Thành phố Hồ Chí Minh", UUID.fromString(SEAT_MAP), SALE_STARTS.plusSeconds(86_400), EVENT_ENDS,
+				UUID.fromString("00000000-0000-7000-8000-0000000a0001"), "Thành phố Hồ Chí Minh", UUID.fromString(SEAT_MAP), SALE_STARTS.plusSeconds(86_400), EVENT_ENDS,
 				SALE_STARTS, 6, 500, false);
 	}
 

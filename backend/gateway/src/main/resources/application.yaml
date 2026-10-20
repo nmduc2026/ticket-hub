@@ -53,6 +53,15 @@ spring:
                 - Path=/api/v1/webhooks/**
               filters:
                 - RemoveRequestHeader=Cookie
+            # API công khai (xem sự kiện, sơ đồ ghế, danh mục tỉnh / xã): khách chưa đăng nhập cũng gọi được. Không
+            # TokenRelay vì request không có phiên; route này phải đứng trước route `api`.
+            - id: public-read
+              uri: ${tickethub.gateway.app-uri}
+              predicates:
+                - Method=GET
+                - Path=/api/v1/events,/api/v1/events/*,/api/v1/events/*/seats,/api/v1/administrative-units
+              filters:
+                - RemoveRequestHeader=Cookie
             - id: api
               uri: ${tickethub.gateway.app-uri}
               predicates:

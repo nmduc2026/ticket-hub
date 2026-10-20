@@ -2,6 +2,7 @@ package com.ndz.backend.catalog.internal.persistence;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,11 +15,16 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.ndz.backend.catalog.CatalogApi.LayoutElement;
+import com.ndz.backend.catalog.CatalogApi.LayoutSeat;
+import com.ndz.backend.catalog.CatalogApi.LayoutSection;
+import com.ndz.backend.catalog.CatalogApi.SeatMapLayout;
 import com.ndz.backend.catalog.CatalogApi.SellableSeat;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.ElementRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.OrganizerInfo;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SeatMapRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SectionRow;
+import com.ndz.backend.catalog.internal.domain.CatalogViews.UnitRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.VenueInfo;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.VenueRow;
 
@@ -75,11 +81,12 @@ public class CatalogReadRepository {
 
 	public Optional<VenueInfo> venueInfo(UUID venueId) {
 		return jdbc.query("""
-				SELECT v.name, c.name AS city_name FROM catalog.venues v
+				SELECT v.name, c.id AS city_id, c.name AS city_name FROM catalog.venues v
 				         JOIN catalog.administrative_units w ON w.id = v.ward_id
 				         JOIN catalog.administrative_units c ON c.id = w.parent_id
 				WHERE v.id = ?
-				""", (rs, i) -> new VenueInfo(rs.getString("name"), rs.getString("city_name")), venueId).stream()
+				""", (rs, i) -> new VenueInfo(rs.getString("name"), rs.getObject("city_id", UUID.class),
+				rs.getString("city_name")), venueId).stream()
 				.findFirst();
 	}
 
@@ -159,6 +166,54 @@ public class CatalogReadRepository {
 				rs.getObject("section_id", UUID.class), rs.getString("code"), rs.getString("row_label"),
 				rs.getInt("seat_number"), rs.getObject("tier_id", UUID.class), rs.getString("tier_name"),
 				rs.getLong("price_minor"), rs.getString("currency")), eventId);
+	}
+
+	/** Đơn vị hành chính đang dùng, lọc theo cấp, đơn vị cha và một đoạn của tên (không phân biệt hoa thường). */
+	public List<UnitRow> activeUnits(Integer level, UUID parentId, String query) {
+		StringBuilder sql = new StringBuilder(
+				"SELECT id, code, name, type, level, parent_id FROM catalog.administrative_units WHERE is_active");
+		List<Object> args = new ArrayList<>();
+		if (level != null) {
+			sql.append(" AND level = ?");
+			args.add(level);
+		}
+		if (parentId != null) {
+			sql.append(" AND parent_id = ?");
+			args.add(parentId);
+		}
+		if (query != null && !query.isBlank()) {
+			sql.append(" AND name ILIKE ? ESCAPE '!'");
+			args.add("%" + query.trim().replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%");
+		}
+		sql.append(" ORDER BY name");
+		return jdbc.query(sql.toString(), (rs, i) -> new UnitRow(rs.getObject("id", UUID.class), rs.getString("code"),
+				rs.getString("name"), rs.getString("type"), rs.getInt("level"), rs.getObject("parent_id", UUID.class)),
+				args.toArray());
+	}
+
+	/** Sơ đồ ghế đầy đủ để vẽ cho khách (kích thước, khu, phần tử không bán, mọi ghế kèm toạ độ). */
+	public SeatMapLayout seatMapLayout(UUID seatMapId) {
+		int[] size = jdbc.query("SELECT width, height FROM catalog.seat_maps WHERE id = ?",
+				(rs, i) -> new int[] { rs.getInt("width"), rs.getInt("height") }, seatMapId).stream().findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("Không có sơ đồ ghế " + seatMapId));
+		List<LayoutSection> sections = jdbc.query("""
+				SELECT id, code, name, shape_json::text AS shape_json FROM catalog.sections
+				WHERE seat_map_id = ? ORDER BY code
+				""", (rs, i) -> new LayoutSection(rs.getObject("id", UUID.class), rs.getString("code"),
+				rs.getString("name"), rs.getString("shape_json")), seatMapId);
+		List<LayoutElement> elements = jdbc.query("""
+				SELECT id, type, label, shape_json::text AS shape_json FROM catalog.seat_map_elements
+				WHERE seat_map_id = ? ORDER BY type, id
+				""", (rs, i) -> new LayoutElement(rs.getObject("id", UUID.class), rs.getString("type"),
+				rs.getString("label"), rs.getString("shape_json")), seatMapId);
+		List<LayoutSeat> seats = jdbc.query("""
+				SELECT s.id, sec.id AS section_id, sec.code, s.row_label, s.seat_number, s.x, s.y
+				FROM catalog.seats s JOIN catalog.sections sec ON sec.id = s.section_id
+				WHERE sec.seat_map_id = ? ORDER BY sec.code, s.row_label, s.seat_number
+				""", (rs, i) -> new LayoutSeat(rs.getObject("id", UUID.class), rs.getObject("section_id", UUID.class),
+				rs.getString("code"), rs.getString("row_label"), rs.getInt("seat_number"), rs.getInt("x"),
+				rs.getInt("y")), seatMapId);
+		return new SeatMapLayout(size[0], size[1], sections, elements, seats);
 	}
 
 	private boolean exists(String sql, Object... args) {

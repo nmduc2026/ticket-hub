@@ -21,6 +21,12 @@ class CatalogApiAdapter implements CatalogApi {
 
 	@Override
 	@Transactional(readOnly = true)
+	public SeatMapLayout seatMapLayout(UUID seatMapId) {
+		return catalog.seatMapLayout(seatMapId);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public List<SellableSeat> sellableSeats(UUID eventId) {
 		return catalog.sellableSeats(eventId);
 	}

@@ -512,6 +512,186 @@
           }
         }
       }
+    },
+    "/api/v1/events" : {
+      "get" : {
+        "tags" : [ "public-event-controller" ],
+        "summary" : "Tìm và lọc sự kiện",
+        "description" : "Chỉ sự kiện đang chờ mở bán, đang bán hoặc tạm dừng; sắp theo giờ diễn",
+        "operationId" : "searchEvents",
+        "parameters" : [ {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "cityId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "category",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 12
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicEventPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{eventId}" : {
+      "get" : {
+        "tags" : [ "public-event-controller" ],
+        "summary" : "Chi tiết sự kiện, hạng vé và còn vé hay không",
+        "operationId" : "getEvent",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "EVENT_NOT_FOUND",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicEventDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{eventId}/seats" : {
+      "get" : {
+        "tags" : [ "public-event-controller" ],
+        "summary" : "Sơ đồ ghế kèm trạng thái",
+        "description" : "Ghế của khu không gán hạng vé có trạng thái NOT_FOR_SALE (khu màu xám, không chọn được)",
+        "operationId" : "getEventSeats",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "EVENT_NOT_FOUND",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventSeats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/administrative-units" : {
+      "get" : {
+        "tags" : [ "administrative-unit-controller" ],
+        "summary" : "Danh mục tỉnh / xã đang dùng",
+        "operationId" : "listAdministrativeUnits",
+        "parameters" : [ {
+          "name" : "level",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "parentId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdministrativeUnit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -747,6 +927,9 @@
       "JsonNode" : {
         "type" : "object",
         "properties" : {
+          "object" : {
+            "type" : "boolean"
+          },
           "array" : {
             "type" : "boolean"
           },
@@ -762,32 +945,22 @@
           "container" : {
             "type" : "boolean"
           },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "bigDecimal" : {
-            "type" : "boolean"
-          },
-          "bigInteger" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
-            "type" : "boolean"
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
           "number" : {
             "type" : "boolean"
           },
-          "double" : {
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "short" : {
+            "type" : "boolean"
+          },
+          "string" : {
             "type" : "boolean"
           },
           "boolean" : {
+            "type" : "boolean"
+          },
+          "int" : {
             "type" : "boolean"
           },
           "textual" : {
@@ -797,22 +970,29 @@
           "binary" : {
             "type" : "boolean"
           },
-          "object" : {
-            "type" : "boolean"
-          },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "int" : {
+          "double" : {
             "type" : "boolean"
           },
           "long" : {
             "type" : "boolean"
           },
-          "short" : {
+          "missingNode" : {
             "type" : "boolean"
           },
-          "string" : {
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "bigDecimal" : {
+            "type" : "boolean"
+          },
+          "bigInteger" : {
             "type" : "boolean"
           },
           "floatingPointNumber" : {
@@ -1029,6 +1209,298 @@
             "additionalProperties" : { }
           }
         }
+      },
+      "PublicEventPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PublicEventSummary"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
+      "PublicEventSummary" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "bannerUrl" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "venueName" : {
+            "type" : "string"
+          },
+          "cityName" : {
+            "type" : "string"
+          },
+          "minPriceMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Giá thấp nhất của các hạng vé; null khi chưa có tồn kho"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "PUBLISHED (chờ mở bán), ON_SALE hoặc SUSPENDED"
+          }
+        },
+        "required" : [ "cityName", "currency", "id", "startsAt", "status", "title", "venueName" ]
+      },
+      "PublicEventDetail" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "category" : {
+            "type" : "string"
+          },
+          "bannerUrl" : {
+            "type" : "string"
+          },
+          "organizerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "venueName" : {
+            "type" : "string"
+          },
+          "cityName" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "saleStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "PUBLISHED, ON_SALE, SUSPENDED, ENDED hoặc CANCELLED"
+          },
+          "maxTicketsPerUser" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "soldOut" : {
+            "type" : "boolean",
+            "description" : "true khi mọi hạng vé hết ghế (tính từ tồn kho, không lưu trong DB)"
+          },
+          "tiers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PublicTier"
+            }
+          }
+        },
+        "required" : [ "cityName", "endsAt", "id", "maxTicketsPerUser", "organizerId", "saleStartsAt", "soldOut", "startsAt", "status", "tiers", "title", "venueName" ]
+      },
+      "PublicTier" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "priceMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Đơn vị nhỏ nhất của tiền tệ"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "available" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số ghế còn trống của hạng vé"
+          }
+        },
+        "required" : [ "available", "currency", "id", "name", "priceMinor" ]
+      },
+      "EventSeats" : {
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventStatus" : {
+            "type" : "string"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "tiers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PublicTier"
+            }
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapSectionState"
+            }
+          },
+          "elements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapElementState"
+            }
+          },
+          "seats" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatState"
+            }
+          }
+        },
+        "required" : [ "elements", "eventId", "eventStatus", "height", "seats", "sections", "tiers", "width" ]
+      },
+      "SeatMapElementState" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "shape" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "required" : [ "shape", "type" ]
+      },
+      "SeatMapSectionState" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "shape" : {
+            "$ref" : "#/components/schemas/JsonNode",
+            "description" : "Hình học của khu (GRID / IMPORTED), nguyên văn"
+          },
+          "tierId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Hạng vé của khu; null khi khu không bán (màu xám)"
+          }
+        },
+        "required" : [ "code", "name", "shape" ]
+      },
+      "SeatState" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "row" : {
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "x" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "y" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "AVAILABLE, HELD, SOLD hoặc NOT_FOR_SALE"
+          }
+        },
+        "required" : [ "id", "number", "row", "sectionCode", "status", "x", "y" ]
+      },
+      "AdministrativeUnit" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "TINH, THANH_PHO, PHUONG, XA hoặc DAC_KHU"
+          },
+          "level" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "1 = Tỉnh / Thành phố, 2 = Xã / Phường / Đặc khu"
+          },
+          "parentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "code", "id", "level", "name", "type" ]
       }
     }
   }

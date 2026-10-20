@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
@@ -39,6 +40,10 @@ class SecurityConfiguration {
 				.authorizeHttpRequests(requests -> requests
 						// Webhook xác thực bằng chữ ký Stripe, không cần session.
 						.requestMatchers(WEBHOOKS).permitAll()
+						// API công khai cho khách chưa đăng nhập; vẫn đi qua Gateway nhưng không có Bearer.
+						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats",
+								"/api/v1/administrative-units")
+						.permitAll()
 						.requestMatchers("/api/**").authenticated()
 						// Phần còn lại (health, trang SPA): web server phía trước phục vụ.
 						.anyRequest().permitAll())

@@ -27,21 +27,21 @@ public class EventSnapshotRepository {
 	public boolean upsertPublished(EventPublished event) {
 		return jdbc.update("""
 				INSERT INTO booking.event_snapshots
-				    (event_id, organizer_id, title, description, category, banner_url, venue_id, venue_name, city_name,
+				    (event_id, organizer_id, title, description, category, banner_url, venue_id, venue_name, city_id, city_name,
 				     seat_map_id, starts_at, ends_at, sale_starts_at, status, high_demand, max_tickets_per_user,
 				     platform_fee_bps, last_event_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PUBLISHED', ?, ?, ?, ?)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PUBLISHED', ?, ?, ?, ?)
 				ON CONFLICT (event_id) DO UPDATE SET
 				    organizer_id = EXCLUDED.organizer_id, title = EXCLUDED.title, description = EXCLUDED.description,
 				    category = EXCLUDED.category, banner_url = EXCLUDED.banner_url, venue_id = EXCLUDED.venue_id,
-				    venue_name = EXCLUDED.venue_name, city_name = EXCLUDED.city_name, seat_map_id = EXCLUDED.seat_map_id,
+				    venue_name = EXCLUDED.venue_name, city_id = EXCLUDED.city_id, city_name = EXCLUDED.city_name, seat_map_id = EXCLUDED.seat_map_id,
 				    starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at,
 				    sale_starts_at = EXCLUDED.sale_starts_at, status = 'PUBLISHED', high_demand = EXCLUDED.high_demand,
 				    max_tickets_per_user = EXCLUDED.max_tickets_per_user, platform_fee_bps = EXCLUDED.platform_fee_bps,
 				    last_event_at = EXCLUDED.last_event_at, version = booking.event_snapshots.version + 1
 				WHERE booking.event_snapshots.last_event_at < EXCLUDED.last_event_at
 				""", event.eventId(), event.organizerId(), event.title(), event.description(), event.category(),
-				event.bannerUrl(), event.venueId(), event.venueName(), event.cityName(), event.seatMapId(),
+				event.bannerUrl(), event.venueId(), event.venueName(), event.cityId(), event.cityName(), event.seatMapId(),
 				Timestamp.from(event.startsAt()), Timestamp.from(event.endsAt()),
 				Timestamp.from(event.saleStartsAt()), event.highDemand(), event.maxTicketsPerUser(),
 				event.platformFeeBps(), Timestamp.from(event.occurredAt())) == 1;

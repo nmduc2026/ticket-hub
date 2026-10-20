@@ -13,6 +13,7 @@ CREATE TABLE booking.event_snapshots
     banner_url           TEXT,
     venue_id             UUID        NOT NULL,
     venue_name           TEXT        NOT NULL,
+    city_id              UUID        NOT NULL,
     city_name            TEXT        NOT NULL,
     seat_map_id          UUID        NOT NULL,
     starts_at            TIMESTAMPTZ NOT NULL,
@@ -29,7 +30,7 @@ CREATE TABLE booking.event_snapshots
     PRIMARY KEY (event_id)
 );
 CREATE INDEX ix_event_snapshots_status_starts ON booking.event_snapshots (status, starts_at);
-CREATE INDEX ix_event_snapshots_city ON booking.event_snapshots (city_name);
+CREATE INDEX ix_event_snapshots_city ON booking.event_snapshots (city_id);
 
 CREATE TABLE booking.bookings
 (

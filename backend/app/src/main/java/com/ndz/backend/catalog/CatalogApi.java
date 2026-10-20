@@ -15,6 +15,26 @@ public interface CatalogApi {
 	 */
 	List<SellableSeat> sellableSeats(UUID eventId);
 
+	/**
+	 * Toàn bộ sơ đồ ghế để vẽ: kích thước, các khu, phần tử không bán (sân khấu, lối đi) và mọi ghế kèm toạ độ, kể cả
+	 * ghế của khu không bán. Trạng thái và hạng vé của ghế do Booking ghép từ tồn kho.
+	 */
+	SeatMapLayout seatMapLayout(UUID seatMapId);
+
+	/** Sơ đồ ghế; {@code shapeJson} là JSON nguyên văn của hình học khu / phần tử. */
+	record SeatMapLayout(int width, int height, List<LayoutSection> sections, List<LayoutElement> elements,
+			List<LayoutSeat> seats) {
+	}
+
+	record LayoutSection(UUID id, String code, String name, String shapeJson) {
+	}
+
+	record LayoutElement(UUID id, String type, String label, String shapeJson) {
+	}
+
+	record LayoutSeat(UUID id, UUID sectionId, String sectionCode, String rowLabel, int seatNumber, int x, int y) {
+	}
+
 	/** Một ghế đang bán và hạng vé của nó. Giá là số nguyên đơn vị nhỏ nhất (BR-10). */
 	record SellableSeat(UUID seatId, UUID sectionId, String sectionCode, String rowLabel, int seatNumber,
 			UUID tierId, String tierName, long priceMinor, String currency) {
