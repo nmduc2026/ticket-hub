@@ -17,6 +17,8 @@ class TestSecurityConfiguration {
 		return registry -> {
 			registry.add("tickethub.security.jwk-set-uri", TestTokens::jwkSetUri);
 			registry.add("tickethub.security.issuer-uri", () -> TestTokens.ISSUER);
+			// Endpoint chỉ có trong test không được lọt vào hợp đồng OpenAPI gửi cho frontend.
+			registry.add("springdoc.paths-to-exclude", () -> "/test-probe/**,/api/v1/test-probe/**");
 		};
 	}
 

@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
-import org.springframework.security.oauth2.client.oidc.web.logout.OidcClientInitiatedLogoutSuccessHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizedClientRepository;
@@ -49,7 +48,7 @@ class SecurityConfiguration {
 						.authorizedClientRepository(authorizedClients)
 						.successHandler(new ReturnToAuthenticationSuccessHandler()))
 				.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(entryPoint()))
-				.logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler(clients)))
+				.logout(logout -> logout.logoutSuccessHandler(new SpaLogoutSuccessHandler(clients)))
 				.csrf(csrf -> csrf
 						.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
 						.csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
@@ -85,13 +84,6 @@ class SecurityConfiguration {
 		DelegatingAuthenticationEntryPoint entryPoint = new DelegatingAuthenticationEntryPoint(entryPoints);
 		entryPoint.setDefaultEntryPoint(new LoginUrlAuthenticationEntryPoint(LOGIN_URL));
 		return entryPoint;
-	}
-
-	/** Đăng xuất xong chuyển sang Keycloak end_session để xoá cả phiên SSO, rồi quay về "/". */
-	private static OidcClientInitiatedLogoutSuccessHandler logoutSuccessHandler(ClientRegistrationRepository clients) {
-		OidcClientInitiatedLogoutSuccessHandler handler = new OidcClientInitiatedLogoutSuccessHandler(clients);
-		handler.setPostLogoutRedirectUri("{baseUrl}/");
-		return handler;
 	}
 
 }

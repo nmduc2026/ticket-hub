@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["dist", "src/api/generated", "src/routeTree.gen.ts", "playwright-report", "test-results"],
+  "overrides": [
+    {
+      "files": ["src/components/ui/**", "src/routes/**"],
+      "rules": { "react/only-export-components": "off" }
+    }
+  ]
+}

@@ -33,8 +33,7 @@ coverage/
 !*.tfvars.example
 crash.log
 
-# Claude Code (cấu hình cá nhân)
-.claude/settings.local.json
-
-# Maven Wrapper
-.mvn/wrapper/maven-wrapper.jar
+# Cong cu kiem thu trinh duyet
+.playwright-mcp/
+playwright-report/
+test-results/

@@ -31,6 +31,8 @@ class ResourceServerConfiguration {
 		http
 				.authorizeHttpRequests(requests -> requests
 						.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+						// Hợp đồng API (OpenAPI) là nguồn sinh client cho frontend; không chứa dữ liệu.
+						.requestMatchers("/v3/api-docs/**").permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRolesConverter()))

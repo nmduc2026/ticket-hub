@@ -157,6 +157,20 @@ class BffLoginFlowTests {
 	}
 
 	@Test
+	void xhrLogoutReturnsEndSessionUrlInsteadOfARedirect() throws Exception {
+		login("/");
+
+		HttpResponse<String> logout = send(submit("/logout").header("X-XSRF-TOKEN", xsrfToken())
+				.header("X-Requested-With", "XMLHttpRequest"));
+		HttpResponse<String> afterLogout = send(navigate("/api/v1/me").header("X-Requested-With", "XMLHttpRequest"));
+
+		assertThat(logout.statusCode()).isEqualTo(200);
+		assertThat(logout.body()).startsWith("{\"logoutUrl\":\"" + idpBase() + REALM + "/protocol/openid-connect/logout");
+		assertThat(logout.body()).contains("id_token_hint=");
+		assertThat(afterLogout.statusCode()).isEqualTo(401);
+	}
+
+	@Test
 	void responsesCarrySecurityHeaders() throws Exception {
 		HttpResponse<String> response = send(navigate("/actuator/health"));
 
