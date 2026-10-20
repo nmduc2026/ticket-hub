@@ -9,104 +9,215 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ForbiddenRouteImport } from './routes/forbidden'
+import { Route as GuestRouteImport } from './routes/_guest'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
+import { Route as OrganizerRouteRouteImport } from './routes/organizer/route'
+import { Route as GuestIndexRouteImport } from './routes/_guest/index'
+import { Route as GuestForbiddenRouteImport } from './routes/_guest/forbidden'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer/index'
+import { Route as GuestMeProfileRouteImport } from './routes/_guest/me/profile'
 
-const IndexRoute = IndexRouteImport.update({
+const GuestRoute = GuestRouteImport.update({
+  id: '/_guest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrganizerRouteRoute = OrganizerRouteRouteImport.update({
+  id: '/organizer',
+  path: '/organizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GuestIndexRoute = GuestIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => GuestRoute,
 } as any)
-const ForbiddenRoute = ForbiddenRouteImport.update({
+const GuestForbiddenRoute = GuestForbiddenRouteImport.update({
   id: '/forbidden',
   path: '/forbidden',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => GuestRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
-  id: '/organizer/',
-  path: '/organizer/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrganizerRouteRoute,
+} as any)
+const GuestMeProfileRoute = GuestMeProfileRouteImport.update({
+  id: '/me/profile',
+  path: '/me/profile',
+  getParentRoute: () => GuestRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/forbidden': typeof ForbiddenRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/organizer': typeof OrganizerRouteRouteWithChildren
+  '/': typeof GuestIndexRoute
+  '/forbidden': typeof GuestForbiddenRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/me/profile': typeof GuestMeProfileRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/forbidden': typeof ForbiddenRoute
+  '/forbidden': typeof GuestForbiddenRoute
+  '/': typeof GuestIndexRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
+  '/me/profile': typeof GuestMeProfileRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/forbidden': typeof ForbiddenRoute
+  '/admin': typeof AdminRouteRouteWithChildren
+  '/organizer': typeof OrganizerRouteRouteWithChildren
+  '/_guest': typeof GuestRouteWithChildren
+  '/_guest/forbidden': typeof GuestForbiddenRoute
+  '/_guest/': typeof GuestIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
+  '/_guest/me/profile': typeof GuestMeProfileRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forbidden' | '/admin/' | '/organizer/'
+  fullPaths:
+    | '/admin'
+    | '/organizer'
+    | '/'
+    | '/forbidden'
+    | '/admin/'
+    | '/organizer/'
+    | '/me/profile'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/forbidden' | '/admin' | '/organizer'
-  id: '__root__' | '/' | '/forbidden' | '/admin/' | '/organizer/'
+  to: '/forbidden' | '/' | '/admin' | '/organizer' | '/me/profile'
+  id:
+    | '__root__'
+    | '/admin'
+    | '/organizer'
+    | '/_guest'
+    | '/_guest/forbidden'
+    | '/_guest/'
+    | '/admin/'
+    | '/organizer/'
+    | '/_guest/me/profile'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ForbiddenRoute: typeof ForbiddenRoute
-  AdminIndexRoute: typeof AdminIndexRoute
-  OrganizerIndexRoute: typeof OrganizerIndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  OrganizerRouteRoute: typeof OrganizerRouteRouteWithChildren
+  GuestRoute: typeof GuestRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
+    '/_guest': {
+      id: '/_guest'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof GuestRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/forbidden': {
-      id: '/forbidden'
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/organizer': {
+      id: '/organizer'
+      path: '/organizer'
+      fullPath: '/organizer'
+      preLoaderRoute: typeof OrganizerRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_guest/': {
+      id: '/_guest/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof GuestIndexRouteImport
+      parentRoute: typeof GuestRoute
+    }
+    '/_guest/forbidden': {
+      id: '/_guest/forbidden'
       path: '/forbidden'
       fullPath: '/forbidden'
-      preLoaderRoute: typeof ForbiddenRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof GuestForbiddenRouteImport
+      parentRoute: typeof GuestRoute
     }
     '/admin/': {
       id: '/admin/'
-      path: '/admin'
+      path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/organizer/': {
       id: '/organizer/'
-      path: '/organizer'
+      path: '/'
       fullPath: '/organizer/'
       preLoaderRoute: typeof OrganizerIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OrganizerRouteRoute
+    }
+    '/_guest/me/profile': {
+      id: '/_guest/me/profile'
+      path: '/me/profile'
+      fullPath: '/me/profile'
+      preLoaderRoute: typeof GuestMeProfileRouteImport
+      parentRoute: typeof GuestRoute
     }
   }
 }
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ForbiddenRoute: ForbiddenRoute,
+interface AdminRouteRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
+interface OrganizerRouteRouteChildren {
+  OrganizerIndexRoute: typeof OrganizerIndexRoute
+}
+
+const OrganizerRouteRouteChildren: OrganizerRouteRouteChildren = {
   OrganizerIndexRoute: OrganizerIndexRoute,
+}
+
+const OrganizerRouteRouteWithChildren = OrganizerRouteRoute._addFileChildren(
+  OrganizerRouteRouteChildren,
+)
+
+interface GuestRouteChildren {
+  GuestForbiddenRoute: typeof GuestForbiddenRoute
+  GuestIndexRoute: typeof GuestIndexRoute
+  GuestMeProfileRoute: typeof GuestMeProfileRoute
+}
+
+const GuestRouteChildren: GuestRouteChildren = {
+  GuestForbiddenRoute: GuestForbiddenRoute,
+  GuestIndexRoute: GuestIndexRoute,
+  GuestMeProfileRoute: GuestMeProfileRoute,
+}
+
+const GuestRouteWithChildren = GuestRoute._addFileChildren(GuestRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  AdminRouteRoute: AdminRouteRouteWithChildren,
+  OrganizerRouteRoute: OrganizerRouteRouteWithChildren,
+  GuestRoute: GuestRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,6 +1,7 @@
 {
   "realm": "tickethub",
   "displayName": "Ticket Hub",
+  "loginTheme": "tickethub",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": true,

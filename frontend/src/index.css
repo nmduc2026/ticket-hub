@@ -8,6 +8,9 @@
 @theme inline {
     --font-heading: var(--font-sans);
     --font-sans: 'Manrope Variable', system-ui, sans-serif;
+    --color-night: var(--night);
+    --color-night-foreground: var(--night-foreground);
+    --color-night-muted: var(--night-muted);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -85,6 +88,11 @@
   --sidebar-accent-foreground: #065f46;
   --sidebar-border: #e3e7e5;
   --sidebar-ring: #047857;
+
+  /* Vùng xanh đêm (footer, hero): chữ ký brand, README §2. */
+  --night: #022c22;
+  --night-foreground: #ecfdf5;
+  --night-muted: #a7c9bc;
 }
 
 .dark {
@@ -121,6 +129,10 @@
   --sidebar-accent-foreground: #6ee7b7;
   --sidebar-border: #222c28;
   --sidebar-ring: #6ee7b7;
+
+  --night: #03251d;
+  --night-foreground: #ecfdf5;
+  --night-muted: #a7c9bc;
 }
 
 @layer base {

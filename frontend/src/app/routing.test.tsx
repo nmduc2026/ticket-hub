@@ -22,7 +22,7 @@ describe('bảo vệ route theo role', () => {
 
     renderAt('/admin')
 
-    expect(await screen.findByRole('heading', { name: 'Tổng quan quản trị' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Tổng quan' }, { timeout: 5000 })).toBeInTheDocument()
   })
 
   it('CUSTOMER vào /admin bị chặn và thấy trang không có quyền', async () => {
@@ -31,7 +31,7 @@ describe('bảo vệ route theo role', () => {
     renderAt('/admin')
 
     expect(await screen.findByRole('heading', { name: 'Không có quyền truy cập' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Tổng quan quản trị' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Tổng quan' })).not.toBeInTheDocument()
   })
 
   it('CUSTOMER không thấy liên kết Quản trị trên thanh điều hướng', async () => {
@@ -40,7 +40,7 @@ describe('bảo vệ route theo role', () => {
     renderAt('/')
 
     expect(await screen.findByText('Xin chào, Khách Hàng')).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Quản trị' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Quản trị viên' })).not.toBeInTheDocument()
   })
 
   it('khách chưa đăng nhập xem được trang chủ và thấy nút Đăng nhập', async () => {

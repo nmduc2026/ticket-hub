@@ -25,16 +25,24 @@ export async function loadCurrentUser(queryClient: QueryClient): Promise<MeRespo
 }
 
 /**
- * Dùng trong `beforeLoad`: chưa đăng nhập → tới Keycloak rồi quay lại `href`; đã đăng nhập nhưng thiếu role →
- * `/forbidden`. Chặn ở giao diện chỉ là UX, quyền thật do backend kiểm (overview.md §13.3).
+ * Dùng trong `beforeLoad` của trang chỉ cần đăng nhập: chưa đăng nhập → tới Keycloak rồi quay lại `href`.
  */
-export async function requireRole(queryClient: QueryClient, role: Role, href: string): Promise<MeResponse> {
+export async function requireUser(queryClient: QueryClient, href: string): Promise<MeResponse> {
   const user = await loadCurrentUser(queryClient)
   if (user === null) {
     redirectToLogin(href)
     // Trình duyệt đang rời trang; giữ route ở trạng thái chờ thay vì render lỗi.
     return new Promise<MeResponse>(() => {})
   }
+  return user
+}
+
+/**
+ * Như {@link requireUser} và thêm yêu cầu role; đã đăng nhập nhưng thiếu role → `/forbidden`. Chặn ở giao diện chỉ
+ * là UX, quyền thật do backend kiểm (overview.md §13.3).
+ */
+export async function requireRole(queryClient: QueryClient, role: Role, href: string): Promise<MeResponse> {
+  const user = await requireUser(queryClient, href)
   if (!hasRole(user.roles, role)) {
     throw redirect({ to: '/forbidden' })
   }
