@@ -1,0 +1,82 @@
+server:
+  port: 8080
+  # Dựng URL redirect theo X-Forwarded-* của reverse proxy (Vite dev, nginx) — overview.md §13.1.
+  forward-headers-strategy: framework
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        name: SESSION
+        http-only: true
+        # Local chạy http nên Secure tắt; deploy HTTPS đặt GATEWAY_COOKIE_SECURE=true.
+        secure: ${GATEWAY_COOKIE_SECURE:false}
+        same-site: lax
+
+spring:
+  application:
+    name: gateway
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  session:
+    # Session (kèm access / refresh token) nằm ở Redis để restart hay chạy nhiều instance vẫn dùng chung.
+    redis:
+      namespace: "spring:session"
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            provider: keycloak
+            client-id: tickethub-bff
+            client-secret: ${KEYCLOAK_BFF_CLIENT_SECRET:}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            scope: openid,profile,email
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/tickethub}
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            # Webhook: không session, không token; app tự xác thực bằng chữ ký Stripe trên raw body.
+            - id: webhooks
+              uri: ${tickethub.gateway.app-uri}
+              predicates:
+                - Path=/api/v1/webhooks/**
+              filters:
+                - RemoveRequestHeader=Cookie
+            - id: api
+              uri: ${tickethub.gateway.app-uri}
+              predicates:
+                - Path=/api/**
+              filters:
+                # Cookie SESSION chỉ dành cho Gateway, không chuyển xuống app.
+                - RemoveRequestHeader=Cookie
+                - TokenRelay=keycloak
+
+tickethub:
+  gateway:
+    app-uri: ${APP_URI:http://localhost:8081}
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
