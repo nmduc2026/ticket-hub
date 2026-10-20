@@ -8,6 +8,8 @@ export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],
+  // Lần đầu sau khi dựng stack, Keycloak và Gateway chậm: 5 giây mặc định không đủ.
+  expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
   use: {
