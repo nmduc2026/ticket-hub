@@ -2,11 +2,13 @@ package com.ndz.backend.booking.internal.persistence;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.ndz.backend.booking.internal.domain.BookingViews.EventRules;
 import com.ndz.backend.catalog.events.EventPublished;
 import com.ndz.backend.catalog.events.EventUpdated;
 
@@ -63,6 +65,15 @@ public class EventSnapshotRepository {
 				UPDATE booking.event_snapshots SET status = ?, last_event_at = ?, version = version + 1
 				WHERE event_id = ? AND last_event_at < ?
 				""", status, Timestamp.from(occurredAt), eventId, Timestamp.from(occurredAt)) == 1;
+	}
+
+	/** Quy tắc đặt vé của sự kiện (trạng thái, giới hạn vé mỗi người), đọc từ bản sao; không đọc DB của Catalog. */
+	public Optional<EventRules> rules(UUID eventId) {
+		return jdbc.query(
+				"SELECT event_id, status, max_tickets_per_user, sale_starts_at FROM booking.event_snapshots WHERE event_id = ?",
+				(rs, i) -> new EventRules(rs.getObject("event_id", UUID.class), rs.getString("status"),
+						rs.getInt("max_tickets_per_user"), rs.getTimestamp("sale_starts_at").toInstant()),
+				eventId).stream().findFirst();
 	}
 
 	public boolean exists(UUID eventId) {

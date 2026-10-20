@@ -6,6 +6,10 @@
  */
 
 export * from './administrativeUnit';
+export * from './booking';
+export * from './bookingHold';
+export * from './bookingItem';
+export * from './createBookingRequest';
 export * from './eventRequest';
 export * from './eventSeats';
 export * from './jsonNode';

@@ -431,6 +431,56 @@
         }
       }
     },
+    "/api/v1/bookings" : {
+      "post" : {
+        "tags" : [ "booking-controller" ],
+        "summary" : "Giữ ghế, tạo đơn chờ thanh toán",
+        "description" : "Bắt buộc header Idempotency-Key. Giữ ghế 10 phút (BR-03).",
+        "operationId" : "createBooking",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateBookingRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "409" : {
+            "description" : "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingHold"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "MAX_SEATS_EXCEEDED, TICKET_LIMIT_EXCEEDED, DUPLICATE_SEATS, EMAIL_REQUIRED hoặc IDEMPOTENCY_KEY_REUSED",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingHold"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingHold"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/venues" : {
       "get" : {
         "tags" : [ "venue-controller" ],
@@ -640,6 +690,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/EventSeats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bookings/{bookingId}" : {
+      "get" : {
+        "tags" : [ "booking-controller" ],
+        "summary" : "Trạng thái đơn của tôi",
+        "operationId" : "getBooking",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Booking"
                 }
               }
             }
@@ -898,6 +976,47 @@
         },
         "required" : [ "name" ]
       },
+      "CreateBookingRequest" : {
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "seatIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            },
+            "minItems" : 1
+          }
+        },
+        "required" : [ "eventId", "seatIds" ]
+      },
+      "BookingHold" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Hạn giữ ghế"
+          },
+          "totalMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Tổng tiền, đơn vị nhỏ nhất của tiền tệ"
+          },
+          "currency" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingId", "currency", "expiresAt", "totalMinor" ]
+      },
       "Venue" : {
         "type" : "object",
         "properties" : {
@@ -927,9 +1046,6 @@
       "JsonNode" : {
         "type" : "object",
         "properties" : {
-          "object" : {
-            "type" : "boolean"
-          },
           "array" : {
             "type" : "boolean"
           },
@@ -948,42 +1064,38 @@
           "number" : {
             "type" : "boolean"
           },
-          "pojo" : {
+          "floatingPointNumber" : {
             "type" : "boolean"
           },
-          "short" : {
+          "pojo" : {
             "type" : "boolean"
           },
           "string" : {
             "type" : "boolean"
           },
-          "boolean" : {
+          "short" : {
+            "type" : "boolean"
+          },
+          "object" : {
             "type" : "boolean"
           },
           "int" : {
+            "type" : "boolean"
+          },
+          "long" : {
+            "type" : "boolean"
+          },
+          "double" : {
+            "type" : "boolean"
+          },
+          "binary" : {
             "type" : "boolean"
           },
           "textual" : {
             "type" : "boolean",
             "deprecated" : true
           },
-          "binary" : {
-            "type" : "boolean"
-          },
-          "double" : {
-            "type" : "boolean"
-          },
-          "long" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
-            "type" : "boolean"
-          },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
-          "integralNumber" : {
+          "boolean" : {
             "type" : "boolean"
           },
           "valueNode" : {
@@ -992,10 +1104,17 @@
           "bigDecimal" : {
             "type" : "boolean"
           },
+          "missingNode" : {
+            "type" : "boolean"
+          },
           "bigInteger" : {
             "type" : "boolean"
           },
-          "floatingPointNumber" : {
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "integralNumber" : {
             "type" : "boolean"
           },
           "embeddedValue" : {
@@ -1472,6 +1591,72 @@
           }
         },
         "required" : [ "id", "number", "row", "sectionCode", "status", "x", "y" ]
+      },
+      "Booking" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "PENDING_PAYMENT, CONFIRMED, EXPIRED, CANCELLED, REFUND_REQUESTED, REFUNDED hoặc REFUND_FAILED"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "totalMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BookingItem"
+            }
+          }
+        },
+        "required" : [ "currency", "eventId", "expiresAt", "id", "items", "status", "totalMinor" ]
+      },
+      "BookingItem" : {
+        "type" : "object",
+        "properties" : {
+          "seatId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "row" : {
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "tierId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "tierName" : {
+            "type" : "string"
+          },
+          "priceMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "number", "priceMinor", "row", "seatId", "sectionCode", "tierId", "tierName" ]
       },
       "AdministrativeUnit" : {
         "type" : "object",
