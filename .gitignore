@@ -1,0 +1,35 @@
+# Secret và cấu hình cục bộ
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Backend (Maven)
+target/
+*.log
+hs_err_pid*
+
+# Frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Claude Code (cấu hình cá nhân)
+.claude/settings.local.json

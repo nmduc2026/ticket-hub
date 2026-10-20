@@ -30,7 +30,9 @@ Danh sách đầy đủ: `overview.md` §21.
 # TODO: điền khi scaffold backend/ và frontend/
 # Backend: Maven
 # Frontend: npm
-# Hạ tầng dev: docker compose --profile <core|kafka|search|observability|platform>
+# Hạ tầng dev (chạy trong infra/docker-compose/, lần đầu: cp .env.example .env):
+#   docker compose --profile <core|kafka|search|observability|platform> up -d
+# Bật gitleaks pre-commit (một lần sau khi clone): git config core.hooksPath .githooks
 ```
 
 ## Cấu trúc thư mục
