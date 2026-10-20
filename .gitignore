@@ -37,3 +37,7 @@ crash.log
 .playwright-mcp/
 playwright-report/
 test-results/
+
+# Terraform: bản plan và log lỗi tạm của run-probe.sh
+tfplan
+apply.err
