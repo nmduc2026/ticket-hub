@@ -27,9 +27,10 @@ Danh sách đầy đủ: `overview.md` §21.
 
 ## Lệnh thường dùng
 ```bash
-# TODO: điền khi scaffold backend/ và frontend/
-# Backend: Maven
-# Frontend: npm
+# Backend (chạy trong backend/, cần Docker cho Testcontainers):
+#   ./mvnw verify                                  # build + toàn bộ test
+#   DB_PASSWORD=... ./mvnw -pl app spring-boot:run # app ở :8081, cần compose profile core
+# TODO: Frontend (npm) điền khi scaffold frontend/
 # Hạ tầng dev (chạy trong infra/docker-compose/, lần đầu: cp .env.example .env):
 #   docker compose --profile <core|kafka|search|observability|platform> up -d
 # Bật gitleaks pre-commit (một lần sau khi clone): git config core.hooksPath .githooks

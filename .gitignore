@@ -14,6 +14,8 @@ Thumbs.db
 
 # Backend (Maven)
 target/
+# Spring Modulith sinh javadoc.json khi chạy test
+/build/
 *.log
 hs_err_pid*
 
@@ -33,3 +35,6 @@ crash.log
 
 # Claude Code (cấu hình cá nhân)
 .claude/settings.local.json
+
+# Maven Wrapper
+.mvn/wrapper/maven-wrapper.jar

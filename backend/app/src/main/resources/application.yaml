@@ -1,0 +1,48 @@
+server:
+  # 8080 dành cho Gateway (redirect URI của client tickethub-bff); app nằm sau Gateway.
+  port: 8081
+
+spring:
+  application:
+    name: app
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tickethub}
+    username: ${DB_USER:tickethub}
+    password: ${DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # Bảng không khai báo schema (event_publication của Modulith) nằm ở `shared`;
+        # entity của module khai báo schema của mình trong @Table.
+        default_schema: shared
+        jdbc:
+          time_zone: UTC
+  flyway:
+    # Một lịch sử migration chung đặt ở `shared`; mỗi module một thư mục db/migration/<module>/.
+    schemas: shared
+    default-schema: shared
+    locations: classpath:db/migration
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
