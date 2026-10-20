@@ -9,6 +9,397 @@
     "description" : "Generated server url"
   } ],
   "paths" : {
+    "/api/v1/organizer/events/{eventId}" : {
+      "get" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Chi tiết sự kiện của tôi",
+        "operationId" : "getOrganizerEvent",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "Không có hoặc không phải sự kiện của bạn (EVENT_NOT_FOUND)",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Sửa sự kiện",
+        "description" : "Sau publish chỉ đổi được tiêu đề, mô tả, danh mục; đổi thông tin bán vé trả EVENT_LOCKED (BR-14)",
+        "operationId" : "updateOrganizerEvent",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EventRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "409" : {
+            "description" : "EVENT_LOCKED",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/events/{eventId}/tier-sections" : {
+      "put" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Gán hạng vé cho khu ghế (thay toàn bộ, chỉ khi còn là nháp)",
+        "operationId" : "replaceTierSections",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TierSectionsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TierSectionAssignment"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/events/{eventId}/ticket-tiers/{tierId}" : {
+      "put" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Sửa hạng vé (chỉ khi còn là nháp)",
+        "operationId" : "updateTicketTier",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "tierId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TicketTierRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketTier"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Xoá hạng vé và các khu đã gán cho nó (chỉ khi còn là nháp)",
+        "operationId" : "deleteTicketTier",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "tierId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/events" : {
+      "get" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Danh sách sự kiện của tôi",
+        "operationId" : "listOrganizerEvents",
+        "parameters" : [ {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "enum" : [ "DRAFT", "PUBLISHED", "ON_SALE", "SUSPENDED", "ENDED", "CANCELLED" ]
+            },
+            "uniqueItems" : true
+          }
+        }, {
+          "name" : "venueId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventPage"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Tạo sự kiện nháp",
+        "operationId" : "createOrganizerEvent",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EventRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/events/{eventId}/ticket-tiers" : {
+      "get" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Hạng vé của sự kiện",
+        "operationId" : "listTicketTiers",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TicketTier"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Thêm hạng vé (chỉ khi còn là nháp)",
+        "operationId" : "createTicketTier",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TicketTierRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TicketTier"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/venues" : {
+      "get" : {
+        "tags" : [ "venue-controller" ],
+        "summary" : "Danh sách địa điểm",
+        "operationId" : "listVenues",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Venue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/venues/{venueId}/seat-maps" : {
+      "get" : {
+        "tags" : [ "venue-controller" ],
+        "summary" : "Sơ đồ ghế của một địa điểm, kèm khu và phần tử không bán",
+        "operationId" : "listVenueSeatMaps",
+        "parameters" : [ {
+          "name" : "venueId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/SeatMap"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me" : {
       "get" : {
         "tags" : [ "me-controller" ],
@@ -41,6 +432,465 @@
   },
   "components" : {
     "schemas" : {
+      "EventRequest" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 5000,
+            "minLength" : 0
+          },
+          "category" : {
+            "type" : "string",
+            "maxLength" : 50,
+            "minLength" : 0
+          },
+          "venueId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "seatMapId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "saleStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "maxTicketsPerUser" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 100,
+            "minimum" : 1
+          }
+        },
+        "required" : [ "title" ]
+      },
+      "OrganizerEventDetail" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "category" : {
+            "type" : "string"
+          },
+          "bannerUrl" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "DRAFT", "PUBLISHED", "ON_SALE", "SUSPENDED", "ENDED", "CANCELLED" ]
+          },
+          "venueId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "venueName" : {
+            "type" : "string"
+          },
+          "seatMapId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "saleStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "maxTicketsPerUser" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "platformFeeBps" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "inventoryReady" : {
+            "type" : "boolean"
+          },
+          "salesInfoLocked" : {
+            "type" : "boolean",
+            "description" : "true khi đã publish: thông tin bán vé chỉ đọc (BR-14)"
+          },
+          "tiers" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TicketTier"
+            }
+          },
+          "tierSections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TierSectionAssignment"
+            }
+          }
+        },
+        "required" : [ "id", "inventoryReady", "maxTicketsPerUser", "salesInfoLocked", "status", "tierSections", "tiers", "title" ]
+      },
+      "TicketTier" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "priceMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Đơn vị nhỏ nhất của tiền tệ (VND không nhân 100)"
+          },
+          "currency" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "currency", "id", "name", "priceMinor" ]
+      },
+      "TierSectionAssignment" : {
+        "type" : "object",
+        "properties" : {
+          "sectionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "tierId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "sectionId", "tierId" ]
+      },
+      "TierSectionAssignmentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "sectionId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "tierId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "sectionId", "tierId" ]
+      },
+      "TierSectionsRequest" : {
+        "type" : "object",
+        "description" : "Trạng thái mới của việc gán: khu không có trong danh sách thì không bán",
+        "properties" : {
+          "assignments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TierSectionAssignmentRequest"
+            }
+          }
+        },
+        "required" : [ "assignments" ]
+      },
+      "TicketTierRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "priceMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Đơn vị nhỏ nhất của tiền tệ; VND không nhân 100 (50.000đ là 50000)",
+            "minimum" : 0
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "Venue" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "address" : {
+            "type" : "string"
+          },
+          "wardName" : {
+            "type" : "string"
+          },
+          "cityName" : {
+            "type" : "string"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "address", "capacity", "cityName", "id", "name", "wardName" ]
+      },
+      "JsonNode" : {
+        "type" : "object",
+        "properties" : {
+          "array" : {
+            "type" : "boolean"
+          },
+          "empty" : {
+            "type" : "boolean"
+          },
+          "null" : {
+            "type" : "boolean"
+          },
+          "float" : {
+            "type" : "boolean"
+          },
+          "container" : {
+            "type" : "boolean"
+          },
+          "number" : {
+            "type" : "boolean"
+          },
+          "string" : {
+            "type" : "boolean"
+          },
+          "object" : {
+            "type" : "boolean"
+          },
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "missingNode" : {
+            "type" : "boolean"
+          },
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "bigDecimal" : {
+            "type" : "boolean"
+          },
+          "bigInteger" : {
+            "type" : "boolean"
+          },
+          "boolean" : {
+            "type" : "boolean"
+          },
+          "double" : {
+            "type" : "boolean"
+          },
+          "int" : {
+            "type" : "boolean"
+          },
+          "textual" : {
+            "type" : "boolean",
+            "deprecated" : true
+          },
+          "binary" : {
+            "type" : "boolean"
+          },
+          "pojo" : {
+            "type" : "boolean"
+          },
+          "short" : {
+            "type" : "boolean"
+          },
+          "long" : {
+            "type" : "boolean"
+          },
+          "floatingPointNumber" : {
+            "type" : "boolean"
+          },
+          "embeddedValue" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "SeatMap" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "locked" : {
+            "type" : "boolean",
+            "description" : "true khi đã có sự kiện publish dùng: bất biến"
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapSection"
+            }
+          },
+          "elements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapElement"
+            }
+          }
+        },
+        "required" : [ "elements", "height", "id", "locked", "name", "sections", "version", "width" ]
+      },
+      "SeatMapElement" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "STAGE, AISLE, LABEL hoặc AREA"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "shape" : {
+            "$ref" : "#/components/schemas/JsonNode"
+          }
+        },
+        "required" : [ "id", "shape", "type" ]
+      },
+      "SeatMapSection" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "seatCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số ghế của khu"
+          },
+          "shape" : {
+            "$ref" : "#/components/schemas/JsonNode",
+            "description" : "Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json"
+          }
+        },
+        "required" : [ "code", "id", "name", "seatCount", "shape" ]
+      },
+      "OrganizerEventPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/OrganizerEventSummary"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
+      "OrganizerEventSummary" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "category" : {
+            "type" : "string"
+          },
+          "bannerUrl" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "DRAFT", "PUBLISHED", "ON_SALE", "SUSPENDED", "ENDED", "CANCELLED" ]
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "endsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "saleStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "venueId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "venueName" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "status", "title" ]
+      },
       "MeResponse" : {
         "type" : "object",
         "properties" : {

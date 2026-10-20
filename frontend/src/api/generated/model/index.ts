@@ -5,9 +5,28 @@
  * OpenAPI spec version: v1
  */
 
+export * from './eventRequest';
+export * from './jsonNode';
+export * from './jsonNodeNodeType';
+export * from './listOrganizerEventsParams';
+export * from './listOrganizerEventsStatusItem';
 export * from './meResponse';
 export * from './meResponseEmail';
 export * from './meResponseFullName';
 export * from './meResponseUsername';
+export * from './organizerEventDetail';
+export * from './organizerEventDetailStatus';
+export * from './organizerEventPage';
+export * from './organizerEventSummary';
+export * from './organizerEventSummaryStatus';
 export * from './problemDetail';
 export * from './problemDetailProperties';
+export * from './seatMap';
+export * from './seatMapElement';
+export * from './seatMapSection';
+export * from './ticketTier';
+export * from './ticketTierRequest';
+export * from './tierSectionAssignment';
+export * from './tierSectionAssignmentRequest';
+export * from './tierSectionsRequest';
+export * from './venue';
