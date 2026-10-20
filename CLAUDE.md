@@ -59,8 +59,7 @@ Monorepo (`overview.md` §22):
 - Git:
   - `main` luôn build và deploy được. Nhánh: `feat/<slug>`, `fix/<slug>`, `infra/<slug>`, `docs/<slug>`, `chore/<slug>`.
   - Commit theo Conventional Commits, scope là module: `feat(booking): giữ ghế bằng Postgres (BR-02, BR-03)`. Ghi mã BR khi liên quan.
-  - 1 PR = 1 việc kiểm chứng được. Mô tả PR: mục tiêu, BR / AC liên quan, cách test, kết quả verify. Gắn `[USER-REVIEW]` khi đụng phần người dùng bắt buộc tự xem (xem file lộ trình).
-  - Chỉ merge khi CI xanh; squash merge vào `main`.
+  - 1 PR = 1 việc kiểm chứng được. Mô tả PR: mục tiêu, BR / AC liên quan, cách test, kết quả verify.  - Chỉ merge khi CI xanh; squash merge vào `main`.
 
 ## Môi trường & deploy
 - dev: máy 16GB, Docker Compose theo profile
@@ -78,7 +77,7 @@ Monorepo (`overview.md` §22):
 - **Một session cho một hạng mục** trong plan sprint; xong hạng mục thì báo cáo bàn giao, người dùng `/clear` trước hạng mục kế tiếp.
 - **Không đọc cả `overview.md`** (rất dài): chỉ đọc các § mà plan / hạng mục chỉ ra, tìm theo tiêu đề.
 - Yêu cầu mơ hồ → `brainstorm`. Bắt đầu sprint / việc lớn, viết ADR, review cuối sprint → `tech-lead`.
-- Review độc lập (tuỳ chọn, vùng `[USER-REVIEW]`): gọi subagent general-purpose review diff theo skill `code-review`.
+- Review độc lập (tuỳ chọn, vùng rủi ro cao: tiền, oversell, bảo mật): gọi subagent general-purpose review diff theo skill `code-review`.
 
 ## Skill
 | Vùng việc | Skill nạp |

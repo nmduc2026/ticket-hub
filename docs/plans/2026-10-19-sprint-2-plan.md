@@ -63,12 +63,6 @@
 - AC-11: Lab AWS: mở frontend qua CloudFront, đăng nhập được bằng user test; sau destroy `verify-clean.sh` không còn tài nguyên.
 - AC-12: Danh sách sự kiện của organizer: lọc trạng thái + địa điểm và từ khoá ghi lên URL, tải lại trang giữ nguyên; toolbar ghim khi cuộn; chọn dòng hiện "Xuất (n)"; màn khớp prototype #12.
 
-## Người dùng tự xem (`[USER-REVIEW]`)
-
-- SQL giữ ghế, unique index `uq_one_pending_per_user`, cách đếm tổng vé BR-02 (việc 7).
-- Migration `catalog` và `booking` (việc 1, 5).
-- `terraform plan` của lab 1 (việc 15).
-
 ## Thao tác cần báo trước
 
 Commit / push / PR / merge; `terraform apply` / `destroy` lab 1 (hỏi từng lần).

@@ -39,7 +39,7 @@ infra/
 - Realm `tickethub` export ở `infra/keycloak/`, import khi container khởi động; sửa realm qua UI thì export lại và commit.
 - Client và role theo `overview.md` §13.2; audience mapper `tickethub-api`; `tickethub-account-admin` chỉ có `view-users`, `manage-users`.
 - Client secret trong file export lấy từ biến môi trường, không commit secret thật. User test chỉ dùng ở dev.
-- Mọi thay đổi realm và quyền client gắn `[USER-REVIEW]`.
+- Thay đổi realm và quyền client phải nêu rõ trong báo cáo bàn giao.
 
 ## 5. Dockerfile
 
@@ -75,7 +75,7 @@ infra/
 - Region `ap-southeast-1`. Mỗi lab một thư mục, state local (gitignore), không có tài nguyên thường trực.
 - Provider đặt `default_tags`: `Project=tickethub`, `Lab=<tên>`, `ExpiresAt=<ngày>`.
 - Theo §23.4: RDS `skip_final_snapshot = true`; EBS `delete_on_termination = true`, gp3; CloudWatch Logs giữ 3–7 ngày; không NAT Gateway, không Elastic IP thừa; EC2 dùng Spot.
-- Quy trình: `terraform plan` → người dùng xem plan (`[USER-REVIEW]`) → `apply` (hỏi từng lần) → làm lab → `destroy` → `verify-clean.sh` → hôm sau kiểm Cost Explorer.
+- Quy trình: `terraform plan` → người dùng xem plan → `apply` (hỏi từng lần) → làm lab → `destroy` → `verify-clean.sh` → hôm sau kiểm Cost Explorer.
 - Mọi tài nguyên gỡ xong trước **11/12/2026**.
 
 ## 10. Quy trình làm task hạ tầng

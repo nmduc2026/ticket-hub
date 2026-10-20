@@ -57,12 +57,6 @@
 - AC-10: Playwright mua trọn vé chạy xanh; truy vấn ghế trùng (§10) trả 0 dòng.
 - AC-11: Đổi image tag trong Git → ArgoCD cập nhật k3d; app chạy qua HTTPS của Envoy Gateway; Trivy chạy trong CI.
 
-## Người dùng tự xem (`[USER-REVIEW]`)
-
-- Idempotency khi gọi Stripe, verify webhook, máy trạng thái payment, job đối soát, nhánh đến muộn và hoàn tự động (việc 2–6).
-- Miễn CSRF cho webhook ở Gateway (việc 3).
-- Cách giữ khoá ký vé (việc 7); Secret trong Helm (việc 12).
-
 ## Thao tác cần báo trước
 
 Commit / push / PR / merge; `kubectl` / `helm` lên cụm k3d staging; cài ArgoCD; đặt Stripe test key vào `.env` / K8s Secret (không commit).

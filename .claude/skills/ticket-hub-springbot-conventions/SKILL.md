@@ -51,7 +51,7 @@ com.ndz.backend.booking/
 ## 5. Persistence
 
 - Mỗi module một schema Postgres; Flyway migration của module nằm trong `db/migration/<module>/`, tên `V<yyyyMMddHHmm>__<module>_<mô_tả>.sql`.
-- Migration không sửa sau khi đã merge; đổi schema theo **expand → migrate → contract** (`overview.md` §18). Migration có `DROP` / đổi kiểu cột gắn `[USER-REVIEW]`.
+- Migration không sửa sau khi đã merge; đổi schema theo **expand → migrate → contract** (`overview.md` §18). Migration có `DROP` / đổi kiểu cột phải nêu rõ trong báo cáo bàn giao.
 - Khoá chính UUIDv7 sinh ở app. Bảng cập nhật đồng thời có `@Version`.
 - `spring.jpa.open-in-view=false`. Quan hệ mặc định `LAZY`; tránh N+1 (fetch join / entity graph / jOOQ cho truy vấn đọc phức tạp).
 - jOOQ dùng cho báo cáo và truy vấn đọc nhiều bảng **trong cùng module**.
@@ -93,7 +93,7 @@ tickethub:
 ## 10. Bảo mật
 
 - `app` là Resource Server: kiểm chữ ký, `iss`, `aud=tickethub-api`, role từ `realm_access.roles`, chỉ map `CUSTOMER` / `ORGANIZER` / `ADMIN`.
-- `gateway` theo đúng bảng "Yêu cầu cấu hình bắt buộc" ở `overview.md` §13.1. Mọi thay đổi cấu hình bảo mật gắn `[USER-REVIEW]`.
+- `gateway` theo đúng bảng "Yêu cầu cấu hình bắt buộc" ở `overview.md` §13.1. Thay đổi cấu hình bảo mật phải nêu rõ trong báo cáo bàn giao.
 - Lấy người dùng hiện tại qua một helper trong `shared` (`CurrentUser`), không đọc `SecurityContextHolder` rải rác.
 
 ## 11. Log và quan sát

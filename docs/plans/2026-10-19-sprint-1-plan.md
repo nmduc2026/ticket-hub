@@ -21,7 +21,7 @@
 | 8 | Dockerfile `app`, `gateway`, frontend (multi-stage, non-root). CI GitHub Actions: backend build + unit + Testcontainers, Spotless, Error Prone, JaCoCo, SonarCloud; frontend lint, type-check, test; build image, đẩy lên GHCR khi merge vào `main`; gitleaks; Playwright đăng nhập 3 role; Renovate | Infra | §19.3, §19.4 (Image), §20.1; ADR 0007 | 3, 7 | PR mở ra là CI chạy; CI xanh trên `main`; image của cả 3 ứng dụng có trên GHCR |
 | 9 | AWS: checklist bảo vệ tài khoản (§23.4 lớp 1–2: MFA, IAM Identity Center, budget 0.01$); Terraform thăm dò ở `infra/terraform/aws/probe/` cho EC2, Spot, RDS, Multi-AZ, ALB, ASG, CloudFront, SES, CloudWatch / SNS, kèm hướng dẫn chạy | Infra | §23; ADR 0013, 0017 | 1 | Người dùng chạy apply / destroy từng dịch vụ; bảng kết quả "dùng được / bị chặn / phương án thay thế"; `verify-clean.sh` sạch |
 | 10 | Verify toàn sprint theo AC bên dưới, kèm bằng chứng (skill `verification`) | Verify | AC bên dưới | 1–8 | Báo cáo verify |
-| 11 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho vùng `[USER-REVIEW]`) | Review | — | 10 | APPROVED / CHANGES REQUESTED |
+| 11 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho vùng rủi ro cao: bảo mật, secret, AWS) | Review | — | 10 | APPROVED / CHANGES REQUESTED |
 
 ## Thứ tự
 
@@ -42,13 +42,6 @@
 - AC-7: CI chạy trên mọi PR; commit chứa secret bị gitleaks chặn.
 - AC-8: Có bảng kết quả kiểm Free plan và mọi tài nguyên thăm dò đã destroy.
 - AC-9: Khung Admin / Organizer và layout khách khớp prototype (bố cục, chữ, breadcrumb `Trang chủ ›`); mọi popover / modal đóng được bằng click ra ngoài và Esc, focus trả về nút mở; không có chuỗi viết cứng ngoài i18n.
-
-## Người dùng tự xem (`[USER-REVIEW]`)
-
-- Cấu hình BFF (việc 4) và Resource Server (việc 5).
-- Realm export và quyền của client `tickethub-account-admin` (việc 2).
-- `.env.example`, gitleaks: không có secret thật trong Git.
-- Mọi `terraform plan` của việc 9 trước khi apply.
 
 ## Thao tác cần báo trước
 
