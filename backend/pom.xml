@@ -23,6 +23,9 @@
 
 	<properties>
 		<java.version>21</java.version>
+		<!-- Ghi đè bản của Spring Boot 4.1.1 để vá CVE Trivy báo (Tomcat CRITICAL, Jackson HIGH); bỏ khi Boot cập nhật. -->
+		<tomcat.version>11.0.27</tomcat.version>
+		<jackson-bom.version>3.1.8</jackson-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring-modulith.version>2.1.1</spring-modulith.version>
 		<archunit.version>1.4.1</archunit.version>
@@ -31,6 +34,10 @@
 		<wiremock.version>3.13.1</wiremock.version>
 		<shedlock.version>7.10.1</shedlock.version>
 		<springdoc.version>3.1.1</springdoc.version>
+		<errorprone.version>2.50.0</errorprone.version>
+		<spotless.version>3.10.4</spotless.version>
+		<jacoco.version>0.8.15</jacoco.version>
+		<sonar-maven.version>5.8.0.7211</sonar-maven.version>
 	</properties>
 
 	<dependencyManagement>
@@ -78,4 +85,82 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<build>
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.sonarsource.scanner.maven</groupId>
+					<artifactId>sonar-maven-plugin</artifactId>
+					<version>${sonar-maven.version}</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<plugins>
+			<!-- Error Prone chạy trong lúc biên dịch; cần các tuỳ chọn add-exports ở .mvn/jvm.config (JDK 21). -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<compilerArgs>
+						<arg>-XDcompilePolicy=simple</arg>
+						<arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+						<arg>--should-stop=ifError=FLOW</arg>
+						<arg>-Xplugin:ErrorProne</arg>
+					</compilerArgs>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>com.google.errorprone</groupId>
+							<artifactId>error_prone_core</artifactId>
+							<version>${errorprone.version}</version>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+			<!-- Spotless kiểm tra ở giai đoạn verify; chạy `./mvnw spotless:apply` để tự sửa. -->
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>${spotless.version}</version>
+				<configuration>
+					<lineEndings>UNIX</lineEndings>
+					<java>
+						<removeUnusedImports/>
+						<trimTrailingWhitespace/>
+						<endWithNewline/>
+					</java>
+				</configuration>
+				<executions>
+					<execution>
+						<id>spotless-check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- JaCoCo: báo cáo coverage cho SonarCloud (target/site/jacoco/jacoco.xml). -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>jacoco-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>jacoco-report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

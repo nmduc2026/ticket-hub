@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
@@ -34,6 +36,11 @@ final class CachedBodyRequest extends HttpServletRequestWrapper {
 			}
 
 			@Override
+			public int read(byte[] buffer, int offset, int length) {
+				return source.read(buffer, offset, length);
+			}
+
+			@Override
 			public boolean isFinished() {
 				return source.available() == 0;
 			}
@@ -52,8 +59,9 @@ final class CachedBodyRequest extends HttpServletRequestWrapper {
 
 	@Override
 	public BufferedReader getReader() throws IOException {
-		String encoding = getCharacterEncoding() != null ? getCharacterEncoding() : "UTF-8";
-		return new BufferedReader(new InputStreamReader(getInputStream(), encoding));
+		Charset charset = getCharacterEncoding() != null ? Charset.forName(getCharacterEncoding())
+				: StandardCharsets.UTF_8;
+		return new BufferedReader(new InputStreamReader(getInputStream(), charset));
 	}
 
 }

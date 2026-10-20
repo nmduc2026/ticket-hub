@@ -38,7 +38,11 @@ class IdempotencyStore {
 		this.jdbc = jdbc;
 	}
 
-	/** @return true nếu request này giành được quyền xử lý key; {@code claimedAt} là dấu nhận diện chủ sở hữu. */
+	/**
+	 * Giành quyền xử lý một key; {@code claimedAt} là dấu nhận diện chủ sở hữu khi hoàn tất hoặc nhả.
+	 *
+	 * @return true nếu request này giành được quyền
+	 */
 	boolean claim(String scope, UUID userId, String key, String requestHash, Instant claimedAt, Instant expiresAt,
 			Instant abandonedBefore) {
 		return jdbc.update(CLAIM, scope, userId, key, requestHash, Timestamp.from(claimedAt), Timestamp.from(expiresAt),
