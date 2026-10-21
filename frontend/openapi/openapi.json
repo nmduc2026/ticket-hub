@@ -769,6 +769,16 @@
               }
             }
           },
+          "503" : {
+            "description" : "SEAT_HOLD_UNAVAILABLE: hệ thống giữ ghế tạm dừng (Redis không dùng được), thử lại sau Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "422" : {
             "description" : "MAX_SEATS_EXCEEDED, TICKET_LIMIT_EXCEEDED, DUPLICATE_SEATS, EMAIL_REQUIRED hoặc IDEMPOTENCY_KEY_REUSED",
             "content" : {

@@ -89,6 +89,7 @@ export const vi = {
     CANNOT_LOCK_SELF: 'Không thể khoá chính tài khoản của bạn.',
     USER_NOT_FOUND: 'Không tìm thấy người dùng.',
     IDENTITY_PROVIDER_UNAVAILABLE: 'Hệ thống tài khoản đang bận. Thử lại sau ít phút.',
+    SEAT_HOLD_UNAVAILABLE: 'Hệ thống đang bảo trì bán vé. Thử lại sau ít giây.',
     generic: 'Có lỗi xảy ra. Thử lại sau.',
     server: 'Máy chủ đang bận. Thử lại sau ít phút.',
     network: 'Không kết nối được. Kiểm tra mạng rồi thử lại.',

@@ -12,6 +12,7 @@ import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
+import com.ndz.booking.dto.response.BookingViews.HeldSeat;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
@@ -57,6 +58,12 @@ public interface BookingRepositoryCustom {
 	void recordRevokedTicket(UUID bookingId, UUID ticketId, Instant now);
 
 	int revokedTicketCount(UUID bookingId);
+
+	/** Mọi ghế đang {@code HELD} của booking còn chờ thanh toán, để dựng lại key Redis. */
+	List<HeldSeat> findHeldSeats();
+
+	/** Id các ghế của một booking. */
+	List<UUID> seatIdsOf(UUID bookingId);
 
 	/** Thêm các ghế của đơn mới tạo (cùng transaction với việc tạo đơn). */
 	@Transactional

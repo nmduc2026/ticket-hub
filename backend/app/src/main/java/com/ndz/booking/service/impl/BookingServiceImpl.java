@@ -30,6 +30,7 @@ import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.EventSnapshotRepository;
+import com.ndz.booking.service.SeatHoldService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 import com.ndz.shared.util.Uuid7;
@@ -53,15 +54,18 @@ public class BookingServiceImpl implements BookingService {
 
 	private final BookingRepository bookings;
 	private final EventSnapshotRepository snapshots;
+	private final SeatHoldService seatHolds;
 	private final BookingProperties properties;
 	private final TransactionTemplate transaction;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
-	BookingServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots, BookingProperties properties,
-			TransactionTemplate transaction, ApplicationEventPublisher publisher, Clock clock) {
+	BookingServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots, SeatHoldService seatHolds,
+			BookingProperties properties, TransactionTemplate transaction, ApplicationEventPublisher publisher,
+			Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
+		this.seatHolds = seatHolds;
 		this.properties = properties;
 		this.transaction = transaction;
 		this.publisher = publisher;
@@ -85,9 +89,26 @@ public class BookingServiceImpl implements BookingService {
 		}
 		checkUserLimits(userId, rules, seatIds.size());
 
+		// Lớp 1 (Redis) chặn sớm các request tranh cùng ghế; Postgres bên dưới vẫn quyết định (overview.md §10).
+		UUID bookingId = Uuid7.next(clock);
+		Instant expiresAt = clock.instant().plus(properties.holdDuration());
+		seatHolds.acquire(eventId, seatIds, bookingId, expiresAt);
+		try {
+			return holdWithRetry(userId, contactEmail, eventId, seatIds, bookingId, expiresAt);
+		}
+		catch (RuntimeException e) {
+			// TX Postgres lỗi: nhả đúng key của booking này (so giá trị), key của booking khác còn nguyên.
+			seatHolds.release(eventId, seatIds, bookingId);
+			throw e;
+		}
+	}
+
+	private BookingView holdWithRetry(UUID userId, String contactEmail, UUID eventId, List<UUID> seatIds,
+			UUID bookingId, Instant expiresAt) {
 		for (int attempt = 1;; attempt++) {
 			try {
-				return transaction.execute(status -> holdInTransaction(userId, contactEmail, eventId, seatIds));
+				return transaction.execute(
+						status -> holdInTransaction(userId, contactEmail, eventId, seatIds, bookingId, expiresAt));
 			}
 			catch (PessimisticLockingFailureException e) {
 				if (attempt >= MAX_ATTEMPTS) {
@@ -127,6 +148,7 @@ public class BookingServiceImpl implements BookingService {
 				throw new BusinessException(ErrorCode.BOOKING_NOT_CANCELLABLE, "Chỉ huỷ được đơn đang chờ thanh toán");
 			}
 			List<UUID> seatIds = bookings.releaseSeats(bookingId);
+			seatHolds.releaseAfterCommit(booking.eventId(), seatIds, bookingId);
 			publisher.publishEvent(new BookingCancelled(Uuid7.next(clock), clock.instant(), bookingId, userId,
 					booking.eventId(), seatIds));
 			log.info("Booking {} được khách huỷ, nhả {} ghế", bookingId, seatIds.size());
@@ -171,7 +193,8 @@ public class BookingServiceImpl implements BookingService {
 		}
 	}
 
-	private BookingView holdInTransaction(UUID userId, String contactEmail, UUID eventId, List<UUID> seatIds) {
+	private BookingView holdInTransaction(UUID userId, String contactEmail, UUID eventId, List<UUID> seatIds,
+			UUID bookingId, Instant expiresAt) {
 		List<LockedSeat> seats = bookings.lockSeats(eventId, seatIds);
 		boolean allAvailable = seats.size() == seatIds.size()
 				&& seats.stream().allMatch(seat -> "AVAILABLE".equals(seat.status()));
@@ -181,10 +204,8 @@ public class BookingServiceImpl implements BookingService {
 		}
 
 		Instant now = clock.instant();
-		Instant expiresAt = now.plus(properties.holdDuration());
 		long total = seats.stream().mapToLong(LockedSeat::priceMinor).sum();
 		String currency = seats.get(0).currency();
-		UUID bookingId = Uuid7.next(clock);
 		bookings.save(new Booking(bookingId, userId, eventId, total, currency, expiresAt, contactEmail, now));
 		bookings.insertItems(bookingId, eventId, seats);
 		if (bookings.markHeld(eventId, seatIds, bookingId) != seatIds.size()) {

@@ -16,6 +16,10 @@ public final class BookingViews {
 	public record EventRules(UUID eventId, String status, int maxTicketsPerUser, Instant saleStartsAt) {
 	}
 
+	/** Ghế đang giữ cùng hạn của booking giữ nó, để dựng lại key Redis khi Redis phục hồi (overview.md §10). */
+	public record HeldSeat(UUID eventId, UUID seatId, UUID bookingId, Instant expiresAt, Instant paymentStartedAt) {
+	}
+
 	/** Một ghế đã khoá trong tồn kho. */
 	public record LockedSeat(UUID seatId, UUID tierId, String tierName, String sectionCode, String rowLabel,
 			int seatNumber, long priceMinor, String currency, String status) {

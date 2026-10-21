@@ -13,6 +13,7 @@ public class BusinessException extends RuntimeException {
 
 	private final ErrorCode code;
 	private final Map<String, Object> properties = new LinkedHashMap<>();
+	private Integer retryAfterSeconds;
 
 	public BusinessException(ErrorCode code, String message) {
 		super(message);
@@ -23,6 +24,16 @@ public class BusinessException extends RuntimeException {
 	public BusinessException with(String name, Object value) {
 		properties.put(name, value);
 		return this;
+	}
+
+	/** Gợi ý client thử lại sau ngần này giây (header {@code Retry-After}), dùng với lỗi 503 tạm thời. */
+	public BusinessException retryAfter(int seconds) {
+		this.retryAfterSeconds = seconds;
+		return this;
+	}
+
+	public Integer retryAfterSeconds() {
+		return retryAfterSeconds;
 	}
 
 	public Map<String, Object> properties() {

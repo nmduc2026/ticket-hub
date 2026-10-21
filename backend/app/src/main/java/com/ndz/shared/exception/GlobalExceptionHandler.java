@@ -3,6 +3,8 @@ package com.ndz.shared.exception;
 import java.util.List;
 import java.util.Map;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +31,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(BusinessException.class)
-	ProblemDetail handleBusiness(BusinessException ex) {
+	ProblemDetail handleBusiness(BusinessException ex, HttpServletResponse response) {
+		if (ex.retryAfterSeconds() != null) {
+			response.setHeader(HttpHeaders.RETRY_AFTER, String.valueOf(ex.retryAfterSeconds()));
+		}
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.status(), ex.getMessage());
 		problem.setProperty("code", ex.code().name());
 		ex.properties().forEach(problem::setProperty);

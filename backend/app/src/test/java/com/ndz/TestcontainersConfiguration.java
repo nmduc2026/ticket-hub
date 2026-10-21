@@ -92,6 +92,28 @@ class TestcontainersConfiguration {
 				"http://" + keycloakContainer.getHost() + ":" + keycloakContainer.getMappedPort(8080));
 	}
 
+	/** Redis cho lớp 1 giữ ghế (overview.md §10); không đặt mật khẩu trong test. */
+	@Bean
+	GenericContainer<?> redisContainer() {
+		return new GenericContainer<>(DockerImageName.parse("redis:7.4.5")).withExposedPorts(6379)
+				.waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\n", 1));
+	}
+
+	@Bean
+	DynamicPropertyRegistrar redisProperties(GenericContainer<?> redisContainer) {
+		return registry -> {
+			registry.add("spring.data.redis.host", redisContainer::getHost);
+			registry.add("spring.data.redis.port", () -> redisContainer.getMappedPort(6379));
+			registry.add("spring.data.redis.password", () -> "");
+		};
+	}
+
+	/** Tạm dừng / chạy lại Redis để diễn tập Redis chết mà giữ nguyên cổng. */
+	@Bean
+	RedisControl redisControl(GenericContainer<?> redisContainer) {
+		return new RedisControl(redisContainer);
+	}
+
 	@Bean
 	MailpitApi mailpit(GenericContainer<?> mailpitContainer) {
 		return new MailpitApi("http://" + mailpitContainer.getHost() + ":" + mailpitContainer.getMappedPort(8025));

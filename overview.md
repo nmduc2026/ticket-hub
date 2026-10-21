@@ -695,7 +695,7 @@ return 1
 
 **Nguyên tắc về hết hạn**: Postgres (`expires_at`, `payment_started_at`) là nguồn quyết định duy nhất ghế còn được giữ hay không. TTL của key Redis luôn dài hơn hạn trong Postgres (cộng 30 giây, gia hạn thêm 5 phút khi bắt đầu thanh toán); key được xoá chủ động khi booking hết hạn, bị huỷ hay TX thất bại, TTL chỉ là lưới an toàn.
 
-**Khi Redis chết**: theo nguyên tắc P6 (fail-closed) — tạm dừng giữ ghế mới, trả thông báo "đang bảo trì bán vé"; xem sự kiện vẫn hoạt động bình thường. Khi Redis hoạt động lại, dựng lại các key `seat:*` từ những dòng `HELD` trong `seat_inventory` rồi mới mở lại việc giữ ghế.
+**Khi Redis chết**: theo nguyên tắc P6 (fail-closed) — tạm dừng giữ ghế mới, trả thông báo "đang bảo trì bán vé"; xem sự kiện vẫn hoạt động bình thường. Khi Redis hoạt động lại, dựng lại các key `seat:*` từ những dòng `HELD` trong `seat_inventory` rồi mới mở lại việc giữ ghế. `POST /bookings` trả `503 SEAT_HOLD_UNAVAILABLE` kèm `Retry-After`. Mỗi instance tự kiểm tra Redis vài giây một lần; thấy Redis mất dữ liệu (key đánh dấu `seat-hold:marker` biến mất) thì dựng lại key trước khi nhận giữ ghế. Key sống `expires_at` + 30 giây (cộng ân hạn khi đã bắt đầu thanh toán), được xoá chủ động khi booking hết hạn, bị huỷ hoặc xác nhận.
 
 **Bất biến được kiểm chứng** bằng load test (JMeter) và truy vấn đối soát:
 

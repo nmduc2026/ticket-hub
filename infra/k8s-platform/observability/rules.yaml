@@ -29,6 +29,13 @@ spec:
           annotations:
             summary: "Phát vé thất bại do lỗi nghiệp vụ (booking chuyển sang hoàn 100%)"
             runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/ticket-issuance-failed.md
+        - alert: SeatHoldUnavailable
+          expr: min(tickethub_booking_seat_hold_available) < 1
+          for: 1m
+          labels: { severity: critical }
+          annotations:
+            summary: "Redis giữ ghế không dùng được: giữ ghế mới đang trả 503 (fail-closed)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/seat-hold-unavailable.md
         - alert: RefundFailedBookings
           expr: max(tickethub_invariant_refund_failed_bookings) > 0
           labels: { severity: invariant }

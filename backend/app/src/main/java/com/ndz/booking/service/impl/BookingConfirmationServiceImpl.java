@@ -20,6 +20,7 @@ import com.ndz.booking.event.PaymentSucceeded;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
+import com.ndz.booking.service.SeatHoldService;
 import com.ndz.booking.service.BookingConfirmationService;
 import com.ndz.shared.util.Uuid7;
 
@@ -33,14 +34,17 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 	private final BookingRepository bookings;
 	private final EventSnapshotRepository snapshots;
 	private final ProcessedEventRepository processed;
+	private final SeatHoldService seatHolds;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	BookingConfirmationServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots,
-			ProcessedEventRepository processed, ApplicationEventPublisher publisher, Clock clock) {
+			ProcessedEventRepository processed, SeatHoldService seatHolds, ApplicationEventPublisher publisher,
+			Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.processed = processed;
+		this.seatHolds = seatHolds;
 		this.publisher = publisher;
 		this.clock = clock;
 	}
@@ -79,6 +83,9 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 			throw new IllegalStateException("Booking " + booking.id() + " có " + data.items().size()
 					+ " ghế nhưng chỉ " + sold + " ghế đang giữ");
 		}
+		// Ghế đã SOLD trong Postgres: nhả key Redis để key không chặn ghế khi vé được hoàn và ghế về AVAILABLE.
+		seatHolds.releaseAfterCommit(data.eventId(), data.items().stream().map(BookingItemView::seatId).toList(),
+				booking.id());
 		publishConfirmed(data);
 		log.info("Booking {} đã xác nhận, {} ghế đã bán", booking.id(), sold);
 	}

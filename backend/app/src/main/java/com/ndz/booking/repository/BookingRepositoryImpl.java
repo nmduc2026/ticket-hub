@@ -14,6 +14,7 @@ import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
+import com.ndz.booking.dto.response.BookingViews.HeldSeat;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
@@ -57,6 +58,23 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 		rows.forEach(em::detach);
 		return rows.stream().findFirst().map(booking -> new LockedBooking(booking.getId(), booking.getUserId(),
 				booking.getEventId(), booking.getStatus(), booking.getExpiresAt(), booking.getPaymentStartedAt()));
+	}
+
+	@Override
+	public List<HeldSeat> findHeldSeats() {
+		List<Object[]> rows = em.createQuery("""
+				select s.id.eventId, s.id.seatId, b.id, b.expiresAt, b.paymentStartedAt
+				from SeatInventory s join Booking b on b.id = s.bookingId
+				where s.status = 'HELD' and b.status = :pending
+				""", Object[].class).setParameter("pending", BookingStatus.PENDING_PAYMENT).getResultList();
+		return rows.stream().map(row -> new HeldSeat((UUID) row[0], (UUID) row[1], (UUID) row[2], (Instant) row[3],
+				(Instant) row[4])).toList();
+	}
+
+	@Override
+	public List<UUID> seatIdsOf(UUID bookingId) {
+		return em.createQuery("select i.id.seatId from BookingItem i where i.id.bookingId = :bookingId", UUID.class)
+				.setParameter("bookingId", bookingId).getResultList();
 	}
 
 	@Override

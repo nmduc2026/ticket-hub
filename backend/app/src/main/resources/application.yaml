@@ -5,6 +5,14 @@ server:
 spring:
   application:
     name: app
+  data:
+    redis:
+      # Lớp 1 giữ ghế (overview.md §10). Timeout ngắn: Redis chậm cũng coi như hỏng (fail-closed), không treo request.
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 500ms
+      connect-timeout: 1s
   threads:
     virtual:
       enabled: true
@@ -54,6 +62,10 @@ logging:
       console: logstash
 
 management:
+  health:
+    redis:
+      # Redis chỉ phục vụ lớp giữ ghế; trạng thái của nó có chỉ báo riêng (seatHold), Redis chết không được làm app DOWN.
+      enabled: false
   endpoints:
     web:
       exposure:
@@ -63,6 +75,11 @@ management:
     health:
       probes:
         enabled: true
+      status:
+        # Redis giữ ghế chết chỉ làm giữ ghế dừng (DEGRADED), app vẫn phục vụ xem sự kiện nên health trả 200.
+        order: DOWN,OUT_OF_SERVICE,DEGRADED,UP,UNKNOWN
+        http-mapping:
+          DEGRADED: 200
   tracing:
     sampling:
       probability: 1.0

@@ -54,11 +54,16 @@ export type createBookingResponse422 = {
   data: ProblemDetail
   status: 422
 }
+
+export type createBookingResponse503 = {
+  data: ProblemDetail
+  status: 503
+}
     
 export type createBookingResponseSuccess = (createBookingResponse201) & {
   headers: Headers;
 };
-export type createBookingResponseError = (createBookingResponse409 | createBookingResponse422) & {
+export type createBookingResponseError = (createBookingResponse409 | createBookingResponse422 | createBookingResponse503) & {
   headers: Headers;
 };
 
@@ -87,7 +92,7 @@ export const createBooking = async (createBookingRequest: CreateBookingRequest, 
 
 
 
-export const getCreateBookingMutationOptions = <TError = ProblemDetail | ProblemDetail,
+export const getCreateBookingMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext> => {
 
@@ -114,12 +119,12 @@ const {mutation: mutationOptions} = options ?
 
     export type CreateBookingMutationResult = NonNullable<Awaited<ReturnType<typeof createBooking>>>
     export type CreateBookingMutationBody = CreateBookingRequest
-    export type CreateBookingMutationError = ProblemDetail | ProblemDetail
+    export type CreateBookingMutationError = ProblemDetail | ProblemDetail | ProblemDetail
 
     /**
  * @summary Giữ ghế, tạo đơn chờ thanh toán
  */
-export const useCreateBooking = <TError = ProblemDetail | ProblemDetail,
+export const useCreateBooking = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createBooking>>,

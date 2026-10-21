@@ -52,6 +52,9 @@ class BookingController {
 			description = "Bắt buộc header Idempotency-Key. Giữ ghế 10 phút (BR-03).")
 	@ApiResponse(responseCode = "409", description = "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "503",
+			description = "SEAT_HOLD_UNAVAILABLE: hệ thống giữ ghế tạm dừng (Redis không dùng được), thử lại sau Retry-After",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "422",
 			description = "MAX_SEATS_EXCEEDED, TICKET_LIMIT_EXCEEDED, DUPLICATE_SEATS, EMAIL_REQUIRED hoặc IDEMPOTENCY_KEY_REUSED",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))

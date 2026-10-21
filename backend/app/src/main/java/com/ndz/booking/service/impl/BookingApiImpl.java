@@ -18,6 +18,7 @@ import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.repository.BookingRepository;
+import com.ndz.booking.service.SeatHoldService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 
@@ -26,11 +27,14 @@ import com.ndz.shared.exception.ErrorCode;
 public class BookingApiImpl implements BookingApi {
 
 	private final BookingRepository bookings;
+	private final SeatHoldService seatHolds;
 	private final BookingProperties properties;
 	private final Clock clock;
 
-	BookingApiImpl(BookingRepository bookings, BookingProperties properties, Clock clock) {
+	BookingApiImpl(BookingRepository bookings, SeatHoldService seatHolds, BookingProperties properties,
+			Clock clock) {
 		this.bookings = bookings;
+		this.seatHolds = seatHolds;
 		this.properties = properties;
 		this.clock = clock;
 	}
@@ -51,6 +55,9 @@ public class BookingApiImpl implements BookingApi {
 				throw holdExpiring();
 			}
 			bookings.markPaymentStarted(bookingId, now);
+			// BR-03: từ đây booking được ân hạn thêm, key Redis phải sống lâu bằng hạn Postgres mới.
+			seatHolds.extend(booking.eventId(), bookings.seatIdsOf(bookingId), bookingId,
+					booking.expiresAt().plus(properties.paymentGrace()));
 		}
 		else if (!now.isBefore(booking.expiresAt().plus(properties.paymentGrace()))) {
 			// Đã qua cả ân hạn: job hết hạn sắp chuyển EXPIRED.

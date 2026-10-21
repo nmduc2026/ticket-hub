@@ -18,6 +18,7 @@ import com.ndz.booking.event.BookingExpired;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.repository.BookingRepository;
+import com.ndz.booking.service.SeatHoldService;
 import com.ndz.shared.util.Uuid7;
 
 /**
@@ -32,14 +33,16 @@ public class BookingExpiryServiceImpl implements BookingExpiryService {
 	private static final Logger log = LoggerFactory.getLogger(BookingExpiryServiceImpl.class);
 
 	private final BookingRepository bookings;
+	private final SeatHoldService seatHolds;
 	private final BookingProperties properties;
 	private final TransactionTemplate transaction;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
-	BookingExpiryServiceImpl(BookingRepository bookings, BookingProperties properties, TransactionTemplate transaction,
-			ApplicationEventPublisher publisher, Clock clock) {
+	BookingExpiryServiceImpl(BookingRepository bookings, SeatHoldService seatHolds, BookingProperties properties,
+			TransactionTemplate transaction, ApplicationEventPublisher publisher, Clock clock) {
 		this.bookings = bookings;
+		this.seatHolds = seatHolds;
 		this.properties = properties;
 		this.transaction = transaction;
 		this.publisher = publisher;
@@ -82,6 +85,7 @@ public class BookingExpiryServiceImpl implements BookingExpiryService {
 			return false;
 		}
 		List<UUID> seatIds = bookings.releaseSeats(bookingId);
+		seatHolds.releaseAfterCommit(booking.eventId(), seatIds, bookingId);
 		publisher.publishEvent(new BookingExpired(Uuid7.next(clock), now, bookingId, booking.userId(),
 				booking.eventId(), seatIds));
 		log.info("Booking {} hết hạn, nhả {} ghế", bookingId, seatIds.size());
