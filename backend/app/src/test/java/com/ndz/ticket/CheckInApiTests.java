@@ -33,22 +33,30 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 
 import com.ndz.IntegrationTest;
+import com.ndz.MutableClock;
 import com.ndz.TestTokens;
+import com.ndz.booking.event.TicketCheckedIn;
 import com.ndz.ticket.repository.SigningKeyRepository;
 import com.ndz.ticket.util.QrTokenSigner;
 
 /**
  * Check-in (plan Sprint 4 việc 5; AC-7, AC-8; BR-09; overview.md §7.5, §11.2; ADR 0024): vé hợp lệ → {@code USED}, quét
- * lần hai / vé thu hồi bị từ chối, chỉ organizer của sự kiện, QR giả không qua được, xoay khoá theo {@code kid}.
+ * lần hai / vé thu hồi bị từ chối, chỉ organizer của sự kiện, QR giả không qua được, xoay khoá theo {@code kid}; chỉ
+ * nhận trong khung giờ của sự kiện và phát {@code TicketCheckedIn} (plan sprint dọn dẹp việc 9, AC-8).
  */
 @IntegrationTest
+@RecordApplicationEvents
 class CheckInApiTests {
 
 	private static final Instant NOW = Instant.parse("2026-11-01T03:00:00Z");
+	private static final Instant STARTS_AT = NOW.plusSeconds(3600);
+	private static final Instant ENDS_AT = STARTS_AT.plusSeconds(3 * 3600);
 
 	@Autowired
 	MockMvc mockMvc;
@@ -65,6 +73,12 @@ class CheckInApiTests {
 	@Autowired
 	ECKey signingKey;
 
+	@Autowired
+	MutableClock clock;
+
+	@Autowired
+	ApplicationEvents applicationEvents;
+
 	private UUID eventId;
 	private final UUID customer = UUID.randomUUID();
 	private final UUID stranger = UUID.randomUUID();
@@ -73,12 +87,16 @@ class CheckInApiTests {
 	void prepare() {
 		cleanUp();
 		eventId = UUID.randomUUID();
-		jdbc.update("insert into catalog.events (id, organizer_id, title) values (?, ?, 'Sự kiện check-in')", eventId,
-				TestTokens.ORGANIZER_ID);
+		jdbc.update("""
+				insert into catalog.events (id, organizer_id, title, starts_at, ends_at)
+				values (?, ?, 'Sự kiện check-in', ?, ?)
+				""", eventId, TestTokens.ORGANIZER_ID, Timestamp.from(STARTS_AT), Timestamp.from(ENDS_AT));
+		clock.setInstant(NOW);
 	}
 
 	@AfterEach
 	void cleanUp() {
+		clock.reset();
 		jdbc.update("delete from ticket.check_ins");
 		jdbc.update("delete from ticket.tickets");
 		jdbc.update("delete from catalog.events where title = 'Sự kiện check-in'");
@@ -140,6 +158,69 @@ class CheckInApiTests {
 			pool.shutdownNow();
 		}
 		assertThat(count("select count(*) from ticket.check_ins where ticket_id = ?", ticket.id())).isEqualTo(1);
+	}
+
+	// ---- BR-09: khung giờ check-in ----
+
+	@Test
+	@DisplayName("AC-8: đúng 3 giờ trước giờ diễn → nhận; sớm hơn 1 giây → 422 CHECKIN_NOT_OPEN, vé giữ VALID")
+	void checkInOpensExactlyThreeHoursBeforeTheShow() throws Exception {
+		Ticket early = ticket("VALID");
+		Ticket onTime = ticket("VALID");
+
+		clock.setInstant(STARTS_AT.minusSeconds(3 * 3600 + 1));
+		checkIn(organizer(), early.token(), "A1").andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("CHECKIN_NOT_OPEN"));
+		clock.setInstant(STARTS_AT.minusSeconds(3 * 3600));
+		checkIn(organizer(), onTime.token(), "A1").andExpect(status().isOk());
+
+		assertThat(statusOf(early.id())).isEqualTo("VALID");
+		assertThat(statusOf(onTime.id())).isEqualTo("USED");
+	}
+
+	@Test
+	@DisplayName("AC-8: đúng giờ kết thúc → nhận; sau giờ kết thúc → 422 EVENT_ENDED, không ghi check_ins")
+	void checkInClosesAfterTheEventEnds() throws Exception {
+		Ticket atEnd = ticket("VALID");
+		Ticket late = ticket("VALID");
+
+		clock.setInstant(ENDS_AT);
+		checkIn(organizer(), atEnd.token(), "A1").andExpect(status().isOk());
+		clock.setInstant(ENDS_AT.plusSeconds(1));
+		checkIn(organizer(), late.token(), "A1").andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("EVENT_ENDED"));
+
+		assertThat(statusOf(late.id())).isEqualTo("VALID");
+		assertThat(count("select count(*) from ticket.check_ins where ticket_id = ?", late.id())).isZero();
+	}
+
+	@Test
+	@DisplayName("Sự kiện chưa có giờ diễn (nháp) → 422 CHECKIN_NOT_OPEN")
+	void anEventWithoutStartTimeIsNotOpen() throws Exception {
+		Ticket ticket = ticket("VALID");
+		jdbc.update("update catalog.events set starts_at = null, ends_at = null where id = ?", eventId);
+
+		checkIn(organizer(), ticket.token(), "A1").andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("CHECKIN_NOT_OPEN"));
+	}
+
+	@Test
+	@DisplayName("AC-8: check-in hợp lệ phát đúng 1 TicketCheckedIn có eventId, seatId; quét lần 2 không phát thêm")
+	void aSuccessfulCheckInPublishesExactlyOneTicketCheckedIn() throws Exception {
+		Ticket ticket = ticket("VALID");
+		UUID seatId = jdbc.queryForObject("select seat_id from ticket.tickets where id = ?", UUID.class, ticket.id());
+
+		checkIn(organizer(), ticket.token(), "A1").andExpect(status().isOk());
+		checkIn(organizer(), ticket.token(), "A2").andExpect(status().isConflict());
+
+		List<TicketCheckedIn> published = applicationEvents.stream(TicketCheckedIn.class).toList();
+		assertThat(published).singleElement().satisfies(event -> {
+			assertThat(event.ticketId()).isEqualTo(ticket.id());
+			assertThat(event.eventId()).isEqualTo(eventId);
+			assertThat(event.seatId()).isEqualTo(seatId);
+			assertThat(event.gate()).isEqualTo("A1");
+			assertThat(event.occurredAt()).isEqualTo(NOW);
+		});
 	}
 
 	// ---- Quyền ----

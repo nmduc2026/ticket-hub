@@ -17,7 +17,8 @@ const TONES: Record<Tone, string> = {
 
 function toneOf(outcome: ScanOutcome): Tone {
   if (outcome.kind === 'valid') return 'success'
-  return outcome.kind === 'used' ? 'warning' : 'danger'
+  // Vé thật nhưng không vào được lúc này (đã dùng, ngoài giờ check-in): vàng; vé có vấn đề: đỏ.
+  return outcome.kind === 'used' || outcome.kind === 'notOpen' || outcome.kind === 'ended' ? 'warning' : 'danger'
 }
 
 function iconOf(outcome: ScanOutcome, tone: Tone) {

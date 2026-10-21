@@ -9,6 +9,8 @@ export type ScanOutcome =
   | { kind: 'wrongEvent' }
   | { kind: 'notFound' }
   | { kind: 'notOwner' }
+  | { kind: 'notOpen' }
+  | { kind: 'ended' }
   | { kind: 'offline' }
   | { kind: 'error' }
 
@@ -24,6 +26,10 @@ export function outcomeFromError(error: unknown): ScanOutcome {
       return { kind: 'notFound' }
     case 'NOT_EVENT_OWNER':
       return { kind: 'notOwner' }
+    case 'CHECKIN_NOT_OPEN':
+      return { kind: 'notOpen' }
+    case 'EVENT_ENDED':
+      return { kind: 'ended' }
     default:
       return { kind: 'error' }
   }

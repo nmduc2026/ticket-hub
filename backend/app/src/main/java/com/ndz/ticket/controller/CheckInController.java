@@ -34,7 +34,7 @@ class CheckInController {
 	}
 
 	@Operation(operationId = "checkIn", summary = "Check-in một vé (BR-09)",
-			description = "Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.")
+			description = "Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử. Mở từ 3 giờ trước giờ diễn tới giờ kết thúc.")
 	@ApiResponse(responseCode = "200", description = "Vé hợp lệ, đã chuyển sang USED",
 			content = @Content(schema = @Schema(implementation = CheckInResponse.class)))
 	@ApiResponse(responseCode = "403", description = "NOT_EVENT_OWNER (không phải organizer của sự kiện)",
@@ -42,6 +42,9 @@ class CheckInController {
 	@ApiResponse(responseCode = "404", description = "TICKET_NOT_FOUND (QR sai chữ ký hoặc không có vé)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "409", description = "TICKET_ALREADY_USED hoặc TICKET_REVOKED",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "422",
+			description = "CHECKIN_NOT_OPEN (sớm hơn 3 giờ trước giờ diễn) hoặc EVENT_ENDED (sau giờ kết thúc)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping("/checkins")
 	CheckInResponse checkIn(@Valid @RequestBody CheckInRequest request) {

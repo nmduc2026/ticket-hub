@@ -2,6 +2,7 @@ package com.ndz.ticket.service.impl;
 
 import java.text.ParseException;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,13 +10,17 @@ import com.nimbusds.jose.jwk.ECKey;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ndz.booking.event.TicketCheckedIn;
 import com.ndz.catalog.api.CatalogApi;
+import com.ndz.catalog.api.CatalogApi.EventSchedule;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 import com.ndz.shared.util.Uuid7;
+import com.ndz.ticket.config.TicketProperties;
 import com.ndz.ticket.dto.response.CheckInResponses.CheckInResponse;
 import com.ndz.ticket.dto.response.CheckInResponses.KeySetResponse;
 import com.ndz.ticket.dto.response.CheckInResponses.SigningKey;
@@ -38,16 +43,21 @@ public class CheckInServiceImpl implements CheckInService {
 	private final SigningKeyRepository keys;
 	private final CatalogApi catalog;
 	private final MeterRegistry metrics;
+	private final ApplicationEventPublisher publisher;
+	private final TicketProperties properties;
 	private final Clock clock;
 
 	CheckInServiceImpl(QrTokenVerifier verifier, TicketRepository tickets, CheckInRepository checkIns,
-			SigningKeyRepository keys, CatalogApi catalog, MeterRegistry metrics, Clock clock) {
+			SigningKeyRepository keys, CatalogApi catalog, MeterRegistry metrics, ApplicationEventPublisher publisher,
+			TicketProperties properties, Clock clock) {
 		this.metrics = metrics;
 		this.verifier = verifier;
 		this.tickets = tickets;
 		this.checkIns = checkIns;
 		this.keys = keys;
 		this.catalog = catalog;
+		this.publisher = publisher;
+		this.properties = properties;
 		this.clock = clock;
 	}
 
@@ -74,11 +84,15 @@ public class CheckInServiceImpl implements CheckInService {
 		if (!catalog.isEventOrganizer(ticket.getEventId(), organizerUserId)) {
 			throw new BusinessException(ErrorCode.NOT_EVENT_OWNER, "Bạn không phải ban tổ chức của sự kiện này");
 		}
+		Instant now = clock.instant();
+		requireCheckInOpen(ticket.getEventId(), now);
 		// BR-09: một vé chỉ check-in một lần; nguyên tử để hai thiết bị quét cùng lúc chỉ một nơi thành công.
 		if (tickets.markUsed(ticket.getId()) == 0) {
 			throw notUsable(ticket.getId());
 		}
-		checkIns.insert(Uuid7.next(clock), ticket.getId(), gate, organizerUserId, clock.instant());
+		checkIns.insert(Uuid7.next(clock), ticket.getId(), gate, organizerUserId, now);
+		publisher.publishEvent(new TicketCheckedIn(Uuid7.next(clock), now, ticket.getId(), ticket.getBookingId(),
+				ticket.getEventId(), ticket.getSeatId(), gate));
 		log.info("Check-in vé {} sự kiện {} cổng {}", ticket.getId(), ticket.getEventId(), gate);
 		return new CheckInResponse(ticket.getId(), ticket.getSectionCode() + "-" + ticket.getRowLabel() + "-"
 				+ ticket.getSeatNumber(), TicketStatus.USED);
@@ -89,6 +103,21 @@ public class CheckInServiceImpl implements CheckInService {
 	public KeySetResponse signingKeys() {
 		List<SigningKey> signingKeys = keys.findAllPublicKeys().stream().map(CheckInServiceImpl::toPublicKey).toList();
 		return new KeySetResponse(signingKeys);
+	}
+
+	/**
+	 * BR-09: check-in mở từ {@code checkInOpensBefore} trước giờ diễn tới hết giờ kết thúc. Sự kiện chưa có giờ diễn
+	 * (còn nháp) coi như chưa mở.
+	 */
+	private void requireCheckInOpen(UUID eventId, Instant now) {
+		EventSchedule schedule = catalog.eventSchedule(eventId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.TICKET_NOT_FOUND, "Vé không hợp lệ"));
+		if (schedule.startsAt() == null || now.isBefore(schedule.startsAt().minus(properties.checkInOpensBefore()))) {
+			throw new BusinessException(ErrorCode.CHECKIN_NOT_OPEN, "Chưa tới giờ mở check-in của sự kiện");
+		}
+		if (schedule.endsAt() != null && now.isAfter(schedule.endsAt())) {
+			throw new BusinessException(ErrorCode.EVENT_ENDED, "Sự kiện đã kết thúc");
+		}
 	}
 
 	/** Đọc lại trạng thái hiện tại để báo đúng lý do khi {@code markUsed} không đổi được dòng nào. */

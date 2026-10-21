@@ -1,6 +1,7 @@
 package com.ndz.catalog.service.impl;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +35,12 @@ class CatalogApiImpl implements CatalogApi {
 	@Transactional(readOnly = true)
 	public boolean isEventOrganizer(UUID eventId, UUID userId) {
 		return events.findByIdAndOrganizerId(eventId, userId).isPresent();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<EventSchedule> eventSchedule(UUID eventId) {
+		return events.findById(eventId).map(event -> new EventSchedule(event.getStartsAt(), event.getEndsAt()));
 	}
 
 	@Override

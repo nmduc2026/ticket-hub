@@ -94,7 +94,7 @@ Bán vé concert là bài toán có tải **cực kỳ không đều**: ngày th
 | BR-06 | Phí nền tảng mặc định **5%** giá vé (application fee), cấu hình được bởi Admin. Mức phí được **chốt vào sự kiện lúc publish** và áp cho mọi vé của sự kiện đó; đổi mức phí chỉ áp cho các sự kiện publish sau đó |
 | BR-07 | Hoàn vé được phép đến **48 giờ trước giờ diễn**, theo **cả booking** (không hoàn từng vé). Khách nhận lại số tiền đã trả **trừ phí nền tảng**; phí nền tảng không hoàn (vé 1.000.000đ, phí 5% → hoàn 950.000đ). Checkout hiển thị rõ phần phí nền tảng kèm ghi chú "không hoàn lại" |
 | BR-08 | Sự kiện bị huỷ → tự động hoàn **100%** số tiền đã trả cho mọi booking `CONFIRMED`, **kể cả phí nền tảng**; không áp dụng mốc 48 giờ của BR-07. Chỉ **Admin** được huỷ sự kiện. Booking đang `PENDING_PAYMENT` bị huỷ theo; thanh toán của chúng đến sau đó được hoàn 100% |
-| BR-09 | Một vé chỉ được check-in **1 lần**. Vé bị thu hồi (`REVOKED`) **ngay khi khách gửi yêu cầu hoàn**, không chờ tiền hoàn xong; yêu cầu hoàn không huỷ được |
+| BR-09 | Một vé chỉ được check-in **1 lần**, trong khung từ **3 giờ trước giờ diễn tới giờ kết thúc** (cấu hình được); ngoài khung bị từ chối. Vé bị thu hồi (`REVOKED`) **ngay khi khách gửi yêu cầu hoàn**, không chờ tiền hoàn xong; yêu cầu hoàn không huỷ được |
 | BR-10 | Tiền lưu dạng **số nguyên đơn vị nhỏ nhất** (`amount_minor` BIGINT) + mã tiền tệ (mặc định **VND**, zero-decimal — xem ghi chú tiền tệ dưới bảng); không dùng float/double |
 | BR-11 | Thời gian lưu **UTC** (`timestamptz`), hiển thị theo `Asia/Ho_Chi_Minh` |
 | BR-12 | Customer được **tự huỷ** booking đang `PENDING_PAYMENT` để nhả ghế ngay (→ `CANCELLED`). Nếu thanh toán thành công đến sau khi đã huỷ thì xử lý như nhánh "thanh toán thành công nhưng booking đã hết hạn" (§7.3) |
@@ -501,7 +501,7 @@ Admin theo dõi        → tiến độ hoàn tiền của sự kiện: đã ho�
 
 1. QR trên vé chứa một **JWT ký bằng ECDSA (ES256)**: `{ticketId, eventId, seat, kid}`.
 2. Organizer quét QR bằng app check-in (PWA, camera). App **xác minh chữ ký** bằng public key để loại vé giả ngay tại chỗ.
-3. App gọi `POST /checkins` → cập nhật atomic `UPDATE tickets SET status='USED' WHERE id=? AND status='VALID'` → 0 dòng bị ảnh hưởng nghĩa là vé đã dùng / bị thu hồi. **Chỉ check-in khi có xác nhận từ server**: mất mạng thì báo lỗi, không cho vào, vì chữ ký hợp lệ không chứng minh được vé chưa dùng hay chưa bị thu hồi.
+3. App gọi `POST /checkins`. Server kiểm khung giờ (BR-09): sớm hơn 3 giờ trước `starts_at` → `422 CHECKIN_NOT_OPEN`, sau `ends_at` → `422 EVENT_ENDED`. Trong khung thì cập nhật atomic `UPDATE tickets SET status='USED' WHERE id=? AND status='VALID'` → 0 dòng bị ảnh hưởng nghĩa là vé đã dùng / bị thu hồi. Thành công thì ghi `check_ins` và phát `TicketCheckedIn` (`ticketId`, `bookingId`, `eventId`, `seatId`, `gate`) trong cùng transaction. **Chỉ check-in khi có xác nhận từ server**: mất mạng thì báo lỗi, không cho vào, vì chữ ký hợp lệ không chứng minh được vé chưa dùng hay chưa bị thu hồi.
 4. Hỗ trợ **xoay vòng khoá** (key rotation) qua `kid`.
 
 ### 7.6. Onboarding Organizer

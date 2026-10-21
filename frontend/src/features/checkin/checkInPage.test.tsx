@@ -119,6 +119,8 @@ describe('Check-in tại cổng', () => {
     ['TICKET_REVOKED', 409, 'Vé đã bị thu hồi'],
     ['TICKET_NOT_FOUND', 404, 'Không tìm thấy vé'],
     ['NOT_EVENT_OWNER', 403, 'Không có quyền soát vé'],
+    ['CHECKIN_NOT_OPEN', 422, 'Chưa mở check-in'],
+    ['EVENT_ENDED', 422, 'Sự kiện đã kết thúc'],
   ])('server trả %s thì hiện "%s" và không cho vào', async (code, status, heading) => {
     server.use(
       http.post('/api/v1/checkins', () =>

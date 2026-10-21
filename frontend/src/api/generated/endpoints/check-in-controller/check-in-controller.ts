@@ -36,7 +36,7 @@ import { apiFetch } from '../../../../lib/api-client';
 
 
 /**
- * Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.
+ * Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử. Mở từ 3 giờ trước giờ diễn tới giờ kết thúc.
  * @summary Check-in một vé (BR-09)
  */
 export type checkInResponse200 = {
@@ -58,11 +58,16 @@ export type checkInResponse409 = {
   data: ProblemDetail
   status: 409
 }
+
+export type checkInResponse422 = {
+  data: ProblemDetail
+  status: 422
+}
     
 export type checkInResponseSuccess = (checkInResponse200) & {
   headers: Headers;
 };
-export type checkInResponseError = (checkInResponse403 | checkInResponse404 | checkInResponse409) & {
+export type checkInResponseError = (checkInResponse403 | checkInResponse404 | checkInResponse409 | checkInResponse422) & {
   headers: Headers;
 };
 
@@ -91,7 +96,7 @@ export const checkIn = async (checkInRequest: CheckInRequest, options?: RequestI
 
 
 
-export const getCheckInMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
+export const getCheckInMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkIn>>, TError,{data: CheckInRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof checkIn>>, TError,{data: CheckInRequest}, TContext> => {
 
@@ -118,12 +123,12 @@ const {mutation: mutationOptions} = options ?
 
     export type CheckInMutationResult = NonNullable<Awaited<ReturnType<typeof checkIn>>>
     export type CheckInMutationBody = CheckInRequest
-    export type CheckInMutationError = ProblemDetail | ProblemDetail | ProblemDetail
+    export type CheckInMutationError = ProblemDetail | ProblemDetail | ProblemDetail | ProblemDetail
 
     /**
  * @summary Check-in một vé (BR-09)
  */
-export const useCheckIn = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
+export const useCheckIn = <TError = ProblemDetail | ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkIn>>, TError,{data: CheckInRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof checkIn>>,

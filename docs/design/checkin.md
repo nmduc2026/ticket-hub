@@ -30,6 +30,8 @@ Mỗi kết quả có **màu + biểu tượng + tiêu đề chữ lớn** (khô
 | `eventId` khác sự kiện đang soát | Vé của sự kiện khác | Đỏ | 2 tiếng thấp | Không |
 | `404 TICKET_NOT_FOUND` | Không tìm thấy vé | Đỏ | 2 tiếng thấp | Có |
 | `403 NOT_EVENT_OWNER` | Không có quyền soát sự kiện này | Đỏ | 2 tiếng thấp | Có |
+| `422 CHECKIN_NOT_OPEN` | Chưa mở check-in | Vàng | 2 tiếng thấp | Có |
+| `422 EVENT_ENDED` | Sự kiện đã kết thúc | Vàng | 2 tiếng thấp | Có |
 | Mất mạng / server không trả lời | Mất kết nối | Đỏ | 2 tiếng thấp | Không tới được |
 | Lỗi khác (5xx...) | Chưa check-in được | Đỏ | 2 tiếng thấp | Có |
 

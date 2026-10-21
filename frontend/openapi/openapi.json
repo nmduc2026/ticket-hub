@@ -686,7 +686,7 @@
       "post" : {
         "tags" : [ "check-in-controller" ],
         "summary" : "Check-in một vé (BR-09)",
-        "description" : "Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.",
+        "description" : "Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử. Mở từ 3 giờ trước giờ diễn tới giờ kết thúc.",
         "operationId" : "checkIn",
         "requestBody" : {
           "content" : {
@@ -731,6 +731,16 @@
           },
           "409" : {
             "description" : "TICKET_ALREADY_USED hoặc TICKET_REVOKED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "CHECKIN_NOT_OPEN (sớm hơn 3 giờ trước giờ diễn) hoặc EVENT_ENDED (sau giờ kết thúc)",
             "content" : {
               "application/problem+json" : {
                 "schema" : {

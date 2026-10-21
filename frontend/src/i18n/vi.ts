@@ -278,6 +278,8 @@ export const vi = {
       wrongEvent: { title: 'Vé của sự kiện khác', detail: 'Mã QR thuộc sự kiện khác. Không cho vào' },
       notFound: { title: 'Không tìm thấy vé', detail: 'Mã QR không khớp vé nào. Không cho vào' },
       notOwner: { title: 'Không có quyền soát vé', detail: 'Tài khoản này không phải ban tổ chức của sự kiện' },
+      notOpen: { title: 'Chưa mở check-in', detail: 'Check-in mở từ 3 giờ trước giờ diễn' },
+      ended: { title: 'Sự kiện đã kết thúc', detail: 'Đã qua giờ kết thúc, không nhận check-in nữa' },
       offline: { title: 'Mất kết nối', detail: 'Chưa xác nhận được với hệ thống nên chưa cho vào' },
       error: { title: 'Chưa check-in được', detail: 'Hệ thống chưa phản hồi đúng. Không cho vào' },
     },

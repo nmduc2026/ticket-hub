@@ -2,6 +2,7 @@ package com.ndz.catalog.api;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -24,6 +25,13 @@ public interface CatalogApi {
 
 	/** Người dùng này có phải organizer sở hữu sự kiện không (check-in chỉ dành cho organizer của sự kiện). */
 	boolean isEventOrganizer(UUID eventId, UUID userId);
+
+	/** Giờ diễn và giờ kết thúc của sự kiện (check-in chỉ mở quanh giờ diễn, BR-09). Rỗng nếu không có sự kiện. */
+	Optional<EventSchedule> eventSchedule(UUID eventId);
+
+	/** {@code startsAt}, {@code endsAt} có thể trống khi sự kiện còn nháp. */
+	record EventSchedule(Instant startsAt, Instant endsAt) {
+	}
 
 	/** Sự kiện của một organizer, mới diễn trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). */
 	List<OrganizerEvent> eventsOf(UUID organizerId, int limit);

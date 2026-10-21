@@ -8,7 +8,7 @@ import * as zod from 'zod';
 
 
 /**
- * Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.
+ * Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử. Mở từ 3 giờ trước giờ diễn tới giờ kết thúc.
  * @summary Check-in một vé (BR-09)
  */
 export const checkInBodyQrTokenMin = 0;
