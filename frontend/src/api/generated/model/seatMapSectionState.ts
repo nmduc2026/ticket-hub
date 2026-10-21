@@ -4,13 +4,13 @@
  * Ticket Hub API
  * OpenAPI spec version: v1
  */
-import type { JsonNode } from './jsonNode';
+import type { SeatMapSectionStateShape } from './seatMapSectionStateShape';
 
 export interface SeatMapSectionState {
   code: string;
   name: string;
   /** Hình học của khu (GRID / IMPORTED), nguyên văn */
-  shape: JsonNode;
+  shape: SeatMapSectionStateShape;
   /** Hạng vé của khu; null khi khu không bán (màu xám) */
   tierId?: string;
 }

@@ -1041,6 +1041,33 @@
         },
         "required" : [ "sectionId", "tierId" ]
       },
+      "ProblemDetail" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          }
+        }
+      },
       "TierSectionAssignmentRequest" : {
         "type" : "object",
         "properties" : {
@@ -1152,85 +1179,6 @@
         },
         "required" : [ "address", "capacity", "cityName", "id", "name", "wardName" ]
       },
-      "JsonNode" : {
-        "type" : "object",
-        "properties" : {
-          "array" : {
-            "type" : "boolean"
-          },
-          "empty" : {
-            "type" : "boolean"
-          },
-          "null" : {
-            "type" : "boolean"
-          },
-          "float" : {
-            "type" : "boolean"
-          },
-          "container" : {
-            "type" : "boolean"
-          },
-          "pojo" : {
-            "type" : "boolean"
-          },
-          "int" : {
-            "type" : "boolean"
-          },
-          "string" : {
-            "type" : "boolean"
-          },
-          "short" : {
-            "type" : "boolean"
-          },
-          "long" : {
-            "type" : "boolean"
-          },
-          "double" : {
-            "type" : "boolean"
-          },
-          "object" : {
-            "type" : "boolean"
-          },
-          "textual" : {
-            "type" : "boolean",
-            "deprecated" : true
-          },
-          "boolean" : {
-            "type" : "boolean"
-          },
-          "binary" : {
-            "type" : "boolean"
-          },
-          "floatingPointNumber" : {
-            "type" : "boolean"
-          },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
-            "type" : "boolean"
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "bigDecimal" : {
-            "type" : "boolean"
-          },
-          "bigInteger" : {
-            "type" : "boolean"
-          },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
-          "number" : {
-            "type" : "boolean"
-          },
-          "embeddedValue" : {
-            "type" : "boolean"
-          }
-        }
-      },
       "SeatMap" : {
         "type" : "object",
         "properties" : {
@@ -1287,7 +1235,7 @@
             "type" : "string"
           },
           "shape" : {
-            "$ref" : "#/components/schemas/JsonNode"
+            "type" : "object"
           }
         },
         "required" : [ "id", "shape", "type" ]
@@ -1311,7 +1259,7 @@
             "description" : "Số ghế của khu"
           },
           "shape" : {
-            "$ref" : "#/components/schemas/JsonNode",
+            "type" : "object",
             "description" : "Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json"
           }
         },
@@ -1410,33 +1358,6 @@
           }
         },
         "required" : [ "email", "enabled", "fullName", "id", "roles", "username" ]
-      },
-      "ProblemDetail" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string",
-            "format" : "uri"
-          },
-          "title" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "detail" : {
-            "type" : "string"
-          },
-          "instance" : {
-            "type" : "string",
-            "format" : "uri"
-          },
-          "properties" : {
-            "type" : "object",
-            "additionalProperties" : { }
-          }
-        }
       },
       "PublicEventPage" : {
         "type" : "object",
@@ -1643,7 +1564,7 @@
             "type" : "string"
           },
           "shape" : {
-            "$ref" : "#/components/schemas/JsonNode"
+            "type" : "object"
           }
         },
         "required" : [ "shape", "type" ]
@@ -1658,7 +1579,7 @@
             "type" : "string"
           },
           "shape" : {
-            "$ref" : "#/components/schemas/JsonNode",
+            "type" : "object",
             "description" : "Hình học của khu (GRID / IMPORTED), nguyên văn"
           },
           "tierId" : {

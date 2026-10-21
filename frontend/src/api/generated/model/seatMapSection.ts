@@ -4,7 +4,7 @@
  * Ticket Hub API
  * OpenAPI spec version: v1
  */
-import type { JsonNode } from './jsonNode';
+import type { SeatMapSectionShape } from './seatMapSectionShape';
 
 export interface SeatMapSection {
   id: string;
@@ -13,5 +13,5 @@ export interface SeatMapSection {
   /** Số ghế của khu */
   seatCount: number;
   /** Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json */
-  shape: JsonNode;
+  shape: SeatMapSectionShape;
 }

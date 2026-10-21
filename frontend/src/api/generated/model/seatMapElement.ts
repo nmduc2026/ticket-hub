@@ -4,12 +4,12 @@
  * Ticket Hub API
  * OpenAPI spec version: v1
  */
-import type { JsonNode } from './jsonNode';
+import type { SeatMapElementShape } from './seatMapElementShape';
 
 export interface SeatMapElement {
   id: string;
   /** STAGE, AISLE, LABEL hoặc AREA */
   type: string;
   label?: string;
-  shape: JsonNode;
+  shape: SeatMapElementShape;
 }

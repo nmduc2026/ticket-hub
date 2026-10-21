@@ -6,7 +6,7 @@ export const SEAT_SIZE = 18
 const SECTION_PADDING = 14
 
 /**
- * `shape` của khu / phần tử là JSON tự do ở backend (OpenAPI chỉ khai `JsonNode` rỗng), nên đọc bằng schema thay vì
+ * `shape` của khu / phần tử là JSON tự do ở backend (OpenAPI khai object tự do), nên đọc bằng schema thay vì
  * tin kiểu sinh ra. Khu `GRID` có tham số lưới (ADR 0030); khu `IMPORTED` chỉ có toạ độ ghế nên không có khung.
  */
 const gridShapeSchema = z.object({
