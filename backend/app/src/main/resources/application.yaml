@@ -116,6 +116,10 @@ tickethub:
     # Khoá test mode, chỉ từ biến môi trường / K8s Secret (không commit). Test API: stripe-mock đặt api-base.
     secret-key: ${STRIPE_SECRET_KEY:}
     webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    # Endpoint webhook Connect có signing secret riêng (account.updated của connected account, ADR 0022).
+    connect-webhook-secret: ${STRIPE_CONNECT_WEBHOOK_SECRET:}
+    connect-return-url: ${WEB_BASE_URL:http://localhost:5173}/organizer/payments?connect=return
+    connect-refresh-url: ${WEB_BASE_URL:http://localhost:5173}/organizer/payments?connect=refresh
     api-base: ${STRIPE_API_BASE:}
     timeout: 3s
     webhook-tolerance: 5m

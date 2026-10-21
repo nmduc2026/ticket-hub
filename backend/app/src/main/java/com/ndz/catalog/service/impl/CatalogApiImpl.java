@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ndz.catalog.api.CatalogApi;
 import com.ndz.catalog.repository.CatalogReadRepository;
 import com.ndz.catalog.repository.EventRepository;
+import com.ndz.catalog.repository.OrganizerRepository;
 
 /** Cài đặt {@link CatalogApi} trong cùng process (giai đoạn modular monolith). */
 @Service
@@ -22,10 +23,19 @@ class CatalogApiImpl implements CatalogApi {
 
 	private final CatalogReadRepository catalog;
 	private final EventRepository events;
+	private final OrganizerRepository organizers;
 
-	CatalogApiImpl(CatalogReadRepository catalog, EventRepository events) {
+	CatalogApiImpl(CatalogReadRepository catalog, EventRepository events, OrganizerRepository organizers) {
 		this.catalog = catalog;
 		this.events = events;
+		this.organizers = organizers;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<OrganizerContact> organizerContact(UUID organizerId) {
+		return organizers.findById(organizerId)
+				.map(organizer -> new OrganizerContact(organizer.getStatus().name(), organizer.getContactEmail()));
 	}
 
 	@Override

@@ -10,13 +10,19 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  *
  * @param secretKey secret key {@code sk_test_...}; để trống thì mọi lời gọi Stripe thất bại
  * @param webhookSecret signing secret {@code whsec_...} của endpoint webhook
+ * @param connectWebhookSecret signing secret riêng của endpoint webhook Connect ({@code account.updated})
+ * @param connectReturnUrl trang organizer quay về sau onboarding Stripe (màn #26)
+ * @param connectRefreshUrl trang mở lại khi link onboarding hết hạn
  * @param apiBase ghi đè địa chỉ API (stripe-mock hoặc WireMock khi test); để trống thì dùng api.stripe.com
  * @param timeout thời gian chờ tối đa cho một lời gọi Stripe (overview.md §15.1: 3 giây)
  * @param webhookTolerance độ lệch tối đa giữa giờ ký và giờ nhận webhook (AC-4: 5 phút)
  * @param resilience retry, circuit breaker và bulkhead quanh lời gọi Stripe (overview.md §15.1)
  */
 @ConfigurationProperties("tickethub.stripe")
-public record StripeProperties(String secretKey, String webhookSecret, String apiBase,
+public record StripeProperties(String secretKey, String webhookSecret, String connectWebhookSecret,
+		@DefaultValue("http://localhost:5173/organizer/payments?connect=return") String connectReturnUrl,
+		@DefaultValue("http://localhost:5173/organizer/payments?connect=refresh") String connectRefreshUrl,
+		String apiBase,
 		@DefaultValue("3s") Duration timeout, @DefaultValue("5m") Duration webhookTolerance,
 		@DefaultValue Resilience resilience) {
 

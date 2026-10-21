@@ -803,7 +803,7 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | POST | `/api/v1/organizer/events/{id}/publish` | organizer (owner) | Publish |
 | GET | `/api/v1/organizer/events/{id}/sales` | organizer (owner) | Doanh thu (module booking, jOOQ trên `sales_by_event`) |
 | POST | `/api/v1/organizer/events/{id}/duplicate`, `/api/v1/organizer/events/bulk-duplicate` | organizer (owner) | Nhân bản thành bản nháp (không chép giờ mở bán) |
-| GET | `/api/v1/organizer/dashboard?range=` | organizer | Tổng quan: doanh thu, vé bán theo ngày, đơn gần đây |
+| GET | `/api/v1/organizer/dashboard?days=7|30|90` | organizer | Tổng quan: doanh thu, vé bán theo ngày, đơn gần đây |
 | GET | `/api/v1/organizer/bookings?eventId=&status=&from=&to=&q=` | organizer (owner) | Đơn hàng của các sự kiện của mình |
 | POST | `/api/v1/organizer/bookings/bulk-resend-tickets` | organizer (owner) | Gửi lại email vé cho các đơn đã chọn |
 | GET/PUT | `/api/v1/organizer/profile` | organizer | Hồ sơ công khai, thông tin pháp lý (đổi pháp lý cần Admin duyệt lại) |

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ndz.payment.service.OrganizerStripeService;
 import com.ndz.payment.service.StripeWebhookService;
 
 /**
@@ -24,9 +25,11 @@ import com.ndz.payment.service.StripeWebhookService;
 class StripeWebhookController {
 
 	private final StripeWebhookService service;
+	private final OrganizerStripeService connect;
 
-	StripeWebhookController(StripeWebhookService service) {
+	StripeWebhookController(StripeWebhookService service, OrganizerStripeService connect) {
 		this.service = service;
+		this.connect = connect;
 	}
 
 	@PostMapping("/stripe")
@@ -34,6 +37,14 @@ class StripeWebhookController {
 	void stripe(@RequestBody byte[] body,
 			@RequestHeader(name = "Stripe-Signature", required = false) String signature) {
 		service.handle(new String(body, StandardCharsets.UTF_8), signature);
+	}
+
+	/** Endpoint Connect (signing secret riêng): {@code account.updated} của connected account (overview.md §7.6). */
+	@PostMapping("/stripe-connect")
+	@ResponseStatus(HttpStatus.OK)
+	void stripeConnect(@RequestBody byte[] body,
+			@RequestHeader(name = "Stripe-Signature", required = false) String signature) {
+		connect.handleConnectWebhook(new String(body, StandardCharsets.UTF_8), signature);
 	}
 
 }

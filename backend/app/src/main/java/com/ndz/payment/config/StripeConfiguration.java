@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
+import com.ndz.payment.client.StripeConnectGateway;
 import com.ndz.payment.client.StripeGateway;
 import com.ndz.payment.client.StripeResilience;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -43,6 +44,13 @@ public class StripeConfiguration {
 	@Bean
 	public StripeResilience stripeResilience(StripeProperties properties, MeterRegistry metrics) {
 		return new StripeResilience(properties.resilience(), metrics);
+	}
+
+	@Bean
+	public StripeConnectGateway stripeConnectGateway(StripeClient client, StripeResilience resilience,
+			StripeProperties properties, Clock clock) {
+		return new StripeConnectGateway(client, resilience, properties.connectWebhookSecret(),
+				properties.webhookTolerance(), clock);
 	}
 
 	@Bean

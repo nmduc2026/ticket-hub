@@ -25,6 +25,8 @@ import com.ndz.catalog.entity.enums.EventStatus;
 import com.ndz.catalog.entity.enums.OrganizerStatus;
 import com.ndz.catalog.event.EventResumed;
 import com.ndz.catalog.event.EventSuspended;
+import com.ndz.catalog.event.OrganizerPayoutStatusChanged;
+import com.ndz.catalog.repository.CatalogProcessedEventRepository;
 import com.ndz.catalog.repository.EventRepository;
 import com.ndz.catalog.repository.OrganizerRepository;
 import com.ndz.catalog.service.EventSuspensionService;
@@ -37,6 +39,8 @@ import com.ndz.shared.util.Uuid7;
 @Service
 public class EventSuspensionServiceImpl implements EventSuspensionService {
 
+	static final String PAYOUT_CONSUMER = "catalog.organizer-payout-status";
+
 	private static final Logger log = LoggerFactory.getLogger(EventSuspensionServiceImpl.class);
 
 	/** Trạng thái còn đang bán / chờ mở bán: bị tạm dừng theo organizer (BR-13). */
@@ -44,15 +48,18 @@ public class EventSuspensionServiceImpl implements EventSuspensionService {
 
 	private final EventRepository events;
 	private final OrganizerRepository organizers;
+	private final CatalogProcessedEventRepository processed;
 	private final AuditLogService audit;
 	private final ApplicationEventPublisher publisher;
 	private final TransactionTemplate transaction;
 	private final Clock clock;
 
-	EventSuspensionServiceImpl(EventRepository events, OrganizerRepository organizers, AuditLogService audit,
+	EventSuspensionServiceImpl(EventRepository events, OrganizerRepository organizers,
+			CatalogProcessedEventRepository processed, AuditLogService audit,
 			ApplicationEventPublisher publisher, TransactionTemplate transaction, Clock clock) {
 		this.events = events;
 		this.organizers = organizers;
+		this.processed = processed;
 		this.audit = audit;
 		this.publisher = publisher;
 		this.transaction = transaction;
@@ -122,6 +129,25 @@ public class EventSuspensionServiceImpl implements EventSuspensionService {
 				Map.of("status", OrganizerStatus.SUSPENDED.name(), "reason", reason, "suspendedEvents", selling.size()));
 		log.warn("Admin {} đình chỉ organizer {}, tạm dừng {} sự kiện", adminId, organizerId, selling.size());
 		return new OrganizerSuspension(organizerId, organizer.getStatus().name(), selling.size());
+	}
+
+	@Override
+	@Transactional
+	public void onPayoutStatusChanged(OrganizerPayoutStatusChanged event) {
+		if (!processed.markProcessed(PAYOUT_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua OrganizerPayoutStatusChanged đã xử lý {}", event.messageId());
+			return;
+		}
+		Organizer organizer = lockedOrganizer(event.organizerId());
+		organizer.changePayoutReady(event.payoutReady());
+		organizers.save(organizer);
+		if (event.payoutReady()) {
+			log.info("Organizer {} đã nhận được tiền (charges_enabled)", event.organizerId());
+			return;
+		}
+		List<Event> selling = events.findByOrganizerIdAndStatusIn(event.organizerId(), SELLING);
+		selling.forEach(sale -> suspend(sale, "Tài khoản Stripe của ban tổ chức bị hạn chế", true));
+		log.warn("Organizer {} mất charges_enabled: tạm dừng {} sự kiện", event.organizerId(), selling.size());
 	}
 
 	@Override

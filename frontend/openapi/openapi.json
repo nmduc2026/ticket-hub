@@ -383,6 +383,64 @@
         }
       }
     },
+    "/api/v1/organizer/stripe/onboarding-link" : {
+      "post" : {
+        "tags" : [ "organizer-stripe-controller" ],
+        "summary" : "Tạo Express account nếu chưa có, trả link onboarding Stripe (BR-05)",
+        "operationId" : "createStripeOnboardingLink",
+        "responses" : {
+          "200" : {
+            "description" : "Link onboarding",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StripeLink"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "ORGANIZER_NOT_APPROVED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/stripe/login-link" : {
+      "post" : {
+        "tags" : [ "organizer-stripe-controller" ],
+        "summary" : "Link vào Express Dashboard",
+        "operationId" : "createStripeLoginLink",
+        "responses" : {
+          "200" : {
+            "description" : "Link",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StripeLink"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "STRIPE_NOT_CONNECTED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizer/events" : {
       "get" : {
         "tags" : [ "organizer-event-controller" ],
@@ -1535,6 +1593,25 @@
                   "items" : {
                     "$ref" : "#/components/schemas/SeatMap"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/stripe/account" : {
+      "get" : {
+        "tags" : [ "organizer-stripe-controller" ],
+        "summary" : "Trạng thái kết nối Stripe và số dư",
+        "operationId" : "getStripeAccount",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StripeAccount"
                 }
               }
             }
@@ -2866,6 +2943,20 @@
         },
         "required" : [ "amountMinor", "clientSecret", "currency", "paymentId", "platformFeeMinor" ]
       },
+      "StripeLink" : {
+        "type" : "object",
+        "properties" : {
+          "url" : {
+            "type" : "string"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Chỉ có với link onboarding"
+          }
+        },
+        "required" : [ "url" ]
+      },
       "OrganizerApplyRequest" : {
         "type" : "object",
         "properties" : {
@@ -3354,6 +3445,38 @@
           }
         },
         "required" : [ "code", "id", "name", "seatCount", "shape" ]
+      },
+      "StripeAccount" : {
+        "type" : "object",
+        "properties" : {
+          "state" : {
+            "type" : "string",
+            "description" : "none, incomplete, pending, active hoặc restricted (overview.md §7.6)",
+            "enum" : [ "none", "incomplete", "pending", "active", "restricted" ]
+          },
+          "chargesEnabled" : {
+            "type" : "boolean"
+          },
+          "payoutsEnabled" : {
+            "type" : "boolean"
+          },
+          "requirements" : {
+            "type" : "array",
+            "description" : "Mục Stripe còn yêu cầu bổ sung",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "balanceMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Số dư khả dụng; trống khi chưa kết nối hoặc không đọc được"
+          },
+          "currency" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "chargesEnabled", "currency", "payoutsEnabled", "requirements", "state" ]
       },
       "OrganizerEventPage" : {
         "type" : "object",

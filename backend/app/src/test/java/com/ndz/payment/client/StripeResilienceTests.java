@@ -222,7 +222,7 @@ class StripeResilienceTests {
 	// ---- helpers ----
 
 	private void build(StripeProperties.Resilience config) {
-		var properties = new StripeProperties("dummy-key", "dummy-webhook-secret", stripe.baseUrl(),
+		var properties = new StripeProperties("dummy-key", "dummy-webhook-secret", null, "http://r", "http://f", stripe.baseUrl(),
 				Duration.ofSeconds(3), Duration.ofMinutes(5), config);
 		var configuration = new StripeConfiguration();
 		resilience = configuration.stripeResilience(properties, new SimpleMeterRegistry());

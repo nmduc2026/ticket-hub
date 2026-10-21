@@ -123,7 +123,7 @@ class StripeGatewayTests {
 	}
 
 	private static StripeGateway gatewayWithTimeout(Duration timeout) {
-		var properties = new StripeProperties("dummy-key", "dummy-webhook-secret", stripe.baseUrl(), timeout,
+		var properties = new StripeProperties("dummy-key", "dummy-webhook-secret", null, "http://r", "http://f", stripe.baseUrl(), timeout,
 				Duration.ofMinutes(5), StripeProperties.Resilience.defaults());
 		var configuration = new StripeConfiguration();
 		var resilience = configuration.stripeResilience(properties, new SimpleMeterRegistry());

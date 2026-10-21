@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.ndz.catalog.dto.response.SuspensionResponses.BulkResult;
 import com.ndz.catalog.dto.response.SuspensionResponses.EventStatusResult;
 import com.ndz.catalog.dto.response.SuspensionResponses.OrganizerSuspension;
+import com.ndz.catalog.event.OrganizerPayoutStatusChanged;
 
 /**
  * Tạm dừng bán (BR-13): Admin tạm dừng / mở lại sự kiện, đình chỉ / khôi phục organizer; tự tạm dừng mọi sự kiện đang
@@ -27,6 +28,12 @@ public interface EventSuspensionService {
 
 	/** Đình chỉ organizer và tạm dừng mọi sự kiện {@code PUBLISHED} / {@code ON_SALE} của họ. */
 	OrganizerSuspension suspendOrganizer(UUID adminId, UUID organizerId, String reason);
+
+	/**
+	 * Cập nhật {@code payout_ready}; mất {@code charges_enabled} thì tạm dừng tự động mọi sự kiện đang bán (BR-13).
+	 * Bật lại không tự mở bán. Gửi lại cùng event không xử lý lại.
+	 */
+	void onPayoutStatusChanged(OrganizerPayoutStatusChanged event);
 
 	/** Khôi phục organizer về {@code APPROVED}; sự kiện vẫn tạm dừng tới khi Admin mở lại từng cái. */
 	OrganizerSuspension reinstateOrganizer(UUID adminId, UUID organizerId, String reason);

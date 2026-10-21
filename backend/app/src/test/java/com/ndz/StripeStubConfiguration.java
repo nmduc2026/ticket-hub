@@ -17,6 +17,9 @@ public class StripeStubConfiguration {
 	/** Secret ký webhook mà test dùng để tự ký payload. */
 	public static final String WEBHOOK_SECRET = "dummy-webhook-secret";
 
+	/** Secret riêng của endpoint Connect (khác secret của endpoint platform, AC-2). */
+	public static final String CONNECT_WEBHOOK_SECRET = "dummy-connect-webhook-secret";
+
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	WireMockServer stripeStub() {
 		return new WireMockServer(WireMockConfiguration.options().dynamicPort());
@@ -28,6 +31,7 @@ public class StripeStubConfiguration {
 			registry.add("tickethub.stripe.api-base", stripeStub::baseUrl);
 			registry.add("tickethub.stripe.secret-key", () -> "dummy-test-key");
 			registry.add("tickethub.stripe.webhook-secret", () -> WEBHOOK_SECRET);
+			registry.add("tickethub.stripe.connect-webhook-secret", () -> CONNECT_WEBHOOK_SECRET);
 		};
 	}
 

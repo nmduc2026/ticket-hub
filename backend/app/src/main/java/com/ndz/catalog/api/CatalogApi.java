@@ -45,6 +45,13 @@ public interface CatalogApi {
 	record GuestInfo(Instant doorsOpenAt, Short ageRestriction, String rules) {
 	}
 
+	/** Trạng thái và email liên hệ của organizer (Payment tạo connected account, BR-05). */
+	Optional<OrganizerContact> organizerContact(UUID organizerId);
+
+	/** {@code status}: PENDING, APPROVED, REJECTED hoặc SUSPENDED. */
+	record OrganizerContact(String status, String contactEmail) {
+	}
+
 	/** Tên tỉnh / thành (đơn vị hành chính cấp 1 đang dùng); rỗng nếu id không phải tỉnh / thành. */
 	Optional<String> provinceName(UUID provinceId);
 

@@ -190,6 +190,11 @@ public class Organizer {
 		return rejectionReason;
 	}
 
+	/** Bản sao {@code charges_enabled} từ Payment (BR-05, BR-13). */
+	public void changePayoutReady(boolean payoutReady) {
+		this.payoutReady = payoutReady;
+	}
+
 	/** Bản sao {@code charges_enabled} của Payment (BR-05, BR-13). */
 	public boolean isPayoutReady() {
 		return payoutReady;
