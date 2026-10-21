@@ -35,6 +35,18 @@ export const vi = {
     selectRow: 'Chọn dòng {{name}}',
     toolbar: 'Công cụ danh sách',
   },
+  seatMap: {
+    label: 'Sơ đồ ghế',
+    seat: 'Hàng {{row}}, ghế {{number}}',
+    zoomIn: 'Phóng to',
+    zoomOut: 'Thu nhỏ',
+    zoomReset: 'Về khung nhìn ban đầu',
+    state: { available: 'còn trống', selected: 'đã chọn', sold: 'đã bán', unavailable: 'không bán' },
+    deselected: 'Đã bỏ chọn {{seat}}',
+    notSelectable: 'Không chọn được.',
+    limitReached: 'Tối đa {{max}} ghế mỗi lượt',
+    legend: { available: 'Còn trống (màu theo hạng)', selected: 'Đang chọn', sold: 'Đã bán', unavailable: 'Không bán' },
+  },
   theme: { toggle: 'Đổi giao diện sáng / tối' },
   shell: {
     breadcrumbLabel: 'Đường dẫn',
