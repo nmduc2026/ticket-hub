@@ -1,11 +1,15 @@
 package com.ndz.ticket.service.impl;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.ticket.api.TicketApi;
+import com.ndz.ticket.entity.enums.TicketStatus;
+import com.ndz.ticket.repository.TicketRepository;
 import com.ndz.ticket.service.TicketQueryService;
 
 /** Cài đặt {@link TicketApi} trong cùng process (giai đoạn modular monolith). */
@@ -13,9 +17,17 @@ import com.ndz.ticket.service.TicketQueryService;
 class TicketApiImpl implements TicketApi {
 
 	private final TicketQueryService queries;
+	private final TicketRepository tickets;
 
-	TicketApiImpl(TicketQueryService queries) {
+	TicketApiImpl(TicketQueryService queries, TicketRepository tickets) {
 		this.queries = queries;
+		this.tickets = tickets;
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public boolean hasUpcomingTickets(UUID userId, Instant now) {
+		return tickets.existsByOwnerUserIdAndStatusAndStartsAtAfter(userId, TicketStatus.VALID, now);
 	}
 
 	@Override

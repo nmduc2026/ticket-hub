@@ -61,6 +61,7 @@ public final class TestTokens {
 		private Instant authTime = Instant.now().minusSeconds(60);
 		private Instant expiresAt = Instant.now().plusSeconds(300);
 		private RSAKey key = SIGNING_KEY;
+		private String sessionId;
 
 		public Builder subject(UUID subject) {
 			this.subject = subject;
@@ -107,6 +108,12 @@ public final class TestTokens {
 			return this;
 		}
 
+		/** Claim {@code sid}: phiên Keycloak của token. */
+		public Builder sessionId(String sessionId) {
+			this.sessionId = sessionId;
+			return this;
+		}
+
 		/** Ký bằng khoá không có trong JWKS: giả mạo chữ ký. */
 		public Builder signedByUnknownKey() {
 			this.key = OTHER_KEY;
@@ -124,7 +131,7 @@ public final class TestTokens {
 						.audience(audience).claim("email", email).claim("name", name)
 						.claim("preferred_username", username)
 						.claim("realm_access", java.util.Map.of("roles", roles))
-						.claim("auth_time", Date.from(authTime))
+						.claim("auth_time", Date.from(authTime)).claim("sid", sessionId)
 						.issueTime(Date.from(Instant.now())).expirationTime(Date.from(expiresAt)).build();
 				SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(key.getKeyID()).build(),
 						claims);

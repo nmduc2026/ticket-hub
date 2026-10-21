@@ -24,9 +24,10 @@ public class UserProfileRepositoryImpl implements UserProfileRepositoryCustom {
 			    roles = EXCLUDED.roles,
 			    last_login_at = GREATEST(user_profiles.last_login_at, EXCLUDED.last_login_at),
 			    updated_at = EXCLUDED.updated_at
-			WHERE (user_profiles.email, user_profiles.full_name, user_profiles.username, user_profiles.roles)
+			WHERE user_profiles.deleted_at IS NULL -- tài khoản đã xoá: access token còn hạn không ghi lại thông tin cá nhân
+			  AND ((user_profiles.email, user_profiles.full_name, user_profiles.username, user_profiles.roles)
 			        IS DISTINCT FROM (EXCLUDED.email, EXCLUDED.full_name, EXCLUDED.username, EXCLUDED.roles)
-			   OR user_profiles.last_login_at IS DISTINCT FROM GREATEST(user_profiles.last_login_at, EXCLUDED.last_login_at)
+			   OR user_profiles.last_login_at IS DISTINCT FROM GREATEST(user_profiles.last_login_at, EXCLUDED.last_login_at))
 			""";
 
 	private final JdbcTemplate jdbc;

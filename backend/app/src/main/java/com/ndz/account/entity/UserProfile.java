@@ -1,6 +1,7 @@
 package com.ndz.account.entity;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,7 +50,56 @@ public class UserProfile {
 	@Column(name = "updated_at")
 	private Instant updatedAt;
 
+	@Column(name = "avatar_url")
+	private String avatarUrl;
+
+	private String phone;
+
+	@Column(name = "date_of_birth")
+	private LocalDate dateOfBirth;
+
+	@Column(name = "province_id")
+	private UUID provinceId;
+
+	@Column(name = "deleted_at")
+	private Instant deletedAt;
+
 	protected UserProfile() {
+	}
+
+	/** Khách sửa thông tin app giữ (§6.6); email, tên, mật khẩu sửa ở Keycloak. */
+	public void changeDetails(String phone, LocalDate dateOfBirth, UUID provinceId, Instant now) {
+		this.phone = phone;
+		this.dateOfBirth = dateOfBirth;
+		this.provinceId = provinceId;
+		this.updatedAt = now;
+	}
+
+	/** Đổi ảnh đại diện; trả về địa chỉ ảnh cũ (có thể null) để xoá file cũ. */
+	public String changeAvatar(String avatarUrl, Instant now) {
+		String previous = this.avatarUrl;
+		this.avatarUrl = avatarUrl;
+		this.updatedAt = now;
+		return previous;
+	}
+
+	/**
+	 * Xoá tài khoản: ẩn danh hoá mọi thông tin cá nhân, giữ dòng (và {@code user_id}) để booking, vé cũ vẫn đối soát
+	 * được. Trả về địa chỉ ảnh đại diện cũ (có thể null).
+	 */
+	public String anonymize(Instant now) {
+		String previousAvatar = this.avatarUrl;
+		this.email = null;
+		this.fullName = null;
+		this.username = null;
+		this.avatarUrl = null;
+		this.phone = null;
+		this.dateOfBirth = null;
+		this.provinceId = null;
+		this.enabled = false;
+		this.deletedAt = now;
+		this.updatedAt = now;
+		return previousAvatar;
 	}
 
 	/** Khoá / mở khoá tài khoản (Admin); Envers ghi revision. Chỉ cột đổi được ghi (@DynamicUpdate) nên không đè lên upsert lúc đăng nhập. */
@@ -84,6 +134,26 @@ public class UserProfile {
 
 	public Instant getLastLoginAt() {
 		return lastLoginAt;
+	}
+
+	public String getAvatarUrl() {
+		return avatarUrl;
+	}
+
+	public String getPhone() {
+		return phone;
+	}
+
+	public LocalDate getDateOfBirth() {
+		return dateOfBirth;
+	}
+
+	public UUID getProvinceId() {
+		return provinceId;
+	}
+
+	public Instant getDeletedAt() {
+		return deletedAt;
 	}
 
 }

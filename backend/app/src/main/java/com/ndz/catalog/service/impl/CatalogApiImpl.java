@@ -55,6 +55,13 @@ class CatalogApiImpl implements CatalogApi {
 
 	@Override
 	@Transactional(readOnly = true)
+	public Optional<String> provinceName(UUID provinceId) {
+		return catalog.activeUnits(1, null, null).stream().filter(unit -> unit.id().equals(provinceId))
+				.map(unit -> unit.name()).findFirst();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public List<OrganizerEvent> eventsOf(UUID organizerId, int limit) {
 		return events.findByOrganizerId(organizerId, PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "startsAt")))
 				.stream()

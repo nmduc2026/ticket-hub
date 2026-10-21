@@ -73,6 +73,22 @@ public class KeycloakTestApi {
 		return response.statusCode() == 200 ? JsonPath.read(response.body(), "$.refresh_token") : null;
 	}
 
+	/** Đăng nhập bằng mật khẩu; trả về id phiên Keycloak (claim {@code sid} của access token). */
+	public String loginSessionId(String username) {
+		ensureTestClient();
+		HttpResponse<String> response = tokenRequest(
+				Map.of("grant_type", "password", "client_id", TEST_CLIENT, "username", username, "password", PASSWORD));
+		String accessToken = JsonPath.read(response.body(), "$.access_token");
+		String payload = new String(java.util.Base64.getUrlDecoder().decode(accessToken.split("[.]")[1]),
+				StandardCharsets.UTF_8);
+		return JsonPath.read(payload, "$.sid");
+	}
+
+	/** User còn tồn tại trong Keycloak không. */
+	public boolean exists(UUID userId) {
+		return adminRequest("GET", "/admin/realms/" + REALM + "/users/" + userId, null).statusCode() == 200;
+	}
+
 	/** Mã HTTP khi đổi refresh token lấy access token mới: 200 còn hiệu lực, 400 đã mất hiệu lực. */
 	public int refreshStatus(String refreshToken) {
 		ensureTestClient();

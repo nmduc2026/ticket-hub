@@ -14,11 +14,11 @@ import com.ndz.catalog.service.EventBannerService;
 import com.ndz.catalog.service.OrganizerEventService;
 import com.ndz.catalog.entity.enums.EventStatus;
 import com.ndz.catalog.entity.Event;
-import com.ndz.catalog.entity.enums.ImageType;
 import com.ndz.catalog.repository.EventRepository;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 import com.ndz.shared.util.Uuid7;
+import com.ndz.shared.storage.ImageType;
 import com.ndz.shared.storage.ObjectStorage;
 import com.ndz.shared.storage.StorageException;
 import com.ndz.shared.storage.StorageProperties;
@@ -84,15 +84,7 @@ public class EventBannerServiceImpl implements EventBannerService {
 	}
 
 	private ImageType validate(byte[] content) {
-		if (content.length == 0) {
-			throw new BusinessException(ErrorCode.EMPTY_FILE, "File rỗng");
-		}
-		if (content.length > properties.maxBannerSize().toBytes()) {
-			throw new BusinessException(ErrorCode.IMAGE_TOO_LARGE,
-					"Ảnh vượt quá " + properties.maxBannerSize().toMegabytes() + " MB");
-		}
-		return ImageType.detect(content).orElseThrow(
-				() -> new BusinessException(ErrorCode.UNSUPPORTED_IMAGE_TYPE, "Chỉ nhận ảnh jpg, png hoặc webp"));
+		return ImageType.validate(content, properties.maxBannerSize());
 	}
 
 	private Event owned(UUID organizerId, UUID eventId) {

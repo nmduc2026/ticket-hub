@@ -19,14 +19,15 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
  * {@code SecurityContextHolder}; code khác gọi {@link #require()} hoặc {@link #current()}.
  *
  * @param authTime thời điểm đăng nhập (claim {@code auth_time}), null nếu token không có
+ * @param sessionId phiên đăng nhập Keycloak của token (claim {@code sid}), null nếu token không có
  */
 public record CurrentUser(UUID id, String email, String fullName, String username, Set<String> roles,
-		Instant authTime) {
+		Instant authTime, String sessionId) {
 
 	public static CurrentUser from(Jwt jwt) {
 		return new CurrentUser(UUID.fromString(jwt.getSubject()), jwt.getClaimAsString("email"),
 				jwt.getClaimAsString("name"), jwt.getClaimAsString("preferred_username"), KeycloakRolesConverter.roles(jwt),
-				jwt.getClaimAsInstant("auth_time"));
+				jwt.getClaimAsInstant("auth_time"), jwt.getClaimAsString("sid"));
 	}
 
 	public static Optional<CurrentUser> current() {

@@ -208,6 +208,62 @@
         }
       }
     },
+    "/api/v1/me/profile" : {
+      "get" : {
+        "tags" : [ "my-profile-controller" ],
+        "summary" : "Hồ sơ cá nhân",
+        "operationId" : "getMyProfile",
+        "responses" : {
+          "200" : {
+            "description" : "Hồ sơ",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Profile"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "my-profile-controller" ],
+        "summary" : "Sửa SĐT, ngày sinh, tỉnh / thành",
+        "operationId" : "updateMyProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Hồ sơ sau khi sửa",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "PHONE_INVALID, DATE_OF_BIRTH_INVALID hoặc PROVINCE_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/notification-preferences" : {
       "get" : {
         "tags" : [ "my-notification-controller" ],
@@ -678,6 +734,51 @@
         "responses" : {
           "204" : {
             "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/avatar" : {
+      "post" : {
+        "tags" : [ "my-profile-controller" ],
+        "summary" : "Tải ảnh đại diện (jpg, png, webp, tối đa 2 MB)",
+        "operationId" : "uploadMyAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Địa chỉ ảnh mới",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AvatarUpload"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -1210,6 +1311,47 @@
             }
           }
         }
+      },
+      "delete" : {
+        "tags" : [ "my-profile-controller" ],
+        "summary" : "Xoá tài khoản",
+        "description" : "Xoá tài khoản ở Keycloak và ẩn danh hoá hồ sơ; đơn và vé cũ giữ lại để đối soát.",
+        "operationId" : "deleteMyAccount",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "204" : {
+            "description" : "Đã xoá"
+          },
+          "409" : {
+            "description" : "ACCOUNT_HAS_UPCOMING_TICKETS",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "CONFIRM_EMAIL_MISMATCH",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/me/tickets" : {
@@ -1245,6 +1387,28 @@
                   "type" : "array",
                   "items" : {
                     "$ref" : "#/components/schemas/Ticket"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/sessions" : {
+      "get" : {
+        "tags" : [ "my-profile-controller" ],
+        "summary" : "Phiên đăng nhập đang có",
+        "operationId" : "listMySessions",
+        "responses" : {
+          "200" : {
+            "description" : "Các phiên; phiên hiện tại có current = true",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserSession"
                   }
                 }
               }
@@ -1838,6 +2002,46 @@
           }
         }
       }
+    },
+    "/api/v1/me/sessions/{sessionId}" : {
+      "delete" : {
+        "tags" : [ "my-profile-controller" ],
+        "summary" : "Đăng xuất một phiên khác",
+        "operationId" : "endMySession",
+        "parameters" : [ {
+          "name" : "sessionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "Đã kết thúc phiên"
+          },
+          "404" : {
+            "description" : "SESSION_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "CANNOT_END_CURRENT_SESSION (dùng nút Đăng xuất)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components" : {
@@ -2100,6 +2304,68 @@
         },
         "required" : [ "name" ]
       },
+      "UpdateProfileRequest" : {
+        "type" : "object",
+        "properties" : {
+          "phone" : {
+            "type" : "string",
+            "description" : "0… hoặc +84…, 10 số; khoảng trắng, dấu chấm, gạch nối được bỏ qua",
+            "maxLength" : 20,
+            "minLength" : 0
+          },
+          "dateOfBirth" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "provinceId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Tỉnh / thành (đơn vị hành chính cấp 1)"
+          }
+        }
+      },
+      "Profile" : {
+        "type" : "object",
+        "properties" : {
+          "userId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          },
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "dateOfBirth" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "province" : {
+            "$ref" : "#/components/schemas/ProfileProvince"
+          }
+        },
+        "required" : [ "userId" ]
+      },
+      "ProfileProvince" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "name" ]
+      },
       "NotificationPreferenceChange" : {
         "type" : "object",
         "properties" : {
@@ -2227,6 +2493,15 @@
           }
         },
         "required" : [ "status" ]
+      },
+      "AvatarUpload" : {
+        "type" : "object",
+        "properties" : {
+          "avatarUrl" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "avatarUrl" ]
       },
       "CheckInRequest" : {
         "type" : "object",
@@ -2720,6 +2995,30 @@
           }
         },
         "required" : [ "number", "row", "sectionCode" ]
+      },
+      "UserSession" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "ipAddress" : {
+            "type" : "string"
+          },
+          "startedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastAccessAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "current" : {
+            "type" : "boolean",
+            "description" : "Phiên của trình duyệt đang gọi"
+          }
+        },
+        "required" : [ "current", "id", "lastAccessAt", "startedAt" ]
       },
       "Notification" : {
         "type" : "object",
@@ -3574,6 +3873,18 @@
           }
         },
         "required" : [ "bookingId", "currency", "eventTitle", "totalMinor", "userEmail" ]
+      },
+      "DeleteAccountRequest" : {
+        "type" : "object",
+        "properties" : {
+          "confirmEmail" : {
+            "type" : "string",
+            "description" : "Email của tài khoản, gõ lại để xác nhận",
+            "maxLength" : 320,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "confirmEmail" ]
       }
     }
   }

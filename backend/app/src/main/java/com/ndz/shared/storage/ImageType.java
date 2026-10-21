@@ -1,9 +1,14 @@
-package com.ndz.catalog.entity.enums;
+package com.ndz.shared.storage;
 
 import java.util.Optional;
 
+import org.springframework.util.unit.DataSize;
+
+import com.ndz.shared.exception.BusinessException;
+import com.ndz.shared.exception.ErrorCode;
+
 /**
- * Loại ảnh banner được chấp nhận, nhận diện bằng chữ ký đầu file chứ không tin {@code Content-Type} hay tên file do
+ * Loại ảnh tải lên được chấp nhận (banner, ảnh đại diện), nhận diện bằng chữ ký đầu file chứ không tin {@code Content-Type} hay tên file do
  * client gửi (file đổi đuôi không qua được).
  */
 public enum ImageType {
@@ -24,6 +29,22 @@ public enum ImageType {
 
 	public String extension() {
 		return extension;
+	}
+
+	/**
+	 * Kiểm ảnh tải lên: không rỗng, không quá {@code maxSize}, đúng một trong các loại nhận.
+	 *
+	 * @throws BusinessException {@code EMPTY_FILE}, {@code IMAGE_TOO_LARGE} hoặc {@code UNSUPPORTED_IMAGE_TYPE}
+	 */
+	public static ImageType validate(byte[] content, DataSize maxSize) {
+		if (content.length == 0) {
+			throw new BusinessException(ErrorCode.EMPTY_FILE, "File rỗng");
+		}
+		if (content.length > maxSize.toBytes()) {
+			throw new BusinessException(ErrorCode.IMAGE_TOO_LARGE, "Ảnh vượt quá " + maxSize.toMegabytes() + " MB");
+		}
+		return detect(content).orElseThrow(
+				() -> new BusinessException(ErrorCode.UNSUPPORTED_IMAGE_TYPE, "Chỉ nhận ảnh jpg, png hoặc webp"));
 	}
 
 	public static Optional<ImageType> detect(byte[] bytes) {

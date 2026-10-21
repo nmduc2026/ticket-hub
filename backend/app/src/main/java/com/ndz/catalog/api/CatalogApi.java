@@ -45,6 +45,9 @@ public interface CatalogApi {
 	record GuestInfo(Instant doorsOpenAt, Short ageRestriction, String rules) {
 	}
 
+	/** Tên tỉnh / thành (đơn vị hành chính cấp 1 đang dùng); rỗng nếu id không phải tỉnh / thành. */
+	Optional<String> provinceName(UUID provinceId);
+
 	/** Sự kiện của một organizer, mới diễn trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). */
 	List<OrganizerEvent> eventsOf(UUID organizerId, int limit);
 

@@ -24,6 +24,7 @@ import com.ndz.catalog.service.OrganizerApplicationService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 import com.ndz.shared.util.Uuid7;
+import com.ndz.shared.util.VietnamesePhone;
 
 /**
  * Đăng ký làm organizer (overview.md §7.6). Khoá dòng organizer của chính người nộp nên hai lần nộp đồng thời chỉ một
@@ -37,7 +38,6 @@ public class OrganizerApplicationServiceImpl implements OrganizerApplicationServ
 	private static final Pattern SEPARATORS = Pattern.compile("[\\s.\\-]");
 	private static final Pattern TAX_CODE = Pattern.compile("\\d{10}(\\d{3})?");
 	private static final Pattern CITIZEN_ID = Pattern.compile("\\d{12}");
-	private static final Pattern PHONE = Pattern.compile("(0|\\+84)\\d{9}");
 	private static final Pattern URL = Pattern.compile("https?://\\S+");
 
 	private final OrganizerRepository organizers;
@@ -96,7 +96,7 @@ public class OrganizerApplicationServiceImpl implements OrganizerApplicationServ
 							: "Số CCCD gồm 12 chữ số");
 		}
 		String phone = SEPARATORS.matcher(request.contactPhone()).replaceAll("");
-		if (!PHONE.matcher(phone).matches()) {
+		if (!VietnamesePhone.isValid(phone)) {
 			throw new BusinessException(ErrorCode.PHONE_INVALID, "Số điện thoại không hợp lệ");
 		}
 		String website = blankToNull(request.website());

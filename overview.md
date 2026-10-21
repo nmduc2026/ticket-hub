@@ -348,12 +348,16 @@ Thông báo về vé, hoàn tiền, huỷ sự kiện và kết quả duyệt h�
 user_profiles  (user_id PK = Keycloak sub, email, full_name, username,
                 roles TEXT[],              -- CUSTOMER / ORGANIZER / ADMIN
                 enabled BOOLEAN DEFAULT true,
-                last_login_at, created_at, updated_at)
+                last_login_at, created_at, updated_at,
+                avatar_url, phone, date_of_birth, province_id,   -- app giữ; province_id: đơn vị hành chính cấp 1 (§6.1)
+                deleted_at NULL)                                 -- tài khoản đã xoá, hồ sơ đã ẩn danh
 ```
 
 - **Keycloak là nguồn sự thật** về tài khoản; người dùng sửa email, tên, mật khẩu ở trang tài khoản của Keycloak. `user_profiles` là bản sao để hiển thị và tra cứu trong app (Admin tìm khách, audit log hiển thị tên người thao tác, organizer xem tên người đăng ký).
 - **Đồng bộ khi đăng nhập**: access token mang sẵn `sub`, `email`, `name`, `preferred_username`. Request đầu tiên của người dùng tạo bản ghi; các request sau so claim với bản ghi (có cache theo session) và chỉ ghi DB khi có thay đổi. Email đổi trong Keycloak được cập nhật ở lần đăng nhập kế tiếp.
 - Email gửi vé lấy theo `bookings.contact_email` (email lúc mua), không lấy từ `user_profiles`.
+- **Hồ sơ app giữ**: SĐT, ngày sinh, tỉnh / thành, ảnh đại diện lưu ở `user_profiles` (sửa qua `/me/profile`); email, tên, mật khẩu vẫn sửa ở Keycloak.
+- **Phiên và xoá tài khoản** qua Keycloak Admin API (client `tickethub-account-admin`): xem / kết thúc phiên của chính mình (không kết thúc phiên đang dùng, dùng nút Đăng xuất); xoá tài khoản xoá user ở Keycloak rồi ẩn danh hoá `user_profiles` (xoá email, tên, SĐT, ảnh, ghi `deleted_at`), giữ booking và vé cũ để đối soát; còn vé hợp lệ của sự kiện chưa diễn thì từ chối. Hồ sơ đã xoá không được đồng bộ lại từ access token còn hạn.
 - **Role**: đồng bộ từ `realm_access.roles` khi đăng nhập. Khi Admin duyệt organizer, Account nhận `OrganizerApproved`, gán role `ORGANIZER` trong Keycloak (Admin API) và thêm `ORGANIZER` vào `roles` ngay. Role có hiệu lực trong request của người đó sau lần refresh token kế tiếp (tối đa 5 phút).
 - **Khoá tài khoản** (Admin): Account gọi Keycloak Admin API đặt `enabled = false` và đăng xuất mọi session của người dùng (refresh token mất hiệu lực), cập nhật `user_profiles.enabled`, ghi audit log. Access token đã cấp còn dùng được tối đa 5 phút. Admin không khoá được chính mình. Khoá tài khoản chỉ chặn đăng nhập; muốn dừng bán sự kiện của một organizer thì dùng đình chỉ organizer (BR-13).
 - **Màn hình người dùng** (Admin): danh sách có tìm theo tên / email và lọc theo role; trang chi tiết gồm hồ sơ, đơn hàng, vé, yêu cầu hoàn tiền và (với organizer) sự kiện của họ. Dữ liệu ở các module khác lấy qua interface công khai của từng module.
@@ -775,6 +779,11 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | POST | `/api/v1/webhooks/stripe` | Stripe (verify chữ ký) | Webhook của tài khoản platform (PaymentIntent, refund) |
 | POST | `/api/v1/webhooks/stripe-connect` | Stripe (verify chữ ký Connect) | Webhook của connected account (`account.updated`) |
 | GET | `/api/v1/me` | đã đăng nhập | Hồ sơ người dùng và role |
+| GET/PUT | `/api/v1/me/profile` | đã đăng nhập | Hồ sơ cá nhân: SĐT, ngày sinh, tỉnh / thành, ảnh đại diện (email, tên chỉ đọc); `PHONE_INVALID`, `DATE_OF_BIRTH_INVALID`, `PROVINCE_NOT_FOUND` |
+| POST | `/api/v1/me/avatar` | đã đăng nhập | Ảnh đại diện (multipart, jpg / png / webp, ≤ 2 MB) |
+| GET | `/api/v1/me/sessions` | đã đăng nhập | Phiên đăng nhập (Keycloak), đánh dấu phiên hiện tại theo claim `sid` |
+| DELETE | `/api/v1/me/sessions/{id}` | đã đăng nhập | Đăng xuất một phiên khác; phiên hiện tại → `409 CANNOT_END_CURRENT_SESSION` |
+| DELETE | `/api/v1/me` | đã đăng nhập | Xoá tài khoản: gõ lại email (`CONFIRM_EMAIL_MISMATCH`); còn vé sự kiện chưa diễn → `409 ACCOUNT_HAS_UPCOMING_TICKETS` |
 | GET | `/api/v1/me/tickets` | customer | Vé của tôi |
 | GET | `/api/v1/me/bookings` | customer | Đơn của tôi (gồm trạng thái hoàn tiền) |
 | GET | `/api/v1/me/notifications?unread=&cursor=` | đã đăng nhập | Hộp thư thông báo (cursor) |

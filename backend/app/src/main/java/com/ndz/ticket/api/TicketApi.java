@@ -13,6 +13,9 @@ public interface TicketApi {
 	/** Vé của một người dùng, mới phát trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). Không kèm mã QR. */
 	List<UserTicket> ticketsOf(UUID userId, int limit);
 
+	/** Người dùng còn vé hợp lệ của sự kiện chưa diễn (chặn xoá tài khoản). */
+	boolean hasUpcomingTickets(UUID userId, Instant now);
+
 	record UserTicket(UUID ticketId, String eventTitle, Instant startsAt, String venueName, String sectionCode,
 			String row, int number, String tierName, String status) {
 	}

@@ -8,11 +8,9 @@ import type { OrganizerEventDetail } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
 import { EventPoster } from '@/features/events/EventPoster'
 import { errorMessage } from '@/lib/error-messages'
+import { ACCEPTED_IMAGE_TYPES, imageFileError } from '@/lib/image-upload'
 
 import { invalidateOrganizerEvent } from './eventRequest'
-
-const MAX_BYTES = 2 * 1024 * 1024
-const ACCEPTED = ['image/jpeg', 'image/png', 'image/webp']
 
 /**
  * Ảnh bìa (màn #24). Chọn ảnh là gửi ngay (`POST /organizer/events/{id}/banner`, multipart); kiểm loại và cỡ ở client
@@ -28,8 +26,8 @@ export function BannerCard({ event }: { event: OrganizerEventDetail }) {
   const onFile = (file: File | undefined) => {
     setLocalError(null)
     if (!file) return
-    if (!ACCEPTED.includes(file.type)) return setLocalError(t('errors.UNSUPPORTED_IMAGE_TYPE'))
-    if (file.size > MAX_BYTES) return setLocalError(t('errors.IMAGE_TOO_LARGE'))
+    const fileError = imageFileError(file)
+    if (fileError) return setLocalError(t(`errors.${fileError}`))
     upload.mutate(
       { eventId: event.id, data: { file } },
       {
@@ -61,7 +59,7 @@ export function BannerCard({ event }: { event: OrganizerEventDetail }) {
           ref={input}
           id="banner-file"
           type="file"
-          accept={ACCEPTED.join(',')}
+          accept={ACCEPTED_IMAGE_TYPES.join(',')}
           className="sr-only"
           onChange={(change) => onFile(change.target.files?.[0])}
         />

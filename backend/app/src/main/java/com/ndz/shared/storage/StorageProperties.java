@@ -16,9 +16,10 @@ import org.springframework.util.unit.DataSize;
  * @param accessKey khoá truy cập tĩnh cho dev; để trống thì dùng chuỗi credentials mặc định (IAM role)
  * @param secretKey khoá bí mật đi kèm {@code accessKey}
  * @param maxBannerSize dung lượng tối đa của ảnh banner
+ * @param maxAvatarSize dung lượng tối đa của ảnh đại diện
  */
 @ConfigurationProperties("tickethub.storage")
 public record StorageProperties(URI endpoint, @DefaultValue("ap-southeast-1") String region,
 		@DefaultValue("tickethub-media") String bucket, String publicBaseUrl, String accessKey, String secretKey,
-		@DefaultValue("2MB") DataSize maxBannerSize) {
+		@DefaultValue("2MB") DataSize maxBannerSize, @DefaultValue("2MB") DataSize maxAvatarSize) {
 }

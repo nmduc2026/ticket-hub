@@ -38,6 +38,8 @@ public class KeycloakAdminClient {
 	};
 	private static final ParameterizedTypeReference<Map<String, Object>> OBJECT = new ParameterizedTypeReference<>() {
 	};
+	private static final ParameterizedTypeReference<List<Map<String, Object>>> OBJECT_LIST = new ParameterizedTypeReference<>() {
+	};
 	/** Làm mới token sớm hơn hạn chút để request đang bay không bị từ chối. */
 	private static final Duration TOKEN_MARGIN = Duration.ofSeconds(10);
 
@@ -90,6 +92,53 @@ public class KeycloakAdminClient {
 					.retrieve().toBodilessEntity();
 			return null;
 		});
+	}
+
+	/** Các phiên đăng nhập đang có của user. */
+	public List<UserSession> sessions(UUID userId) {
+		return call("đọc phiên đăng nhập", () -> get(userUrl(userId) + "/sessions", OBJECT_LIST).stream()
+				.map(session -> new UserSession((String) session.get("id"), (String) session.get("ipAddress"),
+						Instant.ofEpochMilli(((Number) session.get("start")).longValue()),
+						Instant.ofEpochMilli(((Number) session.get("lastAccess")).longValue())))
+				.toList());
+	}
+
+	/** Kết thúc một phiên: refresh token của phiên đó mất hiệu lực. Phiên đã hết thì coi như xong. */
+	public void endSession(String sessionId) {
+		try {
+			call("kết thúc phiên", () -> {
+				rest.delete().uri("/admin/realms/" + config.realm() + "/sessions/" + sessionId)
+						.headers(headers -> headers.setBearerAuth(accessToken())).retrieve().toBodilessEntity();
+				return null;
+			});
+		}
+		catch (BusinessException e) {
+			if (e.code() != ErrorCode.USER_NOT_FOUND) {
+				throw e;
+			}
+			log.info("Phiên {} đã không còn ở Keycloak", sessionId);
+		}
+	}
+
+	/** Xoá user khỏi Keycloak (mọi phiên mất theo). User đã bị xoá thì coi như xong. */
+	public void deleteUser(UUID userId) {
+		try {
+			call("xoá user", () -> {
+				rest.delete().uri(userUrl(userId)).headers(headers -> headers.setBearerAuth(accessToken())).retrieve()
+						.toBodilessEntity();
+				return null;
+			});
+		}
+		catch (BusinessException e) {
+			if (e.code() != ErrorCode.USER_NOT_FOUND) {
+				throw e;
+			}
+			log.info("User {} đã không còn ở Keycloak", userId);
+		}
+	}
+
+	/** Một phiên đăng nhập; {@code ipAddress} có thể null. */
+	public record UserSession(String id, String ipAddress, Instant startedAt, Instant lastAccessAt) {
 	}
 
 	private List<String> roleNames(String mappingsUrl) {

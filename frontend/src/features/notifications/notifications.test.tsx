@@ -164,6 +164,8 @@ describe('Cài đặt thông báo (AC-15)', () => {
         sent = await request.json()
         return HttpResponse.json([])
       }),
+      http.get('/api/v1/me/profile', () => HttpResponse.json({ userId: 'u1', email: 'customer@tickethub.local' })),
+      http.get('/api/v1/administrative-units', () => HttpResponse.json([])),
     )
     const user = userEvent.setup()
     renderAt('/me/profile')
