@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,8 @@ import com.ndz.backend.catalog.internal.domain.CatalogViews.ElementRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SeatMapRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.SectionRow;
 import com.ndz.backend.catalog.internal.domain.CatalogViews.VenueRow;
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 
 /** Địa điểm và sơ đồ ghế cho organizer chọn khi tạo sự kiện (overview.md §11.2). Chỉ đọc. */
 @Service
@@ -38,7 +38,7 @@ public class VenueQueryService {
 	@Transactional(readOnly = true)
 	public List<SeatMapView> seatMaps(UUID venueId) {
 		if (!catalog.venueExists(venueId)) {
-			throw new BusinessException("VENUE_NOT_FOUND", "Không tìm thấy địa điểm", HttpStatus.NOT_FOUND);
+			throw new BusinessException(ErrorCode.VENUE_NOT_FOUND, "Không tìm thấy địa điểm");
 		}
 		List<SeatMapRow> maps = catalog.listSeatMaps(venueId);
 		List<UUID> ids = maps.stream().map(SeatMapRow::id).toList();

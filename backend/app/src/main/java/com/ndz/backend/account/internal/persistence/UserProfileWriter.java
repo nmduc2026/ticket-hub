@@ -8,7 +8,7 @@ import java.util.TreeSet;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.ndz.backend.shared.CurrentUser;
+import com.ndz.backend.shared.util.CurrentUser;
 
 /** Upsert hồ sơ trong một câu lệnh: tạo nếu chưa có, chỉ ghi khi claim khác bản ghi (ADR 0016). */
 @Repository

@@ -1,5 +1,6 @@
 package com.ndz.backend.booking;
 
+import com.ndz.backend.shared.exception.ErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -10,7 +11,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import com.ndz.backend.booking.internal.domain.BookingStatus;
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
 
 /** Máy trạng thái booking (overview.md §7.7): mỗi chuyển hợp lệ, và mọi chuyển còn lại đều bị từ chối. */
 class BookingStateMachineTests {
@@ -41,7 +42,7 @@ class BookingStateMachineTests {
 				assertThat(from.canTransitionTo(to)).as("%s -> %s", from, to).isFalse();
 				assertThatThrownBy(() -> from.requireTransitionTo(to)).isInstanceOfSatisfying(BusinessException.class,
 						e -> {
-							assertThat(e.code()).isEqualTo("INVALID_BOOKING_TRANSITION");
+							assertThat(e.code()).isEqualTo(ErrorCode.INVALID_BOOKING_TRANSITION);
 							assertThat(e.status().value()).isEqualTo(409);
 						});
 			}

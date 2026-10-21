@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

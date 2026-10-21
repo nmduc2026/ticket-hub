@@ -11,7 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 import com.ndz.backend.shared.idempotency.Idempotent;
 
 /** Endpoint chỉ có trong test để kiểm tra filter Idempotency-Key; {@code executions} đếm số lần controller thật sự chạy. */
@@ -37,7 +38,7 @@ public class IdempotencyProbeController {
 	@Idempotent(scope = "test-conflict")
 	void conflict() {
 		executions.incrementAndGet();
-		throw new BusinessException("SEAT_UNAVAILABLE", "Ghế vừa có người giữ", HttpStatus.CONFLICT);
+		throw new BusinessException(ErrorCode.SEAT_UNAVAILABLE, "Ghế vừa có người giữ");
 	}
 
 	@PostMapping("/boom")

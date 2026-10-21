@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;

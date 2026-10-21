@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,7 +16,8 @@ import com.ndz.backend.booking.internal.domain.EventViews.TierAvailability;
 import com.ndz.backend.booking.internal.persistence.PublicEventQueries;
 import com.ndz.backend.catalog.CatalogApi;
 import com.ndz.backend.catalog.CatalogApi.SeatMapLayout;
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 
 /**
  * Đọc công khai về sự kiện cho khách chưa đăng nhập (overview.md §11.2). Sơ đồ ghế lấy từ Catalog qua interface công
@@ -71,7 +71,7 @@ public class PublicEventService {
 
 	private EventDetail find(UUID eventId) {
 		return queries.detail(eventId).orElseThrow(
-				() -> new BusinessException("EVENT_NOT_FOUND", "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND, "Không tìm thấy sự kiện"));
 	}
 
 }

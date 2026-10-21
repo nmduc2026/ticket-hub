@@ -36,7 +36,7 @@ import com.ndz.backend.catalog.events.EventPublished;
 import com.ndz.backend.catalog.events.EventUpdated;
 import com.ndz.backend.catalog.events.SeatInventoryReady;
 import com.ndz.backend.catalog.internal.application.EventLifecycleService;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Publish và vòng đời sự kiện (BR-05, BR-06, BR-14; overview.md §7.7, §7.9): điều kiện publish, chốt phí, khoá sơ đồ,

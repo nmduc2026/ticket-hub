@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -16,8 +15,9 @@ import com.ndz.backend.catalog.internal.domain.EventStatus;
 import com.ndz.backend.catalog.internal.domain.Event;
 import com.ndz.backend.catalog.internal.domain.ImageType;
 import com.ndz.backend.catalog.internal.persistence.EventRepository;
-import com.ndz.backend.shared.BusinessException;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.Uuid7;
 import com.ndz.backend.shared.storage.ObjectStorage;
 import com.ndz.backend.shared.storage.StorageException;
 import com.ndz.backend.shared.storage.StorageProperties;
@@ -84,19 +84,19 @@ public class EventBannerService {
 
 	private ImageType validate(byte[] content) {
 		if (content.length == 0) {
-			throw new BusinessException("EMPTY_FILE", "File rỗng");
+			throw new BusinessException(ErrorCode.EMPTY_FILE, "File rỗng");
 		}
 		if (content.length > properties.maxBannerSize().toBytes()) {
-			throw new BusinessException("IMAGE_TOO_LARGE",
+			throw new BusinessException(ErrorCode.IMAGE_TOO_LARGE,
 					"Ảnh vượt quá " + properties.maxBannerSize().toMegabytes() + " MB");
 		}
 		return ImageType.detect(content).orElseThrow(
-				() -> new BusinessException("UNSUPPORTED_IMAGE_TYPE", "Chỉ nhận ảnh jpg, png hoặc webp"));
+				() -> new BusinessException(ErrorCode.UNSUPPORTED_IMAGE_TYPE, "Chỉ nhận ảnh jpg, png hoặc webp"));
 	}
 
 	private Event owned(UUID organizerId, UUID eventId) {
 		return events.findByIdAndOrganizerId(eventId, organizerId).orElseThrow(
-				() -> new BusinessException("EVENT_NOT_FOUND", "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND, "Không tìm thấy sự kiện"));
 	}
 
 	/** Xoá không làm hỏng kết quả chính: file mồ côi chỉ tốn chỗ, nhưng phải để lại dấu vết trong log. */

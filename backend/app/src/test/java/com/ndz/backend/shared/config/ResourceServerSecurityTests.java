@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.config;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;

@@ -4,9 +4,9 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.springframework.http.HttpStatus;
 
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 
 /**
  * Máy trạng thái booking (overview.md §7.7). Chỉ các chuyển trong bảng là hợp lệ; chuyển khác bị từ chối. Mỗi chuyển
@@ -33,8 +33,8 @@ public enum BookingStatus {
 
 	public void requireTransitionTo(BookingStatus next) {
 		if (!canTransitionTo(next)) {
-			throw new BusinessException("INVALID_BOOKING_TRANSITION",
-					"Không thể chuyển đơn từ %s sang %s".formatted(this, next), HttpStatus.CONFLICT);
+			throw new BusinessException(ErrorCode.INVALID_BOOKING_TRANSITION,
+					"Không thể chuyển đơn từ %s sang %s".formatted(this, next));
 		}
 	}
 

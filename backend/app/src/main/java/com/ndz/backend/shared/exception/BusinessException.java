@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.exception;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -7,21 +7,16 @@ import org.springframework.http.HttpStatus;
 
 /**
  * Lỗi nghiệp vụ có mã ổn định cho frontend (vd. {@code SEAT_UNAVAILABLE}); được chuyển thành Problem Details.
+ * Trạng thái HTTP lấy từ {@link ErrorCode}.
  */
 public class BusinessException extends RuntimeException {
 
-	private final String code;
-	private final HttpStatus status;
+	private final ErrorCode code;
 	private final Map<String, Object> properties = new LinkedHashMap<>();
 
-	public BusinessException(String code, String message) {
-		this(code, message, HttpStatus.UNPROCESSABLE_CONTENT);
-	}
-
-	public BusinessException(String code, String message, HttpStatus status) {
+	public BusinessException(ErrorCode code, String message) {
 		super(message);
 		this.code = code;
-		this.status = status;
 	}
 
 	/** Thêm thông tin có cấu trúc vào Problem Details (vd. danh sách mục còn thiếu), để frontend hiển thị chi tiết. */
@@ -34,12 +29,12 @@ public class BusinessException extends RuntimeException {
 		return Map.copyOf(properties);
 	}
 
-	public String code() {
+	public ErrorCode code() {
 		return code;
 	}
 
 	public HttpStatus status() {
-		return status;
+		return code.status();
 	}
 
 }

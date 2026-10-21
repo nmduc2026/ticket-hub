@@ -32,7 +32,7 @@ import com.ndz.backend.TestTokens;
 import com.ndz.backend.catalog.events.EventPublished;
 import com.ndz.backend.catalog.events.EventUpdated;
 import com.ndz.backend.catalog.internal.application.EventLifecycleService;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Booking nghe event của Catalog (plan Sprint 2 việc 5; overview.md §6.2, §7.9, §8.3): sau publish có

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ndz.backend.account.internal.application.UserProfileService;
 import com.ndz.backend.account.internal.domain.UserProfile;
-import com.ndz.backend.shared.CurrentUser;
+import com.ndz.backend.shared.util.CurrentUser;
 
 @RestController
 @RequestMapping("/api/v1/me")

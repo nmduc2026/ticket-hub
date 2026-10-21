@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import com.ndz.backend.account.internal.application.UserProfileService;
-import com.ndz.backend.shared.CurrentUser;
+import com.ndz.backend.shared.util.CurrentUser;
 
 /** Đồng bộ hồ sơ ở mọi request đã xác thực tới `/api/**` (overview.md §6.6, ADR 0016). */
 @Component

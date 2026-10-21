@@ -1,4 +1,4 @@
-package com.ndz.backend.shared.events;
+package com.ndz.backend.shared.event;
 
 import java.time.Instant;
 import java.util.UUID;

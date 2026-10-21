@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.config;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,7 +16,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
  * Role lấy từ {@code realm_access.roles}; chỉ {@code CUSTOMER}, {@code ORGANIZER}, {@code ADMIN} thành {@code ROLE_*}
  * (bỏ {@code offline_access}, {@code uma_authorization}, {@code default-roles-*}).
  */
-final class KeycloakRolesConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+public final class KeycloakRolesConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
 	static final Set<String> APP_ROLES = Set.of("CUSTOMER", "ORGANIZER", "ADMIN");
 

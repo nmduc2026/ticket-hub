@@ -1,10 +1,12 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.config;
+
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.ProblemWriter;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -41,11 +43,9 @@ class ResourceServerConfiguration {
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRolesConverter()))
-						.authenticationEntryPoint((request, response, ex) -> ProblemWriter.write(response,
-								HttpStatus.UNAUTHORIZED, "UNAUTHENTICATED", "Chưa đăng nhập hoặc token không hợp lệ")))
+						.authenticationEntryPoint((request, response, ex) -> ProblemWriter.write(response, ErrorCode.UNAUTHENTICATED, "Chưa đăng nhập hoặc token không hợp lệ")))
 				.exceptionHandling(exceptions -> exceptions
-						.accessDeniedHandler((request, response, ex) -> ProblemWriter.write(response, HttpStatus.FORBIDDEN,
-								"FORBIDDEN", "Không đủ quyền thực hiện thao tác này")))
+						.accessDeniedHandler((request, response, ex) -> ProblemWriter.write(response, ErrorCode.FORBIDDEN, "Không đủ quyền thực hiện thao tác này")))
 				// Sau xác thực và phân quyền theo đường dẫn, trước controller: tra Idempotency-Key trước mọi xử lý nghiệp vụ.
 				.addFilterAfter(idempotencyFilter, AuthorizationFilter.class)
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

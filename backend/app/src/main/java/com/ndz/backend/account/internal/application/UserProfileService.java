@@ -6,15 +6,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.backend.account.internal.domain.UserProfile;
 import com.ndz.backend.account.internal.persistence.UserProfileRepository;
 import com.ndz.backend.account.internal.persistence.UserProfileWriter;
-import com.ndz.backend.shared.BusinessException;
-import com.ndz.backend.shared.CurrentUser;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.CurrentUser;
 
 @Service
 public class UserProfileService {
@@ -59,7 +59,7 @@ public class UserProfileService {
 	@Transactional(readOnly = true)
 	public UserProfile get(UUID userId) {
 		return repository.findById(userId).orElseThrow(
-				() -> new BusinessException("PROFILE_NOT_FOUND", "Chưa có hồ sơ người dùng", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.PROFILE_NOT_FOUND, "Chưa có hồ sơ người dùng"));
 	}
 
 }

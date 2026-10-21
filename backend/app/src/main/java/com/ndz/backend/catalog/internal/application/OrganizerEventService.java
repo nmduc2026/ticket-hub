@@ -14,7 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,8 +28,9 @@ import com.ndz.backend.catalog.internal.persistence.EventRepository;
 import com.ndz.backend.catalog.internal.persistence.EventSpecifications;
 import com.ndz.backend.catalog.internal.persistence.TicketTierRepository;
 import com.ndz.backend.catalog.internal.persistence.TierSectionRepository;
-import com.ndz.backend.shared.BusinessException;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Use case của organizer trên sự kiện của chính họ (overview.md §11.2, §13.3). Mọi truy cập đi qua
@@ -78,8 +78,7 @@ public class OrganizerEventService {
 	@Transactional
 	public EventDetail create(UUID organizerId, EventContent content) {
 		if (!catalog.organizerExists(organizerId)) {
-			throw new BusinessException("ORGANIZER_NOT_REGISTERED", "Tài khoản chưa đăng ký ban tổ chức",
-					HttpStatus.FORBIDDEN);
+			throw new BusinessException(ErrorCode.ORGANIZER_NOT_REGISTERED, "Tài khoản chưa đăng ký ban tổ chức");
 		}
 		validateSalesInfo(content);
 		Event event = events.save(Event.draft(Uuid7.next(clock), organizerId, content, clock.instant()));
@@ -170,12 +169,12 @@ public class OrganizerEventService {
 		Event event = ownedEvent(organizerId, eventId);
 		event.requireDraftForSalesSetup();
 		if (event.getSeatMapId() == null) {
-			throw new BusinessException("SEAT_MAP_REQUIRED", "Chọn sơ đồ ghế trước khi gán hạng vé");
+			throw new BusinessException(ErrorCode.SEAT_MAP_REQUIRED, "Chọn sơ đồ ghế trước khi gán hạng vé");
 		}
 		Set<UUID> seen = new HashSet<>();
 		for (Assignment assignment : assignments) {
 			if (!seen.add(assignment.sectionId())) {
-				throw new BusinessException("DUPLICATE_SECTION", "Một khu chỉ được gán cho một hạng vé");
+				throw new BusinessException(ErrorCode.DUPLICATE_SECTION, "Một khu chỉ được gán cho một hạng vé");
 			}
 		}
 		Set<UUID> sectionsOfMap = catalog.sectionIdsOfSeatMap(event.getSeatMapId());
@@ -183,10 +182,10 @@ public class OrganizerEventService {
 				.collect(Collectors.toSet());
 		for (Assignment assignment : assignments) {
 			if (!sectionsOfMap.contains(assignment.sectionId())) {
-				throw new BusinessException("SECTION_NOT_IN_SEAT_MAP", "Khu không thuộc sơ đồ ghế của sự kiện");
+				throw new BusinessException(ErrorCode.SECTION_NOT_IN_SEAT_MAP, "Khu không thuộc sơ đồ ghế của sự kiện");
 			}
 			if (!tierIds.contains(assignment.tierId())) {
-				throw new BusinessException("TIER_NOT_FOUND", "Hạng vé không thuộc sự kiện này", HttpStatus.NOT_FOUND);
+				throw new BusinessException(ErrorCode.TIER_NOT_FOUND, "Hạng vé không thuộc sự kiện này");
 			}
 		}
 		tierSections.deleteByEventId(eventId);
@@ -201,13 +200,12 @@ public class OrganizerEventService {
 
 	private Event ownedEvent(UUID organizerId, UUID eventId) {
 		return events.findByIdAndOrganizerId(eventId, organizerId)
-				.orElseThrow(() -> new BusinessException("EVENT_NOT_FOUND", "Không tìm thấy sự kiện",
-						HttpStatus.NOT_FOUND));
+				.orElseThrow(() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND, "Không tìm thấy sự kiện"));
 	}
 
 	private TicketTier tier(UUID eventId, UUID tierId) {
 		return tiers.findByIdAndEventId(tierId, eventId).orElseThrow(
-				() -> new BusinessException("TIER_NOT_FOUND", "Không tìm thấy hạng vé", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.TIER_NOT_FOUND, "Không tìm thấy hạng vé"));
 	}
 
 	private EventDetail detail(Event event) {
@@ -220,21 +218,21 @@ public class OrganizerEventService {
 	/** Kiểm thông tin bán vé của nháp: địa điểm và sơ đồ hợp lệ, giờ diễn / mở bán hợp lý. */
 	private void validateSalesInfo(EventContent content) {
 		if (content.startsAt() != null && content.endsAt() != null && !content.startsAt().isBefore(content.endsAt())) {
-			throw new BusinessException("INVALID_EVENT_TIMES", "Giờ kết thúc phải sau giờ bắt đầu");
+			throw new BusinessException(ErrorCode.INVALID_EVENT_TIMES, "Giờ kết thúc phải sau giờ bắt đầu");
 		}
 		if (content.saleStartsAt() != null && content.startsAt() != null
 				&& content.saleStartsAt().isAfter(content.startsAt())) {
-			throw new BusinessException("INVALID_EVENT_TIMES", "Giờ mở bán không được sau giờ bắt đầu sự kiện");
+			throw new BusinessException(ErrorCode.INVALID_EVENT_TIMES, "Giờ mở bán không được sau giờ bắt đầu sự kiện");
 		}
 		if (content.venueId() != null && !catalog.venueExists(content.venueId())) {
-			throw new BusinessException("VENUE_NOT_FOUND", "Không tìm thấy địa điểm", HttpStatus.NOT_FOUND);
+			throw new BusinessException(ErrorCode.VENUE_NOT_FOUND, "Không tìm thấy địa điểm");
 		}
 		if (content.seatMapId() != null) {
 			if (content.venueId() == null) {
-				throw new BusinessException("VENUE_REQUIRED", "Chọn địa điểm trước khi chọn sơ đồ ghế");
+				throw new BusinessException(ErrorCode.VENUE_REQUIRED, "Chọn địa điểm trước khi chọn sơ đồ ghế");
 			}
 			if (!catalog.seatMapBelongsToVenue(content.seatMapId(), content.venueId())) {
-				throw new BusinessException("SEAT_MAP_NOT_IN_VENUE", "Sơ đồ ghế không thuộc địa điểm đã chọn");
+				throw new BusinessException(ErrorCode.SEAT_MAP_NOT_IN_VENUE, "Sơ đồ ghế không thuộc địa điểm đã chọn");
 			}
 		}
 	}

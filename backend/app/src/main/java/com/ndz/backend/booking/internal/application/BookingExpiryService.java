@@ -15,7 +15,7 @@ import com.ndz.backend.booking.events.BookingExpired;
 import com.ndz.backend.booking.internal.domain.BookingStatus;
 import com.ndz.backend.booking.internal.domain.BookingViews.LockedBooking;
 import com.ndz.backend.booking.internal.persistence.BookingRepository;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Hết hạn giữ ghế (BR-03; overview.md §7.3). Hạn tính hoàn toàn theo Postgres: {@code expires_at}, hoặc

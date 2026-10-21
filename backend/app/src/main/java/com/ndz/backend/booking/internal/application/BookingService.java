@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.PessimisticLockingFailureException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -26,8 +25,9 @@ import com.ndz.backend.booking.internal.domain.BookingViews.LockedBooking;
 import com.ndz.backend.booking.internal.domain.BookingViews.LockedSeat;
 import com.ndz.backend.booking.internal.persistence.BookingRepository;
 import com.ndz.backend.booking.internal.persistence.EventSnapshotRepository;
-import com.ndz.backend.shared.BusinessException;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Giữ ghế (overview.md §7.2 đến bước 201, §10 lớp 2). Quy tắc kiểm trước khi khoá ghế (BR-02, sự kiện đang bán); phần
@@ -71,10 +71,9 @@ public class BookingService {
 	public BookingView hold(UUID userId, String contactEmail, UUID eventId, List<UUID> seatIds) {
 		validateRequest(contactEmail, seatIds);
 		EventRules rules = snapshots.rules(eventId).orElseThrow(
-				() -> new BusinessException("EVENT_NOT_FOUND", "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND, "Không tìm thấy sự kiện"));
 		if (!"ON_SALE".equals(rules.status())) {
-			throw new BusinessException("EVENT_NOT_ON_SALE", "Sự kiện chưa mở bán hoặc đã dừng bán",
-					HttpStatus.CONFLICT);
+			throw new BusinessException(ErrorCode.EVENT_NOT_ON_SALE, "Sự kiện chưa mở bán hoặc đã dừng bán");
 		}
 		checkUserLimits(userId, rules, seatIds.size());
 
@@ -108,16 +107,14 @@ public class BookingService {
 	public void cancel(UUID userId, UUID bookingId) {
 		transaction.executeWithoutResult(status -> {
 			LockedBooking booking = bookings.lockBooking(bookingId).filter(found -> found.userId().equals(userId))
-					.orElseThrow(() -> new BusinessException("BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt vé",
-							HttpStatus.NOT_FOUND));
+					.orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy đơn đặt vé"));
 			if (booking.status() != BookingStatus.PENDING_PAYMENT) {
-				throw new BusinessException("BOOKING_NOT_CANCELLABLE",
-						"Chỉ huỷ được đơn đang chờ thanh toán", HttpStatus.CONFLICT);
+				throw new BusinessException(ErrorCode.BOOKING_NOT_CANCELLABLE,
+						"Chỉ huỷ được đơn đang chờ thanh toán");
 			}
 			booking.status().requireTransitionTo(BookingStatus.CANCELLED);
 			if (!bookings.transition(bookingId, BookingStatus.PENDING_PAYMENT, BookingStatus.CANCELLED)) {
-				throw new BusinessException("BOOKING_NOT_CANCELLABLE", "Chỉ huỷ được đơn đang chờ thanh toán",
-						HttpStatus.CONFLICT);
+				throw new BusinessException(ErrorCode.BOOKING_NOT_CANCELLABLE, "Chỉ huỷ được đơn đang chờ thanh toán");
 			}
 			List<UUID> seatIds = bookings.releaseSeats(bookingId);
 			publisher.publishEvent(new BookingCancelled(Uuid7.next(clock), clock.instant(), bookingId, userId,
@@ -129,19 +126,19 @@ public class BookingService {
 	@Transactional(readOnly = true)
 	public BookingView get(UUID userId, UUID bookingId) {
 		return bookings.findOwned(bookingId, userId).orElseThrow(
-				() -> new BusinessException("BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt vé", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy đơn đặt vé"));
 	}
 
 	private void validateRequest(String contactEmail, List<UUID> seatIds) {
 		if (!StringUtils.hasText(contactEmail)) {
-			throw new BusinessException("EMAIL_REQUIRED", "Tài khoản chưa có email để gửi vé");
+			throw new BusinessException(ErrorCode.EMAIL_REQUIRED, "Tài khoản chưa có email để gửi vé");
 		}
 		if (seatIds.size() > properties.maxSeatsPerBooking()) {
-			throw new BusinessException("MAX_SEATS_EXCEEDED",
+			throw new BusinessException(ErrorCode.MAX_SEATS_EXCEEDED,
 					"Mỗi lần đặt tối đa " + properties.maxSeatsPerBooking() + " ghế");
 		}
 		if (new HashSet<>(seatIds).size() != seatIds.size()) {
-			throw new BusinessException("DUPLICATE_SEATS", "Danh sách ghế có ghế bị lặp");
+			throw new BusinessException(ErrorCode.DUPLICATE_SEATS, "Danh sách ghế có ghế bị lặp");
 		}
 	}
 
@@ -151,7 +148,7 @@ public class BookingService {
 			throw pendingExists();
 		}
 		if (bookings.activeTicketCount(userId, rules.eventId()) + requested > rules.maxTicketsPerUser()) {
-			throw new BusinessException("TICKET_LIMIT_EXCEEDED",
+			throw new BusinessException(ErrorCode.TICKET_LIMIT_EXCEEDED,
 					"Mỗi người mua tối đa " + rules.maxTicketsPerUser() + " vé cho sự kiện này");
 		}
 	}
@@ -182,13 +179,12 @@ public class BookingService {
 	}
 
 	private static BusinessException seatUnavailable() {
-		return new BusinessException("SEAT_UNAVAILABLE", "Ghế vừa có người giữ, vui lòng chọn ghế khác",
-				HttpStatus.CONFLICT);
+		return new BusinessException(ErrorCode.SEAT_UNAVAILABLE, "Ghế vừa có người giữ, vui lòng chọn ghế khác");
 	}
 
 	private static BusinessException pendingExists() {
-		return new BusinessException("PENDING_BOOKING_EXISTS",
-				"Bạn đang có một đơn chờ thanh toán cho sự kiện này", HttpStatus.CONFLICT);
+		return new BusinessException(ErrorCode.PENDING_BOOKING_EXISTS,
+				"Bạn đang có một đơn chờ thanh toán cho sự kiện này");
 	}
 
 }

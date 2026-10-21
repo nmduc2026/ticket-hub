@@ -13,7 +13,7 @@ import com.ndz.backend.booking.internal.persistence.ProcessedEventRepository;
 import com.ndz.backend.catalog.events.EventEnded;
 import com.ndz.backend.catalog.events.EventOnSale;
 import com.ndz.backend.catalog.events.EventUpdated;
-import com.ndz.backend.shared.events.IntegrationEvent;
+import com.ndz.backend.shared.event.IntegrationEvent;
 
 /**
  * Giữ {@code event_snapshots} theo event của Catalog sau khi publish (EventPublished do {@link PublishedEventHandler}

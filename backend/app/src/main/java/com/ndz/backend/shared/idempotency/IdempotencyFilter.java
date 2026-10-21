@@ -19,7 +19,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerExecutionChain;
@@ -28,8 +27,9 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import org.springframework.web.util.ServletRequestPathUtils;
 
-import com.ndz.backend.shared.CurrentUser;
-import com.ndz.backend.shared.ProblemWriter;
+import com.ndz.backend.shared.util.CurrentUser;
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.ProblemWriter;
 
 /**
  * Xử lý {@code Idempotency-Key} cho endpoint có {@link Idempotent} (overview.md §6.7, ADR 0025). Chạy sau bước xác
@@ -73,18 +73,18 @@ public class IdempotencyFilter extends OncePerRequestFilter {
 
 		String key = request.getHeader(HEADER);
 		if (key == null || key.isBlank()) {
-			ProblemWriter.write(response, HttpStatus.BAD_REQUEST, "IDEMPOTENCY_KEY_REQUIRED",
+			ProblemWriter.write(response, ErrorCode.IDEMPOTENCY_KEY_REQUIRED,
 					"Thiếu header Idempotency-Key");
 			return;
 		}
 		if (!VALID_KEY.matcher(key).matches()) {
-			ProblemWriter.write(response, HttpStatus.BAD_REQUEST, "IDEMPOTENCY_KEY_INVALID",
+			ProblemWriter.write(response, ErrorCode.IDEMPOTENCY_KEY_INVALID,
 					"Idempotency-Key gồm 1-128 ký tự in được, không có khoảng trắng");
 			return;
 		}
 		byte[] body = request.getInputStream().readNBytes(properties.maxBodySize() + 1);
 		if (body.length > properties.maxBodySize()) {
-			ProblemWriter.write(response, HttpStatus.CONTENT_TOO_LARGE, "PAYLOAD_TOO_LARGE",
+			ProblemWriter.write(response, ErrorCode.PAYLOAD_TOO_LARGE,
 					"Nội dung yêu cầu quá lớn");
 			return;
 		}
@@ -126,17 +126,17 @@ public class IdempotencyFilter extends OncePerRequestFilter {
 		Optional<IdempotencyRecord> existing = store.find(scope, userId, key);
 		if (existing.isEmpty()) {
 			// Bản ghi vừa bị dọn hoặc bị chủ cũ nhả giữa hai câu lệnh; để client gửi lại.
-			ProblemWriter.write(response, HttpStatus.CONFLICT, "REQUEST_IN_PROGRESS",
+			ProblemWriter.write(response, ErrorCode.REQUEST_IN_PROGRESS,
 					"Yêu cầu đang được xử lý, vui lòng thử lại sau");
 			return;
 		}
 		IdempotencyRecord record = existing.get();
 		if (!record.requestHash().equals(requestHash)) {
-			ProblemWriter.write(response, HttpStatus.UNPROCESSABLE_CONTENT, "IDEMPOTENCY_KEY_REUSED",
+			ProblemWriter.write(response, ErrorCode.IDEMPOTENCY_KEY_REUSED,
 					"Idempotency-Key này đã được dùng cho một yêu cầu khác");
 		}
 		else if (!record.completed()) {
-			ProblemWriter.write(response, HttpStatus.CONFLICT, "REQUEST_IN_PROGRESS",
+			ProblemWriter.write(response, ErrorCode.REQUEST_IN_PROGRESS,
 					"Yêu cầu đang được xử lý, vui lòng thử lại sau");
 		}
 		else {

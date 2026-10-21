@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.util;
 
 import java.security.SecureRandom;
 import java.time.Clock;

@@ -3,7 +3,7 @@ package com.ndz.backend.catalog.events;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.ndz.backend.shared.events.IntegrationEvent;
+import com.ndz.backend.shared.event.IntegrationEvent;
 
 /**
  * Booking báo đã tạo xong tồn kho ghế của sự kiện (overview.md §7.9); Catalog nghe để đặt {@code inventory_ready}.

@@ -4,14 +4,14 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -32,12 +32,12 @@ class ProbeController {
 
 	@GetMapping("/business-error")
 	void businessError() {
-		throw new BusinessException("SEAT_UNAVAILABLE", "Ghế vừa có người giữ", HttpStatus.CONFLICT);
+		throw new BusinessException(ErrorCode.SEAT_UNAVAILABLE, "Ghế vừa có người giữ");
 	}
 
 	@GetMapping("/business-error-default-status")
 	void businessErrorDefaultStatus() {
-		throw new BusinessException("HOLD_EXPIRING", "Sắp hết thời gian giữ ghế");
+		throw new BusinessException(ErrorCode.MAX_SEATS_EXCEEDED, "Quá số ghế tối đa");
 	}
 
 	@PostMapping("/validate")

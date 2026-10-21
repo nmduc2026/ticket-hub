@@ -43,7 +43,7 @@ import com.ndz.backend.catalog.internal.web.EventResponses.Tier;
 import com.ndz.backend.catalog.internal.web.EventResponses.Summary;
 import com.ndz.backend.catalog.internal.web.TierRequests.AssignmentsRequest;
 import com.ndz.backend.catalog.internal.web.TierRequests.TierRequest;
-import com.ndz.backend.shared.CurrentUser;
+import com.ndz.backend.shared.util.CurrentUser;
 
 /**
  * API sự kiện của organizer (overview.md §11.2). Controller chỉ nhận request, gọi service và dựng response;

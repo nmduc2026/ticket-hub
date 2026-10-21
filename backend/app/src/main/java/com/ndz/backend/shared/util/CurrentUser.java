@@ -1,11 +1,14 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.util;
+
+import com.ndz.backend.shared.config.KeycloakRolesConverter;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 
 import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -36,7 +39,7 @@ public record CurrentUser(UUID id, String email, String fullName, String usernam
 
 	public static CurrentUser require() {
 		return current().orElseThrow(
-				() -> new BusinessException("UNAUTHENTICATED", "Chưa đăng nhập", HttpStatus.UNAUTHORIZED));
+				() -> new BusinessException(ErrorCode.UNAUTHENTICATED, "Chưa đăng nhập"));
 	}
 
 }

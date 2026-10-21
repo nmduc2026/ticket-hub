@@ -16,7 +16,7 @@ import com.ndz.backend.catalog.CatalogApi;
 import com.ndz.backend.catalog.CatalogApi.SellableSeat;
 import com.ndz.backend.catalog.events.EventPublished;
 import com.ndz.backend.catalog.events.SeatInventoryReady;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Xử lý {@code EventPublished} (overview.md §7.9, ADR 0021) trong một transaction, theo thứ tự: dựng

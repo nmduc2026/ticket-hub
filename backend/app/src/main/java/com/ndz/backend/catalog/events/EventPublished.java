@@ -3,7 +3,7 @@ package com.ndz.backend.catalog.events;
 import java.time.Instant;
 import java.util.UUID;
 
-import com.ndz.backend.shared.events.IntegrationEvent;
+import com.ndz.backend.shared.event.IntegrationEvent;
 
 /**
  * Sự kiện được publish (BR-05, BR-06, BR-14). Chỉ mang metadata: danh sách ghế không đi trong event (ADR 0021),

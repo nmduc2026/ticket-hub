@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.exception;
 
 import java.util.List;
 import java.util.Map;
@@ -24,14 +24,14 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * Mọi lỗi trả về theo RFC 9457 (Problem Details) kèm {@code code} nghiệp vụ và {@code traceId}.
  */
 @RestControllerAdvice
-class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
 	private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
 	@ExceptionHandler(BusinessException.class)
 	ProblemDetail handleBusiness(BusinessException ex) {
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(ex.status(), ex.getMessage());
-		problem.setProperty("code", ex.code());
+		problem.setProperty("code", ex.code().name());
 		ex.properties().forEach(problem::setProperty);
 		addTraceId(problem);
 		return problem;
@@ -46,7 +46,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 		log.error("Lỗi không mong đợi", ex);
 		ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR,
 				"Đã xảy ra lỗi hệ thống");
-		problem.setProperty("code", "INTERNAL_ERROR");
+		problem.setProperty("code", ErrorCode.INTERNAL_ERROR.name());
 		addTraceId(problem);
 		return problem;
 	}
@@ -56,7 +56,7 @@ class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 			HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 		ProblemDetail problem = ex.getBody();
 		problem.setDetail("Dữ liệu không hợp lệ");
-		problem.setProperty("code", "VALIDATION_FAILED");
+		problem.setProperty("code", ErrorCode.VALIDATION_FAILED.name());
 		List<Map<String, String>> errors = ex.getBindingResult().getFieldErrors().stream()
 				.map(error -> Map.of("field", error.getField(),
 						"message", String.valueOf(error.getDefaultMessage())))

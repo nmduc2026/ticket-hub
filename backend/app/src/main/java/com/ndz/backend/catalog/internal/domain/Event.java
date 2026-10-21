@@ -14,9 +14,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
-import org.springframework.http.HttpStatus;
 
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
 
 /**
  * Sự kiện (overview.md §6.1). Quy tắc khoá sau publish (BR-14) nằm ở đây để mọi đường sửa đều đi qua cùng một chỗ;
@@ -149,7 +149,7 @@ public class Event {
 	}
 
 	private static BusinessException locked(String message) {
-		return new BusinessException("EVENT_LOCKED", message, HttpStatus.CONFLICT);
+		return new BusinessException(ErrorCode.EVENT_LOCKED, message);
 	}
 
 	// ---- Máy trạng thái (overview.md §7.7) ----
@@ -213,8 +213,8 @@ public class Event {
 	}
 
 	private BusinessException invalidTransition(EventStatus to) {
-		return new BusinessException("INVALID_EVENT_TRANSITION",
-				"Không thể chuyển sự kiện từ %s sang %s".formatted(status, to), HttpStatus.CONFLICT);
+		return new BusinessException(ErrorCode.INVALID_EVENT_TRANSITION,
+				"Không thể chuyển sự kiện từ %s sang %s".formatted(status, to));
 	}
 
 	public boolean isOwnedBy(UUID userId) {

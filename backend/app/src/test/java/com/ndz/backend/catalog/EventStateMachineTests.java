@@ -1,5 +1,6 @@
 package com.ndz.backend.catalog;
 
+import com.ndz.backend.shared.exception.ErrorCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -11,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import com.ndz.backend.catalog.internal.domain.Event;
 import com.ndz.backend.catalog.internal.domain.EventContent;
 import com.ndz.backend.catalog.internal.domain.EventStatus;
-import com.ndz.backend.shared.BusinessException;
+import com.ndz.backend.shared.exception.BusinessException;
 
 /** Máy trạng thái sự kiện (overview.md §7.7): mỗi chuyển hợp lệ và các chuyển không hợp lệ bị từ chối. */
 class EventStateMachineTests {
@@ -119,7 +120,7 @@ class EventStateMachineTests {
 	@Test
 	void rejectionCarriesTheDocumentedCodeAndStatus() {
 		assertThatThrownBy(() -> published().publish(500)).isInstanceOfSatisfying(BusinessException.class, e -> {
-			assertThat(e.code()).isEqualTo("INVALID_EVENT_TRANSITION");
+			assertThat(e.code()).isEqualTo(ErrorCode.INVALID_EVENT_TRANSITION);
 			assertThat(e.status().value()).isEqualTo(409);
 		});
 	}
@@ -128,7 +129,7 @@ class EventStateMachineTests {
 
 	private static void assertRejected(Runnable transition) {
 		assertThatThrownBy(transition::run).isInstanceOfSatisfying(BusinessException.class,
-				e -> assertThat(e.code()).isEqualTo("INVALID_EVENT_TRANSITION"));
+				e -> assertThat(e.code()).isEqualTo(ErrorCode.INVALID_EVENT_TRANSITION));
 	}
 
 	private static Event draft() {

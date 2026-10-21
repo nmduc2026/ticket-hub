@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.util;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -9,6 +9,8 @@ import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
+import com.ndz.backend.shared.exception.ErrorCode;
+
 /**
  * Ghi Problem Details (RFC 9457) từ filter, nơi {@code GlobalExceptionHandler} không với tới vì lỗi xảy ra trước
  * controller (401, 403, lỗi Idempotency-Key). Cùng định dạng với handler: {@code code} nghiệp vụ và {@code traceId}.
@@ -18,11 +20,11 @@ public final class ProblemWriter {
 	private ProblemWriter() {
 	}
 
-	public static void write(HttpServletResponse response, HttpStatus status, String code, String detail)
-			throws IOException {
+	public static void write(HttpServletResponse response, ErrorCode code, String detail) throws IOException {
+		HttpStatus status = code.status();
 		String traceId = MDC.get("traceId");
 		String json = "{\"type\":\"about:blank\",\"title\":\"%s\",\"status\":%d,\"detail\":\"%s\",\"code\":\"%s\"%s}"
-				.formatted(status.getReasonPhrase(), status.value(), escape(detail), code,
+				.formatted(status.getReasonPhrase(), status.value(), escape(detail), code.name(),
 						traceId == null ? "" : ",\"traceId\":\"" + escape(traceId) + "\"");
 		response.setStatus(status.value());
 		response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);

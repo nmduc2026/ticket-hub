@@ -1,4 +1,4 @@
-package com.ndz.backend.shared;
+package com.ndz.backend.shared.exception;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -37,7 +37,7 @@ class GlobalExceptionHandlerTests {
 	void businessExceptionWithoutStatusIsUnprocessable() throws Exception {
 		mockMvc.perform(get("/test-probe/business-error-default-status"))
 				.andExpect(status().isUnprocessableContent())
-				.andExpect(jsonPath("$.code").value("HOLD_EXPIRING"));
+				.andExpect(jsonPath("$.code").value("MAX_SEATS_EXCEEDED"));
 	}
 
 	@Test

@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ndz.backend.booking.internal.application.BookingService;
 import com.ndz.backend.booking.internal.domain.BookingViews.BookingItemView;
 import com.ndz.backend.booking.internal.domain.BookingViews.BookingView;
-import com.ndz.backend.shared.CurrentUser;
+import com.ndz.backend.shared.util.CurrentUser;
 import com.ndz.backend.shared.idempotency.Idempotent;
 
 /** Đặt vé: giữ ghế và xem đơn của chính mình (overview.md §11.2). */

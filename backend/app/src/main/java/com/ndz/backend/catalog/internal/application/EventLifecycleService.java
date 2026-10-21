@@ -10,7 +10,6 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +25,9 @@ import com.ndz.backend.catalog.internal.persistence.CatalogReadRepository;
 import com.ndz.backend.catalog.internal.persistence.EventRepository;
 import com.ndz.backend.catalog.internal.persistence.TicketTierRepository;
 import com.ndz.backend.catalog.internal.persistence.TierSectionRepository;
-import com.ndz.backend.shared.BusinessException;
-import com.ndz.backend.shared.Uuid7;
+import com.ndz.backend.shared.exception.BusinessException;
+import com.ndz.backend.shared.exception.ErrorCode;
+import com.ndz.backend.shared.util.Uuid7;
 
 /**
  * Vòng đời sự kiện (overview.md §7.7, §7.9): publish, chuyển sang đang bán / kết thúc theo giờ, nhận tin tồn kho ghế
@@ -72,13 +72,13 @@ public class EventLifecycleService {
 	@Transactional
 	public EventDetail publish(UUID organizerId, UUID eventId) {
 		Event event = events.findByIdAndOrganizerId(eventId, organizerId).orElseThrow(
-				() -> new BusinessException("EVENT_NOT_FOUND", "Không tìm thấy sự kiện", HttpStatus.NOT_FOUND));
+				() -> new BusinessException(ErrorCode.EVENT_NOT_FOUND, "Không tìm thấy sự kiện"));
 		event.requireDraft();
 		requireOrganizerCanPublish(organizerId);
 		requireComplete(event);
 		Instant now = clock.instant();
 		if (!now.isBefore(event.getEndsAt())) {
-			throw new BusinessException("INVALID_EVENT_TIMES", "Sự kiện đã qua giờ kết thúc, không publish được");
+			throw new BusinessException(ErrorCode.INVALID_EVENT_TIMES, "Sự kiện đã qua giờ kết thúc, không publish được");
 		}
 
 		int feeBps = catalog.feeBpsAt(now).orElse(properties.defaultPlatformFeeBps());
@@ -133,8 +133,7 @@ public class EventLifecycleService {
 	}
 
 	private void requireOrganizerCanPublish(UUID organizerId) {
-		OrganizerInfo organizer = catalog.organizer(organizerId).orElseThrow(() -> new BusinessException(
-				"ORGANIZER_NOT_REGISTERED", "Tài khoản chưa đăng ký ban tổ chức", HttpStatus.FORBIDDEN));
+		OrganizerInfo organizer = catalog.organizer(organizerId).orElseThrow(() -> new BusinessException(ErrorCode.ORGANIZER_NOT_REGISTERED, "Tài khoản chưa đăng ký ban tổ chức"));
 		List<String> reasons = new ArrayList<>();
 		if (!"APPROVED".equals(organizer.status())) {
 			reasons.add("ORGANIZER_NOT_APPROVED");
@@ -144,7 +143,7 @@ public class EventLifecycleService {
 		}
 		if (!reasons.isEmpty()) {
 			// BR-05: phải được Admin duyệt và tài khoản Stripe Connect đã nhận được tiền.
-			throw new BusinessException("PUBLISH_NOT_ALLOWED", "Chưa đủ điều kiện publish", HttpStatus.CONFLICT)
+			throw new BusinessException(ErrorCode.PUBLISH_NOT_ALLOWED, "Chưa đủ điều kiện publish")
 					.with("reasons", reasons);
 		}
 	}
@@ -173,7 +172,7 @@ public class EventLifecycleService {
 			missing.add("TIER_SECTIONS");
 		}
 		if (!missing.isEmpty()) {
-			throw new BusinessException("PUBLISH_INCOMPLETE", "Còn thiếu thông tin để publish").with("missing",
+			throw new BusinessException(ErrorCode.PUBLISH_INCOMPLETE, "Còn thiếu thông tin để publish").with("missing",
 					missing);
 		}
 	}
