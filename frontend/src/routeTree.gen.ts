@@ -16,7 +16,10 @@ import { Route as GuestIndexRouteImport } from './routes/_guest/index'
 import { Route as GuestForbiddenRouteImport } from './routes/_guest/forbidden'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer/index'
+import { Route as GuestEventsIndexRouteImport } from './routes/_guest/events/index'
 import { Route as GuestMeProfileRouteImport } from './routes/_guest/me/profile'
+import { Route as GuestEventsEventIdIndexRouteImport } from './routes/_guest/events/$eventId/index'
+import { Route as GuestEventsEventIdSeatsRouteImport } from './routes/_guest/events/$eventId/seats'
 
 const GuestRoute = GuestRouteImport.update({
   id: '/_guest',
@@ -52,9 +55,24 @@ const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
   path: '/',
   getParentRoute: () => OrganizerRouteRoute,
 } as any)
+const GuestEventsIndexRoute = GuestEventsIndexRouteImport.update({
+  id: '/events/',
+  path: '/events/',
+  getParentRoute: () => GuestRoute,
+} as any)
 const GuestMeProfileRoute = GuestMeProfileRouteImport.update({
   id: '/me/profile',
   path: '/me/profile',
+  getParentRoute: () => GuestRoute,
+} as any)
+const GuestEventsEventIdIndexRoute = GuestEventsEventIdIndexRouteImport.update({
+  id: '/events/$eventId/',
+  path: '/events/$eventId/',
+  getParentRoute: () => GuestRoute,
+} as any)
+const GuestEventsEventIdSeatsRoute = GuestEventsEventIdSeatsRouteImport.update({
+  id: '/events/$eventId/seats',
+  path: '/events/$eventId/seats',
   getParentRoute: () => GuestRoute,
 } as any)
 
@@ -66,6 +84,9 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/me/profile': typeof GuestMeProfileRoute
+  '/events/': typeof GuestEventsIndexRoute
+  '/events/$eventId/seats': typeof GuestEventsEventIdSeatsRoute
+  '/events/$eventId/': typeof GuestEventsEventIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/forbidden': typeof GuestForbiddenRoute
@@ -73,6 +94,9 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/me/profile': typeof GuestMeProfileRoute
+  '/events': typeof GuestEventsIndexRoute
+  '/events/$eventId/seats': typeof GuestEventsEventIdSeatsRoute
+  '/events/$eventId': typeof GuestEventsEventIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,6 +108,9 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/_guest/me/profile': typeof GuestMeProfileRoute
+  '/_guest/events/': typeof GuestEventsIndexRoute
+  '/_guest/events/$eventId/seats': typeof GuestEventsEventIdSeatsRoute
+  '/_guest/events/$eventId/': typeof GuestEventsEventIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,8 +122,19 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/organizer/'
     | '/me/profile'
+    | '/events/'
+    | '/events/$eventId/seats'
+    | '/events/$eventId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/forbidden' | '/' | '/admin' | '/organizer' | '/me/profile'
+  to:
+    | '/forbidden'
+    | '/'
+    | '/admin'
+    | '/organizer'
+    | '/me/profile'
+    | '/events'
+    | '/events/$eventId/seats'
+    | '/events/$eventId'
   id:
     | '__root__'
     | '/admin'
@@ -107,6 +145,9 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/organizer/'
     | '/_guest/me/profile'
+    | '/_guest/events/'
+    | '/_guest/events/$eventId/seats'
+    | '/_guest/events/$eventId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -166,11 +207,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerIndexRouteImport
       parentRoute: typeof OrganizerRouteRoute
     }
+    '/_guest/events/': {
+      id: '/_guest/events/'
+      path: '/events'
+      fullPath: '/events/'
+      preLoaderRoute: typeof GuestEventsIndexRouteImport
+      parentRoute: typeof GuestRoute
+    }
     '/_guest/me/profile': {
       id: '/_guest/me/profile'
       path: '/me/profile'
       fullPath: '/me/profile'
       preLoaderRoute: typeof GuestMeProfileRouteImport
+      parentRoute: typeof GuestRoute
+    }
+    '/_guest/events/$eventId/': {
+      id: '/_guest/events/$eventId/'
+      path: '/events/$eventId'
+      fullPath: '/events/$eventId/'
+      preLoaderRoute: typeof GuestEventsEventIdIndexRouteImport
+      parentRoute: typeof GuestRoute
+    }
+    '/_guest/events/$eventId/seats': {
+      id: '/_guest/events/$eventId/seats'
+      path: '/events/$eventId/seats'
+      fullPath: '/events/$eventId/seats'
+      preLoaderRoute: typeof GuestEventsEventIdSeatsRouteImport
       parentRoute: typeof GuestRoute
     }
   }
@@ -204,12 +266,18 @@ interface GuestRouteChildren {
   GuestForbiddenRoute: typeof GuestForbiddenRoute
   GuestIndexRoute: typeof GuestIndexRoute
   GuestMeProfileRoute: typeof GuestMeProfileRoute
+  GuestEventsIndexRoute: typeof GuestEventsIndexRoute
+  GuestEventsEventIdSeatsRoute: typeof GuestEventsEventIdSeatsRoute
+  GuestEventsEventIdIndexRoute: typeof GuestEventsEventIdIndexRoute
 }
 
 const GuestRouteChildren: GuestRouteChildren = {
   GuestForbiddenRoute: GuestForbiddenRoute,
   GuestIndexRoute: GuestIndexRoute,
   GuestMeProfileRoute: GuestMeProfileRoute,
+  GuestEventsIndexRoute: GuestEventsIndexRoute,
+  GuestEventsEventIdSeatsRoute: GuestEventsEventIdSeatsRoute,
+  GuestEventsEventIdIndexRoute: GuestEventsEventIdIndexRoute,
 }
 
 const GuestRouteWithChildren = GuestRoute._addFileChildren(GuestRouteChildren)
