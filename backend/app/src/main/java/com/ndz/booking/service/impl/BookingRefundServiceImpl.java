@@ -17,6 +17,7 @@ import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.dto.response.BookingViews.RefundResult;
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.entity.enums.LatePayment;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
@@ -132,13 +133,31 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 	}
 
 	/**
-	 * Chỉ booking đang {@code REFUND_REQUESTED} mới đổi. Hoàn tự động vì thanh toán đến muộn (booking {@code EXPIRED} /
-	 * {@code CANCELLED}) cũng phát các event này nhưng không liên quan tới vòng đời hoàn vé nên bị bỏ qua.
+	 * Hoàn tự động của thanh toán đến muộn (§7.3): booking giữ nguyên {@code EXPIRED} / {@code CANCELLED}, chỉ ghi kết
+	 * quả hoàn vào {@code late_payment} để khách thấy.
+	 */
+	private void recordLatePaymentRefund(UUID bookingId, BookingStatus outcome, String source) {
+		LatePayment latePayment = outcome == BookingStatus.REFUNDED ? LatePayment.REFUNDED : LatePayment.REFUND_FAILED;
+		if (bookings.markLatePayment(bookingId, latePayment)) {
+			log.info("{}: thanh toán đến muộn của booking {} → {}", source, bookingId, latePayment);
+		}
+		else {
+			log.info("{}: booking {} không có thanh toán đến muộn, không đổi", source, bookingId);
+		}
+	}
+
+	/**
+	 * Booking đang {@code REFUND_REQUESTED} chuyển theo kết quả hoàn vé; booking {@code EXPIRED} / {@code CANCELLED}
+	 * (hoàn tự động vì thanh toán đến muộn) chỉ ghi {@code late_payment}; trạng thái khác bỏ qua.
 	 */
 	private void moveAfterRefund(UUID bookingId, BookingStatus next, String source, Instant occurredAt) {
 		LockedBooking booking = bookings.lockBooking(bookingId).orElse(null);
 		if (booking == null) {
 			log.error("{} cho booking không tồn tại {}", source, bookingId);
+			return;
+		}
+		if (booking.status() == BookingStatus.EXPIRED || booking.status() == BookingStatus.CANCELLED) {
+			recordLatePaymentRefund(bookingId, next, source);
 			return;
 		}
 		if (booking.status() != BookingStatus.REFUND_REQUESTED) {

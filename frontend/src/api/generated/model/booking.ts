@@ -5,6 +5,7 @@
  * OpenAPI spec version: v1
  */
 import type { BookingItem } from './bookingItem';
+import type { BookingLatePayment } from './bookingLatePayment';
 
 export interface Booking {
   id: string;
@@ -15,4 +16,6 @@ export interface Booking {
   totalMinor: number;
   currency: string;
   items: BookingItem[];
+  /** Có khi thanh toán đến sau lúc đơn hết hạn / bị huỷ mà không giữ lại được ghế: tiền đang hoàn (REFUND_PENDING), đã hoàn (REFUNDED) hoặc hoàn lỗi (REFUND_FAILED) */
+  latePayment?: BookingLatePayment;
 }

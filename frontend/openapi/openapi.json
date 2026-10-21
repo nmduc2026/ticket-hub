@@ -295,7 +295,7 @@
             }
           },
           "409" : {
-            "description" : "HOLD_EXPIRING (còn dưới 90 giây) hoặc BOOKING_NOT_PAYABLE",
+            "description" : "HOLD_EXPIRING (còn dưới 90 giây), BOOKING_NOT_PAYABLE hoặc PAYMENT_ALREADY_SUCCEEDED (đơn đã trả tiền, đang chờ xác nhận)",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -3210,6 +3210,11 @@
             "items" : {
               "$ref" : "#/components/schemas/BookingItem"
             }
+          },
+          "latePayment" : {
+            "type" : "string",
+            "description" : "Có khi thanh toán đến sau lúc đơn hết hạn / bị huỷ mà không giữ lại được ghế: tiền đang hoàn (REFUND_PENDING), đã hoàn (REFUNDED) hoặc hoàn lỗi (REFUND_FAILED)",
+            "enum" : [ "REFUND_PENDING", "REFUNDED", "REFUND_FAILED" ]
           }
         },
         "required" : [ "currency", "eventId", "expiresAt", "id", "items", "status", "totalMinor" ]

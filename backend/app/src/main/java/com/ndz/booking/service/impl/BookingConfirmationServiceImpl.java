@@ -14,6 +14,7 @@ import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.entity.enums.LatePayment;
 import com.ndz.booking.event.BookingConfirmationFailed;
 import com.ndz.booking.event.BookingConfirmed;
 import com.ndz.booking.event.PaymentSucceeded;
@@ -100,6 +101,7 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 		List<UUID> seatIds = data.items().stream().map(BookingItemView::seatId).toList();
 		String failure = lateFailureReason(booking, seatIds);
 		if (failure != null) {
+			bookings.markLatePayment(booking.id(), LatePayment.REFUND_PENDING);
 			publisher.publishEvent(new BookingConfirmationFailed(Uuid7.next(clock), clock.instant(), booking.id(),
 					event.paymentId(), failure));
 			log.warn("Thanh toán {} đến muộn nhưng booking {} không xác nhận được ({}): hoàn tiền", event.paymentId(),

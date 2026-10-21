@@ -141,6 +141,17 @@ export const vi = {
     holdExpiring: 'Còn quá ít thời gian để thanh toán an toàn. Chọn lại ghế.',
     cardDeclined: 'Thẻ bị từ chối. Thử thẻ khác hoặc phương thức khác.',
     authFailed: 'Chưa xác thực được thẻ. Thử lại.',
+    latePayment: {
+      REFUND_PENDING: {
+        title: 'Không giữ lại được ghế',
+        body: 'Thanh toán đến sau khi hết thời gian giữ ghế và ghế đã có người khác mua. {{amount}} sẽ được hoàn về thẻ của bạn.',
+      },
+      REFUNDED: { title: 'Đã hoàn tiền', body: '{{amount}} đã được hoàn về thẻ của bạn vì không giữ lại được ghế.' },
+      REFUND_FAILED: {
+        title: 'Hoàn tiền chưa thành công',
+        body: 'Không giữ lại được ghế và việc hoàn {{amount}} gặp lỗi. Ticket Hub sẽ xử lý và báo lại cho bạn.',
+      },
+    },
     confirmingTitle: 'Đang xác nhận thanh toán',
     confirmingSlow: 'Thanh toán đã được ghi nhận. Vé sẽ gửi qua email khi xác nhận xong.',
     viewBookings: 'Xem đơn của tôi',

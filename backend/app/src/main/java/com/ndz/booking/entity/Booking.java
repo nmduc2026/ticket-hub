@@ -15,6 +15,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.entity.enums.LatePayment;
 
 /**
  * Đơn đặt vé (overview.md §6.2). Entity chỉ được tạo mới ở trạng thái {@code PENDING_PAYMENT}; mọi chuyển trạng thái
@@ -68,6 +69,10 @@ public class Booking {
 
 	@Column(updatable = false)
 	private Instant refundFailedAt;
+
+	@Enumerated(EnumType.STRING)
+	@Column(updatable = false)
+	private LatePayment latePayment;
 
 	// Boxed để Spring Data coi đơn chưa lưu là mới (persist, không select trước).
 	@Version

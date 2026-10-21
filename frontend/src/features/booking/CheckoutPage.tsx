@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { AlertCircle, Clock, Ticket } from 'lucide-react'
+import { AlertCircle, Clock, RotateCcw, Ticket } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -105,6 +105,11 @@ function Hold({ booking, refetch, confirming, onPaid }: HoldProps) {
   const startPayment = useStartPayment(booking.id, booking.status === 'PENDING_PAYMENT' && !lockedByTime && !confirming)
   const holdExpiring = startPayment.error instanceof ApiError && startPayment.error.code === 'HOLD_EXPIRING'
   const notPayable = startPayment.error instanceof ApiError && startPayment.error.code === 'BOOKING_NOT_PAYABLE'
+  // Đơn đã trả tiền (vd. tải lại trang ngay sau khi trả): không hiện lại form, chờ xác nhận như vừa trả xong.
+  const alreadyPaid = startPayment.error instanceof ApiError && startPayment.error.code === 'PAYMENT_ALREADY_SUCCEEDED'
+  useEffect(() => {
+    if (alreadyPaid && !confirming) onPaid()
+  }, [alreadyPaid, confirming, onPaid])
 
   // Hết giờ ở client thì hỏi lại server để có trạng thái thật (job hết hạn chạy mỗi 30 giây).
   const expiredOnClient = remaining === 0
@@ -125,6 +130,20 @@ function Hold({ booking, refetch, confirming, onPaid }: HoldProps) {
     void navigate({ to: '/events/$eventId/seats', params: { eventId: booking.eventId } })
   }
 
+  // Tiền đến sau khi đơn hết hạn / bị huỷ mà ghế đã có người khác: báo tình trạng hoàn tiền (§7.3).
+  if (booking.latePayment && (booking.status === 'EXPIRED' || booking.status === 'CANCELLED')) {
+    return (
+      <StatusPanel
+        icon={<RotateCcw />}
+        title={t(`checkout.latePayment.${booking.latePayment}.title`)}
+        body={t(`checkout.latePayment.${booking.latePayment}.body`, { amount: formatMoney(booking.totalMinor, booking.currency) })}
+      >
+        <Button variant="outline" asChild>
+          <Link to="/me/bookings">{t('checkout.viewBookings')}</Link>
+        </Button>
+      </StatusPanel>
+    )
+  }
   if (confirming || confirmed) return <Confirming />
   if (booking.status === 'EXPIRED' || expiredOnClient) {
     return (
@@ -244,7 +263,7 @@ function Hold({ booking, refetch, confirming, onPaid }: HoldProps) {
             returnUrl={`${window.location.origin}/checkout/${booking.id}/success`}
             onPaid={onPaid}
           />
-        ) : startPayment.error && !notPayable ? (
+        ) : startPayment.error && !notPayable && !alreadyPaid ? (
           <div role="alert" className="flex items-center justify-between gap-3 text-sm">
             <span>{errorMessage(startPayment.error, t)}</span>
             <Button variant="outline" size="sm" onClick={() => startPayment.retry()}>

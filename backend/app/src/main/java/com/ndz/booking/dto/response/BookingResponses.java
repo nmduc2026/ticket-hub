@@ -73,7 +73,10 @@ public final class BookingResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant expiresAt,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) long totalMinor,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String currency,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Item> items) {
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Item> items,
+			@Schema(description = "Có khi thanh toán đến sau lúc đơn hết hạn / bị huỷ mà không giữ lại được ghế: tiền "
+					+ "đang hoàn (REFUND_PENDING), đã hoàn (REFUNDED) hoặc hoàn lỗi (REFUND_FAILED)",
+					allowableValues = { "REFUND_PENDING", "REFUNDED", "REFUND_FAILED" }) String latePayment) {
 	}
 
 }

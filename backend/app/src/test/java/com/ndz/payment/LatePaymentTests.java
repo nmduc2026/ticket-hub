@@ -7,7 +7,9 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.nio.charset.StandardCharsets;
@@ -183,6 +185,62 @@ class LatePaymentTests {
 	}
 
 	@Test
+	@DisplayName("AC-4: đơn EXPIRED không giữ lại được ghế → latePayment REFUND_PENDING khi Stripe còn chờ, REFUNDED khi hoàn xong")
+	void latePaymentShowsThatTheMoneyIsBeingRefundedThenRefunded() throws Exception {
+		stripe.stubFor(WireMock.post(urlEqualTo("/v1/refunds")).willReturn(refund("pending")));
+		UUID event = onSaleEvent();
+		UUID booking = hold(customer, event, seats(event, 1));
+		expire(booking);
+		jdbc.update("update booking.event_snapshots set status = 'SUSPENDED' where event_id = ?", event);
+		UUID payment = succeededPayment(booking, 1_000_000);
+
+		paymentSucceeded(payment, booking);
+
+		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(
+				count("select count(*) from payment.refunds where stripe_refund_id = 're_late_1'")).isEqualTo(1));
+		bookingOf(customer, booking).andExpect(jsonPath("$.status").value("EXPIRED"))
+				.andExpect(jsonPath("$.latePayment").value("REFUND_PENDING"));
+
+		// Như webhook charge.refunded: chạy trong transaction để RefundCompleted được gửi tới Booking.
+		transaction.executeWithoutResult(status -> refundService.onRefundSucceeded(payment));
+
+		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> bookingOf(customer, booking)
+				.andExpect(jsonPath("$.latePayment").value("REFUNDED")));
+		assertThat(statusOf(booking)).isEqualTo("EXPIRED");
+	}
+
+	@Test
+	@DisplayName("AC-4: hoàn thất bại → latePayment REFUND_FAILED; đơn bình thường không có latePayment")
+	void aFailedLateRefundIsShownAsRefundFailed() throws Exception {
+		stripe.stubFor(WireMock.post(urlEqualTo("/v1/refunds")).willReturn(refund("failed")));
+		UUID event = onSaleEvent();
+		UUID booking = hold(customer, event, seats(event, 1));
+		expire(booking);
+		UUID untouched = hold(otherCustomer, event, seats(event, 1));
+		jdbc.update("update booking.event_snapshots set status = 'SUSPENDED' where event_id = ?", event);
+
+		paymentSucceeded(succeededPayment(booking, 1_000_000), booking);
+
+		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> bookingOf(customer, booking)
+				.andExpect(jsonPath("$.latePayment").value("REFUND_FAILED")));
+		bookingOf(otherCustomer, untouched).andExpect(jsonPath("$.latePayment").doesNotExist());
+	}
+
+	@Test
+	@DisplayName("AC-4: mở lại checkout của đơn đã trả tiền (payment SUCCEEDED) → 409 PAYMENT_ALREADY_SUCCEEDED, không tạo PaymentIntent")
+	void reopeningCheckoutOfAPaidBookingIsRefused() throws Exception {
+		UUID event = onSaleEvent();
+		UUID booking = hold(customer, event, seats(event, 1));
+		succeededPayment(booking, 1_000_000);
+
+		startPayment(customer, booking).andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("PAYMENT_ALREADY_SUCCEEDED"));
+		// Người khác không dò được đơn đã trả hay chưa.
+		startPayment(otherCustomer, booking).andExpect(status().isNotFound());
+		stripe.verify(0, postRequestedFor(urlEqualTo("/v1/payment_intents")));
+	}
+
+	@Test
 	@DisplayName("Sự kiện không còn đang bán (SUSPENDED): hoàn 100%, booking giữ nguyên")
 	void eventNoLongerOnSaleMeansAFullRefund() throws Exception {
 		UUID event = onSaleEvent();
@@ -307,6 +365,18 @@ class LatePaymentTests {
 				.content("{\"eventId\":\"%s\",\"seatIds\":[%s]}".formatted(event, ids))).andExpect(status().isCreated())
 				.andReturn().getResponse().getContentAsString();
 		return UUID.fromString(JsonPath.read(body, "$.bookingId"));
+	}
+
+	private org.springframework.test.web.servlet.ResultActions bookingOf(UUID user, UUID booking) throws Exception {
+		return mockMvc.perform(get("/api/v1/bookings/" + booking)
+				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(user).bearer())).andExpect(status().isOk());
+	}
+
+	private org.springframework.test.web.servlet.ResultActions startPayment(UUID user, UUID booking) throws Exception {
+		return mockMvc.perform(post("/api/v1/payments")
+				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(user).bearer())
+				.header("Idempotency-Key", UUID.randomUUID().toString()).contentType(MediaType.APPLICATION_JSON)
+				.content("{\"bookingId\":\"%s\"}".formatted(booking)));
 	}
 
 	private String statusOf(UUID booking) {

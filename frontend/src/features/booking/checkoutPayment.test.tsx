@@ -140,6 +140,33 @@ describe('thanh toán (BR-03, BR-07)', () => {
     expect(screen.getByRole('button', { name: /Thanh toán 5\.000\.000/ })).toBeEnabled()
   })
 
+  it.each([
+    ['REFUND_PENDING', 'Không giữ lại được ghế', /5\.000\.000.*sẽ được hoàn/],
+    ['REFUNDED', 'Đã hoàn tiền', /5\.000\.000.*đã được hoàn/],
+    ['REFUND_FAILED', 'Hoàn tiền chưa thành công', /gặp lỗi/],
+  ])('đơn hết hạn có latePayment = %s: hiện "%s", không hiện form (AC-4)', async (latePayment, title, body) => {
+    mockBase(() => booking({ status: 'EXPIRED', latePayment }))
+    renderAt(`/checkout/${BOOKING_ID}`)
+
+    expect(await screen.findByRole('heading', { name: title }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.getByText(body)).toBeInTheDocument()
+    expect(screen.queryByText('Hết thời gian giữ ghế')).not.toBeInTheDocument()
+  })
+
+  it('tải lại trang sau khi đã trả: server trả PAYMENT_ALREADY_SUCCEEDED → chờ xác nhận, không hiện lại form (AC-4)', async () => {
+    let polls = 0
+    mockBase(() => {
+      polls++
+      return booking({ status: polls > 1 ? 'CONFIRMED' : 'PENDING_PAYMENT' })
+    })
+    server.use(http.post('/api/v1/payments', () => problem(409, 'PAYMENT_ALREADY_SUCCEEDED')))
+    const router = renderAt(`/checkout/${BOOKING_ID}`)
+
+    expect(await screen.findByText('Đang xác nhận thanh toán', undefined, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.queryByTestId('payment-element')).not.toBeInTheDocument()
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/checkout/${BOOKING_ID}/success`), { timeout: 8000 })
+  }, 15_000)
+
   it('trả tiền xong: chờ đơn CONFIRMED rồi chuyển sang trang thành công (AC-2)', async () => {
     let status = 'PENDING_PAYMENT'
     mockBase(() => booking({ status }))

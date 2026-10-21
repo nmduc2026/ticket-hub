@@ -14,6 +14,7 @@ import com.ndz.payment.client.StripeGateway;
 import com.ndz.payment.client.StripeGatewayException;
 import com.ndz.payment.dto.response.PaymentResponse;
 import com.ndz.payment.entity.Payment;
+import com.ndz.payment.entity.enums.PaymentStatus;
 import com.ndz.payment.repository.PaymentRepository;
 import com.ndz.payment.service.PaymentService;
 import com.ndz.shared.exception.BusinessException;
@@ -44,7 +45,20 @@ public class PaymentServiceImpl implements PaymentService {
 
 	@Override
 	public PaymentResponse startPayment(UUID userId, UUID bookingId) {
-		PaymentStart start = bookings.startPayment(userId, bookingId);
+		boolean alreadyPaid = payments.findByBookingId(bookingId)
+				.map(existing -> existing.getStatus() == PaymentStatus.SUCCEEDED).orElse(false);
+		PaymentStart start;
+		try {
+			// Kiểm quyền sở hữu trước khi nói gì về thanh toán của đơn.
+			start = bookings.startPayment(userId, bookingId);
+		}
+		catch (BusinessException e) {
+			throw alreadyPaid && e.code() == ErrorCode.BOOKING_NOT_PAYABLE ? alreadySucceeded() : e;
+		}
+		if (alreadyPaid) {
+			// Tiền đã thu nhưng Booking chưa nhận PaymentSucceeded: mở lại checkout không được hiện form trả tiền lần nữa.
+			throw alreadySucceeded();
+		}
 		long feeMinor = PlatformFee.of(start.amountMinor(), start.platformFeeBps());
 
 		GatewayPaymentIntent intent = createIntent(start);
@@ -57,6 +71,10 @@ public class PaymentServiceImpl implements PaymentService {
 		Payment payment = payments.findByBookingId(bookingId).orElseThrow();
 		return new PaymentResponse(payment.getId(), intent.clientSecret(), payment.getAmountMinor(),
 				payment.getApplicationFeeMinor(), payment.getCurrency());
+	}
+
+	private static BusinessException alreadySucceeded() {
+		return new BusinessException(ErrorCode.PAYMENT_ALREADY_SUCCEEDED, "Đơn đã được thanh toán, đang chờ xác nhận");
 	}
 
 	private GatewayPaymentIntent createIntent(PaymentStart start) {

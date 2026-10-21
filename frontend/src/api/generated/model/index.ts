@@ -29,6 +29,7 @@ export * from './administrativeUnit';
 export * from './booking';
 export * from './bookingHold';
 export * from './bookingItem';
+export * from './bookingLatePayment';
 export * from './bookingRefund';
 export * from './bookingSummary';
 export * from './bookingSummaryRefundAmountMinor';

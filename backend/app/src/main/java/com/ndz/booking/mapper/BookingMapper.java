@@ -21,7 +21,8 @@ public class BookingMapper {
 
 	public BookingResponse toBooking(BookingView booking) {
 		return new BookingResponse(booking.id(), booking.eventId(), booking.status(), booking.expiresAt(),
-				booking.totalMinor(), booking.currency(), booking.items().stream().map(this::toItem).toList());
+				booking.totalMinor(), booking.currency(), booking.items().stream().map(this::toItem).toList(),
+				booking.latePayment());
 	}
 
 	public SummaryResponse toSummary(BookingSummary summary) {

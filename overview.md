@@ -256,7 +256,9 @@ seat_inventory  (event_id, seat_id, tier_id, tier_name, section_code, row_label,
                  PRIMARY KEY (event_id, seat_id))
 bookings        (id, user_id, event_id,
                  status[PENDING_PAYMENT|CONFIRMED|EXPIRED|CANCELLED|REFUND_REQUESTED|REFUNDED|REFUND_FAILED],
-                 total_minor, currency, expires_at, payment_started_at NULL, confirmed_at NULL, contact_email, version)
+                 total_minor, currency, expires_at, payment_started_at NULL, confirmed_at NULL, contact_email,
+                 late_payment NULL [REFUND_PENDING|REFUNDED|REFUND_FAILED], version)
+                 -- late_payment: thanh toán đến muộn không giữ lại được ghế, theo dõi tiền hoàn tự động (§7.3)
                  -- payment_started_at: ghi khi Payment tạo PaymentIntent, dùng cho ân hạn BR-03
                  -- confirmed_at: lúc booking CONFIRMED, mốc doanh thu theo ngày (nhóm theo ngày Asia/Ho_Chi_Minh)
                  -- contact_email: email của khách tại thời điểm đặt vé, dùng để gửi vé và hoá đơn
@@ -469,7 +471,7 @@ sequenceDiagram
 | **Sắp hết hạn giữ ghế** | `POST /payments` từ chối `409 HOLD_EXPIRING` khi thời gian giữ còn dưới 90 giây (BR-03); FE khoá nút thanh toán và mời chọn lại ghế |
 | **Khách tự huỷ booking** (BR-12) | Booking → CANCELLED, nhả ghế về AVAILABLE, phát `BookingCancelled` → Payment huỷ PaymentIntent (nếu có) |
 | **Thanh toán thất bại** | Stripe webhook `payment_intent.payment_failed` → `PaymentFailed`; payment vẫn ở `REQUIRES_PAYMENT` → user thử lại thẻ khác trên cùng PaymentIntent trong thời hạn giữ ghế |
-| **Thanh toán thành công nhưng booking đã hết hạn** (race) | Booking thử giữ lại đúng các ghế đó: còn trống → CONFIRMED như bình thường; đã bị người khác mua → phát `BookingConfirmationFailed` → Payment **tự động hoàn tiền** |
+| **Thanh toán thành công nhưng booking đã hết hạn** (race) | Booking thử giữ lại đúng các ghế đó: còn trống → CONFIRMED như bình thường; đã bị người khác mua (hoặc sự kiện không còn đang bán) → booking giữ nguyên trạng thái, ghi `late_payment = REFUND_PENDING`, phát `BookingConfirmationFailed` → Payment **tự động hoàn tiền**; `RefundCompleted` / `RefundFailed` cập nhật `late_payment` thành `REFUNDED` / `REFUND_FAILED` để khách thấy ở trang đơn |
 | **Webhook đến trễ / không đến** | Job đối soát (reconciliation, có ShedLock) quét **mọi payment chưa ở trạng thái kết thúc** (`REQUIRES_PAYMENT`, `PROCESSING`) quá 15 phút, hỏi trạng thái trực tiếp từ Stripe API và xử lý như webhook tương ứng. Alert khi có payment `SUCCEEDED` mà booking chưa `CONFIRMED` hay chưa được hoàn sau 5 phút |
 | **Webhook đến sai thứ tự** | Chỉ chấp nhận các chuyển trạng thái có trong máy trạng thái (§7.7); event không khớp bị bỏ qua và ghi log |
 | **Phát hành vé vi phạm UNIQUE** (ghế đã có vé hợp lệ) | Lỗi nghiệp vụ, không retry: Ticket phát `TicketIssuanceFailed` → booking `REFUND_REQUESTED` → Payment **tự động hoàn 100%**. Alert mức cao vì lớp 2 chống oversell đã để lọt. Lỗi hạ tầng (DB không kết nối được…) thì retry có backoff → DLT |
@@ -765,10 +767,10 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | GET | `/api/v1/queue/{eventId}/stream` | customer | SSE vị trí trong hàng chờ |
 | GET | `/api/v1/queue/{eventId}/status` | customer | Vị trí hiện tại / `ADMITTED` (dùng khi kết nối lại hoặc không dùng được SSE) |
 | POST | `/api/v1/bookings` | customer | Giữ ghế, tạo booking |
-| GET | `/api/v1/bookings/{id}` | owner | Trạng thái booking |
+| GET | `/api/v1/bookings/{id}` | owner | Trạng thái booking; có `latePayment` (`REFUND_PENDING` / `REFUNDED` / `REFUND_FAILED`) khi thanh toán đến muộn mà không giữ lại được ghế (§7.3) |
 | DELETE | `/api/v1/bookings/{id}` | owner | Huỷ booking đang `PENDING_PAYMENT`, nhả ghế (BR-12) |
 | POST | `/api/v1/bookings/{id}/refund` | owner | Yêu cầu hoàn vé cho cả booking (BR-07) |
-| POST | `/api/v1/payments` | owner | Tạo PaymentIntent, trả `clientSecret`; `409 HOLD_EXPIRING` khi thời gian giữ còn dưới 90 giây (BR-03) |
+| POST | `/api/v1/payments` | owner | Tạo PaymentIntent, trả `clientSecret`; `409 HOLD_EXPIRING` khi thời gian giữ còn dưới 90 giây (BR-03); `409 PAYMENT_ALREADY_SUCCEEDED` khi payment của đơn đã thu tiền (mở lại checkout, FE chờ xác nhận thay vì hiện lại form) |
 | POST | `/api/v1/webhooks/stripe` | Stripe (verify chữ ký) | Webhook của tài khoản platform (PaymentIntent, refund) |
 | POST | `/api/v1/webhooks/stripe-connect` | Stripe (verify chữ ký Connect) | Webhook của connected account (`account.updated`) |
 | GET | `/api/v1/me` | đã đăng nhập | Hồ sơ người dùng và role |

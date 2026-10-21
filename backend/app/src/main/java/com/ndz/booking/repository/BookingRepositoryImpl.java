@@ -23,6 +23,7 @@ import com.ndz.booking.entity.Booking;
 import com.ndz.booking.entity.BookingItem;
 import com.ndz.booking.entity.SeatInventory;
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.entity.enums.LatePayment;
 import com.ndz.shared.util.PlatformFee;
 
 /**
@@ -87,11 +88,12 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 	@Override
 	public Optional<BookingView> findOwned(UUID bookingId, UUID userId) {
 		List<Object[]> rows = em.createQuery("""
-				select b.id, b.eventId, b.status, b.totalMinor, b.currency, b.expiresAt
+				select b.id, b.eventId, b.status, b.totalMinor, b.currency, b.expiresAt, b.latePayment
 				from Booking b where b.id = :id and b.userId = :userId
 				""", Object[].class).setParameter("id", bookingId).setParameter("userId", userId).getResultList();
 		return rows.stream().findFirst().map(row -> new BookingView((UUID) row[0], (UUID) row[1],
-				((BookingStatus) row[2]).name(), (Long) row[3], (String) row[4], (Instant) row[5], items(bookingId)));
+				((BookingStatus) row[2]).name(), (Long) row[3], (String) row[4], (Instant) row[5],
+				row[6] == null ? null : ((LatePayment) row[6]).name(), items(bookingId)));
 	}
 
 	@Override

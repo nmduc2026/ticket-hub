@@ -35,7 +35,7 @@ public final class BookingViews {
 	}
 
 	public record BookingView(UUID id, UUID eventId, String status, long totalMinor, String currency,
-			Instant expiresAt, List<BookingItemView> items) {
+			Instant expiresAt, String latePayment, List<BookingItemView> items) {
 	}
 
 	/** Dữ liệu Booking đóng gói vào {@code BookingConfirmed} cho Ticket và Notification (không cần bản sao riêng). */

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.booking.entity.Booking;
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.entity.enums.LatePayment;
 
 /**
  * Đơn đặt vé và việc giữ ghế trong tồn kho (overview.md §10, lớp 2 — Postgres là nguồn sự thật). Đọc / tạo mới qua
@@ -124,6 +125,25 @@ public interface BookingRepository extends JpaRepository<Booking, UUID>, Booking
 			WHERE booking_id = :bookingId AND status = 'HELD'
 			""", nativeQuery = true)
 	int markSold(@Param("bookingId") UUID bookingId);
+
+	@Transactional
+	@Modifying(flushAutomatically = true, clearAutomatically = true)
+	@Query(value = """
+			UPDATE booking.bookings SET late_payment = :latePayment, version = version + 1
+			WHERE id = :bookingId AND status IN ('EXPIRED', 'CANCELLED')
+			  AND (:latePayment = 'REFUND_PENDING' OR late_payment IS NOT NULL)
+			""", nativeQuery = true)
+	int updateLatePayment(@Param("bookingId") UUID bookingId, @Param("latePayment") String latePayment);
+
+	/**
+	 * Ghi trạng thái tiền của thanh toán đến muộn (§7.3), chỉ cho booking {@code EXPIRED} / {@code CANCELLED}. Kết quả
+	 * hoàn chỉ ghi khi booking đã được đánh dấu có thanh toán đến muộn.
+	 *
+	 * @return true nếu đã ghi
+	 */
+	default boolean markLatePayment(UUID bookingId, LatePayment latePayment) {
+		return updateLatePayment(bookingId, latePayment.name()) == 1;
+	}
 
 	/** Ghi mốc bắt đầu thanh toán một lần (BR-03: từ đó booking được ân hạn thêm); gọi lại không đổi mốc. */
 	@Transactional
