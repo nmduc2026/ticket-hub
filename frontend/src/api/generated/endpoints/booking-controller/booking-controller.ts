@@ -26,7 +26,8 @@ import type {
 import type {
   Booking,
   BookingHold,
-  CreateBookingRequest
+  CreateBookingRequest,
+  ProblemDetail
 } from '../../model';
 
 import { apiFetch } from '../../../../lib/api-client';
@@ -44,12 +45,12 @@ export type createBookingResponse201 = {
 }
 
 export type createBookingResponse409 = {
-  data: BookingHold
+  data: ProblemDetail
   status: 409
 }
 
 export type createBookingResponse422 = {
-  data: BookingHold
+  data: ProblemDetail
   status: 422
 }
     
@@ -85,7 +86,7 @@ export const createBooking = async (createBookingRequest: CreateBookingRequest, 
 
 
 
-export const getCreateBookingMutationOptions = <TError = BookingHold | BookingHold,
+export const getCreateBookingMutationOptions = <TError = ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext> => {
 
@@ -112,12 +113,12 @@ const {mutation: mutationOptions} = options ?
 
     export type CreateBookingMutationResult = NonNullable<Awaited<ReturnType<typeof createBooking>>>
     export type CreateBookingMutationBody = CreateBookingRequest
-    export type CreateBookingMutationError = BookingHold | BookingHold
+    export type CreateBookingMutationError = ProblemDetail | ProblemDetail
 
     /**
  * @summary Giữ ghế, tạo đơn chờ thanh toán
  */
-export const useCreateBooking = <TError = BookingHold | BookingHold,
+export const useCreateBooking = <TError = ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createBooking>>,
@@ -133,17 +134,24 @@ export const useCreateBooking = <TError = BookingHold | BookingHold,
     /**
  * @summary Trạng thái đơn của tôi
  */
-export type getBookingResponse404 = {
+export type getBookingResponse200 = {
   data: Booking
+  status: 200
+}
+
+export type getBookingResponse404 = {
+  data: ProblemDetail
   status: 404
 }
     
-;
+export type getBookingResponseSuccess = (getBookingResponse200) & {
+  headers: Headers;
+};
 export type getBookingResponseError = (getBookingResponse404) & {
   headers: Headers;
 };
 
-export type getBookingResponse = (getBookingResponseError)
+export type getBookingResponse = (getBookingResponseSuccess | getBookingResponseError)
 
 export const getGetBookingUrl = (bookingId: string,) => {
 
@@ -175,7 +183,7 @@ export const getGetBookingQueryKey = (bookingId?: string,) => {
     }
 
     
-export const getGetBookingQueryOptions = <TData = Awaited<ReturnType<typeof getBooking>>, TError = Booking>(bookingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBooking>>, TError, TData>>, }
+export const getGetBookingQueryOptions = <TData = Awaited<ReturnType<typeof getBooking>>, TError = ProblemDetail>(bookingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBooking>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -194,10 +202,10 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type GetBookingQueryResult = NonNullable<Awaited<ReturnType<typeof getBooking>>>
-export type GetBookingQueryError = Booking
+export type GetBookingQueryError = ProblemDetail
 
 
-export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = Booking>(
+export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = ProblemDetail>(
  bookingId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBooking>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getBooking>>,
@@ -207,7 +215,7 @@ export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TE
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = Booking>(
+export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = ProblemDetail>(
  bookingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBooking>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getBooking>>,
@@ -217,7 +225,7 @@ export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TE
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = Booking>(
+export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = ProblemDetail>(
  bookingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBooking>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -225,7 +233,7 @@ export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TE
  * @summary Trạng thái đơn của tôi
  */
 
-export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = Booking>(
+export function useGetBooking<TData = Awaited<ReturnType<typeof getBooking>>, TError = ProblemDetail>(
  bookingId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getBooking>>, TError, TData>>, }
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -250,12 +258,12 @@ export type cancelBookingResponse204 = {
 }
 
 export type cancelBookingResponse404 = {
-  data: void
+  data: ProblemDetail
   status: 404
 }
 
 export type cancelBookingResponse409 = {
-  data: void
+  data: ProblemDetail
   status: 409
 }
     
@@ -290,7 +298,7 @@ export const cancelBooking = async (bookingId: string, options?: RequestInit): P
 
 
 
-export const getCancelBookingMutationOptions = <TError = void | void,
+export const getCancelBookingMutationOptions = <TError = ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelBooking>>, TError,{bookingId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof cancelBooking>>, TError,{bookingId: string}, TContext> => {
 
@@ -317,12 +325,12 @@ const {mutation: mutationOptions} = options ?
 
     export type CancelBookingMutationResult = NonNullable<Awaited<ReturnType<typeof cancelBooking>>>
     
-    export type CancelBookingMutationError = void | void
+    export type CancelBookingMutationError = ProblemDetail | ProblemDetail
 
     /**
  * @summary Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)
  */
-export const useCancelBooking = <TError = void | void,
+export const useCancelBooking = <TError = ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof cancelBooking>>, TError,{bookingId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof cancelBooking>>,

@@ -451,9 +451,9 @@
           "409" : {
             "description" : "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS",
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingHold"
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -461,9 +461,9 @@
           "422" : {
             "description" : "MAX_SEATS_EXCEEDED, TICKET_LIMIT_EXCEEDED, DUPLICATE_SEATS, EMAIL_REQUIRED hoặc IDEMPOTENCY_KEY_REUSED",
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/BookingHold"
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -732,12 +732,22 @@
           }
         } ],
         "responses" : {
-          "404" : {
-            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+          "200" : {
+            "description" : "Trạng thái đơn",
             "content" : {
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -759,10 +769,24 @@
         } ],
         "responses" : {
           "404" : {
-            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)"
+            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "409" : {
-            "description" : "BOOKING_NOT_CANCELLABLE (đã hết hạn, đã huỷ hoặc đã thanh toán)"
+            "description" : "BOOKING_NOT_CANCELLABLE (đã hết hạn, đã huỷ hoặc đã thanh toán)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           },
           "204" : {
             "description" : "No Content"
