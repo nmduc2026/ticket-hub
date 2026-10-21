@@ -4,7 +4,7 @@
 
 **Đầu vào:** báo cáo verify `docs/test/sprint-1…4-verify.md`; review Sprint 3 `docs/plans/2026-10-19-sprint-3-review.md`; quyết định của người dùng ngày 21/10/2026 (mục "Quyết định đã chốt"). Mỗi hạng mục chỉ đọc đúng các § `overview.md` và ADR ở cột "Đọc".
 
-**Hiện trạng:** `feature/sprint-1` → `sprint-4` xếp chồng (nhánh sau tách từ nhánh trước), chưa nhánh nào được push hay merge vào `main`. Sprint 4: hạng mục 9 (CNPG), 10 (Prometheus / alert), 11 (tracing / Sentry) đã viết manifest và code nhưng chưa chạy trên cụm.
+**Hiện trạng:** `feature/sprint-1` → `sprint-4` xếp chồng (nhánh sau tách từ nhánh trước), chưa nhánh nào được push hay merge vào `main`. Hạng mục 4 và phần viết được của Sprint 5 đã làm trên `feature/sprint-5` (tách từ `sprint-4`, chưa push): xem mục "Tình trạng Sprint 5" cuối file. Sprint 4: hạng mục 9 (CNPG), 10 (Prometheus / alert), 11 (tracing / Sentry) đã viết manifest và code nhưng chưa chạy trên cụm.
 
 **Ngoài sprint này:** việc phụ thuộc tính năng của sprint sau, đã ghi vào plan sprint đó (mục "Việc chuyển sang sprint sau" cuối file); chia lại package `shared` (giữ nguyên).
 
@@ -30,7 +30,7 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 | 1 | Đưa Sprint 1–4 lên `main`: push 4 nhánh, mở PR theo thứ tự, CI chạy lần đầu (chưa từng chạy thật: AC-7 Sprint 1 "CI trên PR", CI xanh trên `main`, image trên GHCR), sửa đỏ, squash merge, rebase nhánh sau lên `main` (`git rebase --onto main <commit-cuối-sprint-trước> feature/sprint-N`) | Infra | `docs/ops/ci-cd.md`; CLAUDE.md (Git) | B1 | 4 PR đã merge, CI xanh trên `main`, image 3 ứng dụng có trên GHCR |
 | 2 | Job `update-image-tags` mở PR tự động thay vì push thẳng `main` (bị chặn khi bắt buộc PR), CI xanh thì tự merge | Infra | §19.3; skill infra | 1 | Merge một thay đổi vào `main` → bot mở PR đổi tag → tự merge → ArgoCD thấy tag mới |
 | 3 | Nợ nhỏ: `.gitattributes` (`* text=auto eol=lf`) và chuẩn hoá xuống dòng để `spotless:check` xanh trên Windows; `infra/docker-compose/.env.example` đủ `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_SIGNING_JWK`, `MAIL_*` và truyền vào `app` (thiếu `TICKET_SIGNING_JWK` thì Ticket sinh khoá tạm, vé cũ không xác minh được sau khi khởi động lại), thêm `frontend/.env.example`, service stripe-mock trong compose dev; khai `Idempotency-Key` bằng `@Parameter` trong OpenAPI của `POST /bookings` rồi sinh lại client, FE bỏ truyền header tay trong `useHoldSeats`; `PENDING_BOOKING_EXISTS` kèm `bookingId` + FE link về đơn đang giữ; nâng Orval 8 nếu máy dev đã lên Node ≥ 22.18 | BE, FE, Infra | §6.7, §11.1, §19.2 | 1 | `spotless:check` xanh trên máy dev; `docker compose --profile core up` chạy được với `.env` sinh từ `.env.example`; hàm Orval `createBooking` có tham số `idempotencyKey` |
-| 4 | `booking` chuyển từ JdbcTemplate sang entity + Spring Data JPA; SQL đặc thù (`FOR UPDATE` theo thứ tự `seat_id`, `UPDATE … WHERE status = 'AVAILABLE'`, `RETURNING`, upsert `ON CONFLICT … WHERE`) giữ bằng native query; cột `version` cho optimistic lock theo convention | BE | §6.2, §10; ADR 0020, 0021; skill springbot (JPA) | 1 | Test 50 luồng tranh 1 ghế, test deadlock, truy vấn ghế trùng §10 và toàn bộ test `booking` xanh, số test không giảm |
+| 4 | **Xong 21/10/2026 (nhánh `feature/sprint-5`, commit 177e985; 328 test xanh, không đổi test).** `booking` chuyển từ JdbcTemplate sang entity + Spring Data JPA; SQL đặc thù (`FOR UPDATE` theo thứ tự `seat_id`, `UPDATE … WHERE status = 'AVAILABLE'`, `RETURNING`, upsert `ON CONFLICT … WHERE`) giữ bằng native query; cột `version` cho optimistic lock theo convention | BE | §6.2, §10; ADR 0020, 0021; skill springbot (JPA) | 1 | Test 50 luồng tranh 1 ghế, test deadlock, truy vấn ghế trùng §10 và toàn bộ test `booking` xanh, số test không giảm |
 | 5 | Thanh toán đến muộn và mở lại checkout: Booking ghi lại khi nhận `PaymentSucceeded` cho đơn `EXPIRED` / `CANCELLED` mà không giữ lại được ghế, cập nhật khi nhận `RefundCompleted` / `RefundFailed`; `GET /bookings/{id}` thêm `latePayment` (`REFUND_PENDING` / `REFUNDED` / `REFUND_FAILED`); `POST /payments` khi payment của đơn đã `SUCCEEDED` → `409 PAYMENT_ALREADY_SUCCEEDED`. FE checkout: hiện "Không giữ lại được ghế, tiền sẽ được hoàn" theo `latePayment`; nhận `PAYMENT_ALREADY_SUCCEEDED` → "Đang xác nhận thanh toán" và hỏi lại trạng thái booking. Ghi vào §7.3, §11.2 | BE, FE | §7.2, §7.3, §7.7, §11.2; ADR 0019 | 4 | Integration test cả hai nhánh; Playwright (mock): đơn hết hạn có `latePayment = REFUND_PENDING` hiện đúng thông báo; tải lại trang sau khi đã trả không hiện lại form |
 | 6 | Hồ sơ cá nhân đầy đủ (#19): `user_profiles` thêm `avatar_url`, `phone`, `date_of_birth`, `province_id` (→ `administrative_units` cấp 1); `GET/PUT /me/profile`, `POST /me/avatar` (dùng lại cách upload banner); phiên đăng nhập `GET /me/sessions`, `DELETE /me/sessions/{id}` và xoá tài khoản `DELETE /me` qua Keycloak Admin API của module `account` (xoá user ở Keycloak, ẩn danh hoá `user_profiles`, giữ booking và vé cũ để đối soát; còn vé của sự kiện chưa diễn thì chặn). Email, tên, mật khẩu vẫn do Keycloak giữ. Không có mục "tài khoản liên kết" (đã gỡ khỏi prototype). Sửa §6.6, §11.2 | BE, FE | §6.6, §11.2, §13.2; ADR 0016; prototype #19 | 1 | Integration test (Testcontainers Keycloak): sửa hồ sơ, đăng xuất 1 phiên, xoá tài khoản; user khác không đọc / sửa được; Playwright #19 qua ở 1280px và 390px |
 | 7 | Trường sự kiện còn thiếu (#24): `events` thêm `doors_open_at`, `age_restriction` (số tuổi tối thiểu, có thể trống), `rules` (văn bản); sửa được cả sau publish, bổ sung vào danh sách thông tin hiển thị của BR-14; hiện ở chi tiết sự kiện (#3) và vé (#9). Gỡ khỏi prototype #24: thẻ, chế độ chỉ-link, kết thúc bán, xem trước | BE, FE | §6.1, §11.2; BR-14; prototype #3, #9, #24 | 1 | Test: sửa 3 trường sau publish → 200, `EventUpdated` cập nhật `event_snapshots`; `doors_open_at` sau `starts_at` → 422 |
@@ -134,3 +134,54 @@ Phụ thuộc tính năng của sprint đó, đã ghi vào plan tương ứng:
 - Màn `/admin/orders` hiện chỉ có danh sách `REFUND_FAILED`; các bộ lọc khác của #29 làm ở Sprint 6, hạng mục 12.
 - FE check-in chưa có số đếm "312/1.200" và tên người mua vì API chưa trả (`docs/design/checkin.md`); số đếm có ở Sprint 6, hạng mục 6.
 - Job gửi lại event treo tắt trong test (`tickethub.events.republish-interval=24h`); test gọi `IncompleteEventPublications` trực tiếp.
+
+## Tình trạng Sprint 5 (nhánh `feature/sprint-5`, 21/10/2026)
+
+Phần viết và kiểm được mà không cần cụm, tài khoản bên ngoài hay số đo trên staging đã làm xong, mỗi hạng mục một commit, chưa push. Backend 371 test, frontend 146 test đều xanh.
+
+| Hạng mục Sprint 5 | Tình trạng | Còn thiếu (ghi ở "Việc treo" bên dưới) |
+|---|---|---|
+| 1 Khung load test | Đã viết `load-tests/jmeter/` (`ticket-hub.jmx` hợp lệ XML, seed user Keycloak, `seed-event.sql` đã chạy thử trên Postgres thật và chạy lại không lỗi) | Chưa chạy JMeter, chưa có stripe-mock trên staging | S5-1 |
+| 2 Baseline | Chưa làm | Cần staging | S5-1 |
+| 3 Lớp 1 Redis giữ ghế | Xong: Lua giữ nhóm / nhả compare-and-delete / gia hạn, TTL, nhả khi hết hạn - huỷ - xác nhận - TX lỗi; 12 test với Redis thật (50 luồng tranh 1 ghế, key mất vẫn không bán trùng) | Cờ `tickethub.booking.seat-hold.enabled` mặc định **tắt** để đo baseline; chưa đo hiệu năng | S5-1 |
+| 4 Fail-closed | Xong: 503 `SEAT_HOLD_UNAVAILABLE` kèm `Retry-After`, probe dựng lại key khi Redis về hoặc mất dữ liệu, health `DEGRADED`, metric, alert `SeatHoldUnavailable`, runbook khung; test dừng Redis thật bằng `docker pause` | Alert chưa kiểm trên Prometheus thật; runbook chờ số đo diễn tập C4 | S5-3 |
+| 5 Đo lại sau Redis | Chưa làm | Cần staging | S5-1 |
+| 6 Organizer đăng ký / duyệt | Xong: `apply`, `application`, Admin list / approve / reject / bulk-approve; Account gán role qua Keycloak Admin API (idempotent); 16 test với Keycloak thật | Upload ảnh giấy phép / CCCD của form #22 chưa làm (xem câu hỏi) | Câu hỏi 1 |
+| 7 Admin người dùng | Xong: tìm, lọc role, chi tiết (đơn, vé, hoàn tiền, sự kiện qua `BookingApi` / `TicketApi` / `CatalogApi`), khoá / mở khoá; 11 test với Keycloak thật (refresh token chết, đăng nhập bị từ chối) | – | – |
+| 8 Audit | Xong: `audit_log` (module nào cũng ghi được, cùng transaction), Envers cho `organizers` và `user_profiles.enabled` kèm người thao tác; duyệt / từ chối / khoá / mở khoá / hoàn thủ công đều ghi | Envers cho `platform_fee_policies` chưa làm vì chưa có entity (Sprint 6 hạng mục phí); API đọc `GET /admin/audit-logs` thuộc Sprint 6 | Sprint 6 |
+| 9 Thông báo vai trò | Xong: Admin nhận "chờ duyệt", organizer nhận kết quả trong app và email, idempotent; 4 test | – | – |
+| 10 FE đăng ký organizer | Xong: 4 trạng thái, 6 test component (MSW) | Playwright "đăng ký → Admin duyệt → vào `/organizer`" | S5-5 |
+| 11 FE Admin organizer / người dùng | Xong: lọc, side sheet, duyệt, từ chối kèm lý do, duyệt hàng loạt, khoá / mở khoá có xác nhận; 9 test component | Playwright "duyệt hàng loạt 3 hồ sơ", "khoá user → bị đăng xuất"; nút "Tạm khoá" của #15 để Sprint 6 (BR-13) | S5-5 |
+| 12 Sentinel + PgBouncer | Đã viết: chart `core` có Sentinel (3 pod), kịch bản khởi động **đã diễn tập bằng 3 container: failover 6 giây, master cũ về lại làm replica**; Pooler CNPG, NetworkPolicy, `app` / `gateway` nối qua Sentinel, Flyway nối thẳng Postgres, ADR 0034 | Chưa chạy trên k3d; chưa đo `pg_stat_activity`; chưa xác nhận PgBouncer >= 1.21 | S5-2 |
+| 13 ELK | Đã viết: ECK Elasticsearch / Kibana / Filebeat, ILM xoá sau 7 ngày, `docs/ops/logging.md` | Chưa chạy; version chart / stack theo trí nhớ; link Grafana và Jaeger sang Kibana chưa làm | S5-2 |
+| 14 Chaos | Đã viết: Chaos Mesh (ArgoCD), thí nghiệm C2 / C4 (cả cụm, chỉ master) / C8 (script đầy disk), endpoint rò bộ nhớ profile `chaos` (ADMIN), `infra/chaos/README.md` | Chưa chạy, chưa có runbook và postmortem thật | S5-3 |
+| 15 Soak / Stress | Chưa làm | Cần staging | S5-1 |
+| 16 Spike Stripe Connect | Chưa làm | Cần B2 | S5-4 |
+| 17, 18 Verify và review cuối sprint | Chưa làm | Làm sau khi các việc treo xong | S5-6 |
+
+### Việc treo của Sprint 5
+
+| # | Việc | Bị chặn bởi | Làm gì khi được gỡ | Xong khi |
+|---|---|---|---|---|
+| S5-1 | Chạy Flash sale, Load, Soak, Stress (hạng mục 1, 2, 5, 15) | B3; cài JMeter 5.6 (JDK 21) trên máy 16 GB, xác nhận hai máy cùng LAN; stripe-mock trên staging (hạng mục 3 dọn dẹp, Sprint 5 hạng mục 1); giới hạn CPU / RAM của `app`, `gateway` | Tạo 500 user + 1 sự kiện 100 ghế theo `load-tests/jmeter/README.md`; chạy lần 1 với `TICKETHUB_BOOKING_SEATHOLD_ENABLED=false` (baseline), lần 2 với `true`; ghi p95, số vé, truy vấn ghế trùng, deadlock; thêm phần thanh toán (webhook giả ký đúng) vào kịch bản | `docs/test/load/sprint-5-load.md` đủ bảng trước / sau; AC-1, AC-2, AC-14 |
+| S5-2 | Chạy thật Sentinel, Pooler, ELK (hạng mục 12, 13) | B3, hạng mục 13 dọn dẹp (k3d + ArgoCD) | Đặt Secret `tickethub-redis`; xác nhận version chart `eck-operator` 3.1.0, Elastic Stack 9.1.4, PgBouncer >= 1.21 trong image Pooler; kill master Redis và kiểm giữ ghế + session; đo `pg_stat_activity` khi chạy Load; tìm log theo `traceId` trong Kibana; kiểm ILM bằng `_ilm/explain`; chốt ADR 0034 (đổi sang `session` nếu có lỗi prepared statement) | AC-6, AC-11 |
+| S5-3 | Diễn tập C2, C4, C8 (hạng mục 14) | S5-2; hạng mục 14 dọn dẹp (Telegram, B4); stripe-mock trên staging | Áp từng file ở `infra/chaos/`, đo thời gian tới alert, viết runbook ở `docs/runbooks/` và postmortem ở `docs/postmortems/`; C4 chạy kèm Flash sale → 0 ghế trùng; C8 lấy heap dump và phân tích | AC-5, AC-12, AC-13 |
+| S5-4 | Spike Stripe Connect (hạng mục 16) | B2 (tài khoản Stripe Singapore, bật Connect, webhook secret Connect) | Kiểm từng giả định ADR 0022: Express account, onboarding link, `account.updated`, destination charge VND, `reverse_transfer`, `refund_application_fee` | AC-15 |
+| S5-5 | Playwright trên stack thật cho đăng ký / duyệt organizer và khoá user (hạng mục 10, 11) | Hạng mục 11 dọn dẹp (E2E trên stack thật) | Hai luồng: đăng ký → Admin duyệt → vào `/organizer`; khoá user → bị đăng xuất ở lần refresh kế tiếp | Hai luồng chạy được trong CI |
+| S5-6 | Verify và review cuối Sprint 5 (hạng mục 17, 18) | S5-1 đến S5-5 | `docs/test/sprint-5-verify.md`; review độc lập bằng subagent cho lớp Redis giữ ghế và khoá tài khoản | APPROVED |
+
+Việc cần làm khi triển khai lên staging (thao tác báo trước, chưa làm): tạo Secret `tickethub-redis`; `app` cần `KEYCLOAK_ACCOUNT_ADMIN_CLIENT_SECRET` (đã khai trong `helm/app/values.yaml`, lấy từ Secret `tickethub-keycloak`); realm đã import trước đó phải có client `tickethub-account-admin` với `view-users`, `manage-users`.
+
+### Quyết định và giả định chờ bạn duyệt
+
+- Hồ sơ organizer bị từ chối được nộp lại và về `PENDING` (giả định đã ghi ở plan Sprint 5). Thêm event `OrganizerRejected` (ngoài `OrganizerApplied` của plan) để báo organizer kèm lý do.
+- Form hồ sơ theo prototype #22: loại hình (cá nhân / doanh nghiệp), tên hiển thị, tên pháp lý, mã số thuế (10 hoặc 13 số) hoặc CCCD (12 số), email, số điện thoại (`0…` hoặc `+84…`), website, giới thiệu, quy mô. Thêm cột vào `catalog.organizers`.
+- Lớp Redis giữ ghế mặc định **tắt**, bật bằng cờ; Redis chết thì giữ ghế trả 503 và health là `DEGRADED` (HTTP 200) chứ không `DOWN`, để pod không rời vòng phục vụ.
+- PgBouncer chạy `transaction` (ADR 0034, Proposed); Flyway nối thẳng Postgres.
+- Test tích hợp của backend giờ dựng thêm Keycloak (~1 GB RAM) và Redis trong context dùng chung: suite chậm thêm ~1 phút cho lần khởi động đầu.
+- Khai báo schema 200 cho các endpoint mới trong OpenAPI (không khai thì Orval không sinh kiểu).
+
+### Câu hỏi cho bạn
+
+1. Form #22 có upload ảnh giấy phép kinh doanh / CCCD (prototype). Làm ở đợt nào: ngay (dùng cách upload banner, lưu S3, Admin xem trong side sheet) hay để Sprint 6 cùng việc upload lên S3 thật?
+2. Tên nút / chữ trên giao diện mới (đăng ký organizer, Admin organizer, Admin người dùng) tôi tự đặt theo văn phong màn có sẵn; bạn đối chiếu với prototype #15, #22, #28 và báo chỗ cần đổi.
