@@ -156,7 +156,6 @@ Trạng thái: hạng mục 1–8b và 12–13 xong (`./mvnw verify` 327 test, `
 | S4-T1 | Chạy lại hạng mục 9, 10, 11 trên cụm | Sau B3–B6 | DD-13, DD-14 |
 | S4-T2 | Wave ArgoCD: CRD PodMonitor chưa có thì sync CNPG lỗi, phải sync lại | Kiểm trên cụm | DD-13 |
 | S4-T3 | PgBouncer (`Pooler`) cho CNPG | | S5-12 |
-| S4-T4 | Bản sao backup ra ngoài máy staging (backup cùng cụm, mất máy là mất backup) | | DD-13 (chờ A2) |
 | S4-T5 | Thông báo `SALE_PAUSED` và `HOLD_EXPIRING` mới có cài đặt, chưa có nơi phát sinh | | `HOLD_EXPIRING`: DD-8; `SALE_PAUSED`: S6-4 |
 | S4-T6 | Thông báo cho Organizer / Admin và SSE `/me/notifications/stream` | Admin: S5-9, S6-7; SSE: S7-4. Organizer nhận "khách yêu cầu hoàn": chưa có | Organizer: DD-8; Admin: S5-9, S6-7; SSE: S7-4 |
 | S4-T7 | Gửi email theo cờ `email` của loại thông báo tuỳ chọn (cờ mới chỉ lưu) | | DD-8 |

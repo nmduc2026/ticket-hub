@@ -22,7 +22,7 @@
 | 10 | FE nhỏ: chạm vào khu trên sơ đồ ghế ở màn hẹp thì zoom vào khu đó rồi mới chọn ghế (`S2-T12`); "Thêm vào lịch" ở vé (#9) bằng file `.ics` sinh ở FE, bỏ "Tải PDF" và hoá đơn khỏi prototype, giữ lọc vé / đơn ở client (`S3-T7`); breadcrumb 4 cấp ở trang sửa sự kiện (`S2-T4`); layout khách thêm ô tìm kiếm, link "Bán vé cùng Ticket Hub", tab danh mục (`S1-T8`) | FE | §14.4; prototype #1, #5, #9, #13, #24 | 1 | Playwright 390px: chạm khu → zoom → chọn được ghế; file `.ics` có giờ theo `Asia/Ho_Chi_Minh`; component test breadcrumb |
 | 11 | E2E trên stack thật (compose `core`, không cần Stripe) cho giữ ghế và publish (`S2-T9`) | FE, Verify | §20.1; skill testcase-rule | 3 | Playwright chạy với `app` + `gateway` thật trong CI |
 | 12 | Chạy thật với Stripe test (`S3-U1`, `U3`, `V1`–`V5`, `S4-U4`, `U5`, `V1`, `V2`): `StripeGateway` trên stripe-mock, checkout trên trình duyệt thật (thẻ 4242, 390px), `purchase.spec.ts` với `E2E_STRIPE=1`, hoàn tiền thật (thẻ `4000 0000 0000 5126` → `refund.failed`, số tiền 950.000) | Verify | §7.2, §7.4; ADR 0022 | 3, B2 | Ghi kết quả vào `docs/test/sprint-cleanup-verify.md`; payload thật khác giả định thì sửa code và test |
-| 13 | Dựng k3d trên máy staging và chạy phần hạ tầng đã viết (`S3-U4`, `U5`, `V6`, `T10`, `S4-U1`, `V4`, `V5`, `T1`, `T2`): Helm, ArgoCD app-of-apps, CoreDNS rewrite `auth.tickethub.localhost`; Garage (ADR 0033) làm object storage; CNPG + WAL archive + base backup; diễn tập PITR (C7) và kill primary (C1); bản sao backup ra ngoài máy staging (`S4-T4`, chờ quyết định A2) | Infra | §18, §19.4, §20.3 (C1, C7); ADR 0033; `docs/ops/k8s-staging.md`, `docs/ops/gitops.md` | 1, 2, B3 | App chạy trên k3d qua ArgoCD; PITR ≤ 15 phút, mất ≤ 5 phút; failover < 30 giây |
+| 13 | Dựng k3d trên máy staging và chạy phần hạ tầng đã viết (`S3-U4`, `U5`, `V6`, `T10`, `S4-U1`, `V4`, `V5`, `T1`, `T2`): Helm, ArgoCD app-of-apps, CoreDNS rewrite `auth.tickethub.localhost`; Garage (ADR 0033) làm object storage; CNPG + WAL archive + base backup; diễn tập PITR (C7) và kill primary (C1) | Infra | §18, §19.4, §20.3 (C1, C7); ADR 0033; `docs/ops/k8s-staging.md`, `docs/ops/gitops.md` | 1, 2, B3 | App chạy trên k3d qua ArgoCD; PITR ≤ 15 phút, mất ≤ 5 phút; failover < 30 giây |
 | 14 | Observability trên cụm (`S4-U2`, `U3`, `V6`–`V9`, `T11`): `helm template` / `promtool check rules`, đối chiếu tên metric với `/actuator/prometheus` thật, alert giả lập tới Telegram, cert 1 giờ tự gia hạn (C9), trace Gateway → app trong Jaeger, lỗi JS trong Sentry, NetworkPolicy cho `/actuator/prometheus` | Infra | §16; `docs/ops/observability.md` | 13, B5, B6 | AC-10 → AC-13 của Sprint 4 có bằng chứng chạy thật |
 | 15 | Check-in trên điện thoại thật qua HTTPS: camera, âm thanh, rung, Safari iOS (`S4-V3`) | Verify | §7.5 | 9, 13, B9 | Quét được vé thật; ghi kết quả vào báo cáo verify |
 | 16 | AWS: checklist bảo vệ tài khoản, Terraform thăm dò Free plan, lab 1 rồi destroy + `verify-clean.sh` (`S1-U4`, `U5`, `S2-U3`) | Infra | §23; `infra/terraform/aws/` | 1, B7 | `docs/ops/aws-free-plan-probe.md` đủ bảng; lab 1 chạy được và sạch sau destroy |
@@ -63,7 +63,7 @@
 - AC-8 (BR-09): Check-in sớm hơn 3 giờ trước giờ diễn → `CHECKIN_NOT_OPEN`; sau giờ kết thúc → `EVENT_ENDED`; check-in hợp lệ phát đúng 1 `TicketCheckedIn`.
 - AC-9: Ở 390px chạm vào khu thì sơ đồ zoom vào khu, chọn được ghế; "Thêm vào lịch" tải file `.ics` đúng giờ diễn.
 - AC-10: Luồng mua vé chạy trọn với Stripe test thật; hoàn tiền thật ra đúng số tiền; thẻ hoàn thất bại ra `REFUND_FAILED`.
-- AC-11: App chạy trên k3d qua ArgoCD; PITR và failover đạt chỉ tiêu Sprint 4 (AC-10, AC-11 của Sprint 4); backup có bản sao ngoài máy staging (nếu A2 chọn làm).
+- AC-11: App chạy trên k3d qua ArgoCD; PITR và failover đạt chỉ tiêu Sprint 4 (AC-10, AC-11 của Sprint 4).
 - AC-12: Alert giả lập tới Telegram, trace Gateway → app trong Jaeger, lỗi JS trong Sentry (AC-12, AC-13 của Sprint 4).
 - AC-13: File pending không còn dòng nào ngoài các dòng gắn với hạng mục của Sprint 5–8.
 
@@ -84,5 +84,4 @@ Push, mở PR, merge (hạng mục 1, 2 và mọi PR sau đó); `kubectl` / `hel
 
 ## Câu hỏi mở
 
-- [BLOCKING phần cuối việc 13] A2: có làm bản sao backup ra ngoài máy staging không, và chép đi đâu.
 - Giả định ở việc 6: "tài khoản liên kết" (đăng nhập bằng Google / Facebook) chỉ có nghĩa khi realm có identity provider; realm hiện chưa có nên bỏ mục này khỏi #19. Xoá tài khoản: xoá user ở Keycloak, ẩn danh hoá `user_profiles`, giữ booking và vé đã qua để đối soát.
