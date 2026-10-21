@@ -40,6 +40,8 @@ class ResourceServerConfiguration {
 						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats",
 								"/api/v1/administrative-units")
 						.permitAll()
+						// Webhook của Stripe không có token: xác thực bằng chữ ký trên raw body (overview.md §13.4).
+						.requestMatchers(HttpMethod.POST, "/api/v1/webhooks/**").permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRolesConverter()))

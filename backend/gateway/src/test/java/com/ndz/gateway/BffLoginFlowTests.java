@@ -160,6 +160,24 @@ class BffLoginFlowTests {
 	}
 
 	@Test
+	void webhookBodyAndStripeSignatureReachTheAppByteForByte() throws Exception {
+		// Chữ ký Stripe tính trên raw body: Gateway không được đổi dù một byte (khoảng trắng, thứ tự trường, Unicode).
+		String rawBody = "{ \"id\" : \"evt_1\",  \"note\":\"Vé đã bán\"\n}";
+		String signature = "t=1700000000,v1=abcdef";
+
+		HttpResponse<String> response = sendWithoutCookies(HttpRequest
+				.newBuilder(URI.create("http://localhost:" + port + "/api/v1/webhooks/stripe"))
+				.header("Stripe-Signature", signature).header("Content-Type", "application/json")
+				.POST(BodyPublishers.ofString(rawBody, StandardCharsets.UTF_8)));
+
+		assertThat(response.statusCode()).isEqualTo(200);
+		var forwarded = IDP_AND_APP.findAll(postRequestedFor(urlPathEqualTo("/api/v1/webhooks/stripe"))).getLast();
+		assertThat(forwarded.getBody()).isEqualTo(rawBody.getBytes(StandardCharsets.UTF_8));
+		assertThat(forwarded.getHeader("Stripe-Signature")).isEqualTo(signature);
+		assertThat(forwarded.containsHeader("Cookie")).isFalse();
+	}
+
+	@Test
 	void logoutDestroysGatewaySessionAndRedirectsToKeycloakEndSession() throws Exception {
 		login("/");
 

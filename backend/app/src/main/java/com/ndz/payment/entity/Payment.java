@@ -71,6 +71,20 @@ public class Payment {
 		this.updatedAt = now;
 	}
 
+	/**
+	 * Chuyển trạng thái theo máy trạng thái (overview.md §7.7). Không có setter {@code status} công khai.
+	 *
+	 * @return false (và không đổi gì) nếu chuyển không hợp lệ: người gọi bỏ qua và ghi log
+	 */
+	public boolean transitionTo(PaymentStatus next, Instant now) {
+		if (!status.canTransitionTo(next)) {
+			return false;
+		}
+		this.status = next;
+		this.updatedAt = now;
+		return true;
+	}
+
 	public UUID getId() {
 		return id;
 	}

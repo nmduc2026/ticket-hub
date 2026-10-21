@@ -1,5 +1,7 @@
 package com.ndz.payment.config;
 
+import java.time.Clock;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -37,8 +39,8 @@ public class StripeConfiguration {
 	}
 
 	@Bean
-	public StripeGateway stripeGateway(StripeClient client) {
-		return new StripeGateway(client);
+	public StripeGateway stripeGateway(StripeClient client, StripeProperties properties, Clock clock) {
+		return new StripeGateway(client, properties.webhookSecret(), properties.webhookTolerance(), clock);
 	}
 
 }

@@ -13,6 +13,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.UUID;
 
@@ -124,7 +125,7 @@ class StripeGatewayTests {
 		var properties = new StripeProperties("dummy-key", "dummy-webhook-secret", stripe.baseUrl(), timeout,
 				Duration.ofMinutes(5));
 		var configuration = new StripeConfiguration();
-		return configuration.stripeGateway(configuration.stripeClient(properties));
+		return configuration.stripeGateway(configuration.stripeClient(properties), properties, Clock.systemUTC());
 	}
 
 }

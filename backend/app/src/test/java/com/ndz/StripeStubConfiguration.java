@@ -14,6 +14,9 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 @TestConfiguration(proxyBeanMethods = false)
 public class StripeStubConfiguration {
 
+	/** Secret ký webhook mà test dùng để tự ký payload. */
+	public static final String WEBHOOK_SECRET = "dummy-webhook-secret";
+
 	@Bean(initMethod = "start", destroyMethod = "stop")
 	WireMockServer stripeStub() {
 		return new WireMockServer(WireMockConfiguration.options().dynamicPort());
@@ -24,7 +27,7 @@ public class StripeStubConfiguration {
 		return registry -> {
 			registry.add("tickethub.stripe.api-base", stripeStub::baseUrl);
 			registry.add("tickethub.stripe.secret-key", () -> "dummy-test-key");
-			registry.add("tickethub.stripe.webhook-secret", () -> "dummy-webhook-secret");
+			registry.add("tickethub.stripe.webhook-secret", () -> WEBHOOK_SECRET);
 		};
 	}
 
