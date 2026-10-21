@@ -713,6 +713,47 @@
         }
       }
     },
+    "/api/v1/me/bookings" : {
+      "get" : {
+        "tags" : [ "my-booking-controller" ],
+        "summary" : "Đơn của tôi, mới tạo trước",
+        "operationId" : "listMyBookings",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/BookingSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events" : {
       "get" : {
         "tags" : [ "public-event-controller" ],
@@ -1555,6 +1596,39 @@
           }
         },
         "required" : [ "number", "row", "sectionCode" ]
+      },
+      "BookingSummary" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "PENDING_PAYMENT, CONFIRMED, EXPIRED, CANCELLED, REFUND_REQUESTED, REFUNDED hoặc REFUND_FAILED"
+          },
+          "totalMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Tổng tiền, đơn vị nhỏ nhất của tiền tệ"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "bookingId", "createdAt", "currency", "eventTitle", "startsAt", "status", "totalMinor" ]
       },
       "PublicEventPage" : {
         "type" : "object",

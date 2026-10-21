@@ -32,6 +32,19 @@ public final class BookingResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) long priceMinor) {
 	}
 
+	@Schema(name = "BookingSummary")
+	public record SummaryResponse(
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID bookingId,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String eventTitle,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant startsAt,
+			@Schema(description = "PENDING_PAYMENT, CONFIRMED, EXPIRED, CANCELLED, REFUND_REQUESTED, REFUNDED hoặc REFUND_FAILED",
+					requiredMode = Schema.RequiredMode.REQUIRED) String status,
+			@Schema(description = "Tổng tiền, đơn vị nhỏ nhất của tiền tệ",
+					requiredMode = Schema.RequiredMode.REQUIRED) long totalMinor,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String currency,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant createdAt) {
+	}
+
 	@Schema(name = "Booking")
 	public record BookingResponse(
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,

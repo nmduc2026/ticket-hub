@@ -43,4 +43,9 @@ public final class BookingViews {
 	public record PaymentInfo(long totalMinor, String currency, int platformFeeBps) {
 	}
 
+	/** Một dòng trong "Đơn của tôi": đơn kèm tên sự kiện và giờ diễn từ bản sao sự kiện. */
+	public record BookingSummary(UUID bookingId, String eventTitle, Instant startsAt, String status, long totalMinor,
+			String currency, Instant createdAt) {
+	}
+
 }

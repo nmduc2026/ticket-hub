@@ -16,6 +16,7 @@ import org.springframework.stereotype.Repository;
 import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
+import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
@@ -176,6 +177,19 @@ public class BookingRepository {
 			statement.setArray(1, connection.createArrayOf("uuid", bookingIds.toArray()));
 			return statement;
 		}, (rs, i) -> rs.getObject("id", UUID.class)));
+	}
+
+	/** Đơn của chính người dùng, mới tạo trước, theo trang (chống IDOR: lọc theo {@code user_id}). */
+	public List<BookingSummary> findByUser(UUID userId, int limit, int offset) {
+		return jdbc.query("""
+				SELECT b.id, e.title, e.starts_at, b.status, b.total_minor, b.currency, b.created_at
+				FROM booking.bookings b JOIN booking.event_snapshots e ON e.event_id = b.event_id
+				WHERE b.user_id = ?
+				ORDER BY b.created_at DESC, b.id
+				LIMIT ? OFFSET ?
+				""", (rs, i) -> new BookingSummary(rs.getObject("id", UUID.class), rs.getString("title"),
+				rs.getTimestamp("starts_at").toInstant(), rs.getString("status"), rs.getLong("total_minor"),
+				rs.getString("currency"), rs.getTimestamp("created_at").toInstant()), userId, limit, offset);
 	}
 
 	/** Ghi mốc bắt đầu thanh toán một lần (BR-03: từ đó booking được ân hạn thêm); gọi lại không đổi mốc. */

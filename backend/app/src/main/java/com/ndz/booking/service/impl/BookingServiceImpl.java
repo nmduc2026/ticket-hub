@@ -22,6 +22,7 @@ import org.springframework.util.StringUtils;
 import com.ndz.booking.event.BookingCancelled;
 import com.ndz.booking.event.BookingCreated;
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.EventRules;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
@@ -46,6 +47,8 @@ public class BookingServiceImpl implements BookingService {
 	private static final int MAX_ATTEMPTS = 2;
 
 	private static final String ONE_PENDING_INDEX = "uq_one_pending_per_user";
+
+	private static final int MAX_PAGE_SIZE = 100;
 
 	private final BookingRepository bookings;
 	private final EventSnapshotRepository snapshots;
@@ -133,6 +136,13 @@ public class BookingServiceImpl implements BookingService {
 	public BookingView get(UUID userId, UUID bookingId) {
 		return bookings.findOwned(bookingId, userId).orElseThrow(
 				() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy đơn đặt vé"));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<BookingSummary> listMine(UUID userId, int page, int size) {
+		int limit = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+		return bookings.findByUser(userId, limit, Math.max(page, 0) * limit);
 	}
 
 	private void validateRequest(String contactEmail, List<UUID> seatIds) {

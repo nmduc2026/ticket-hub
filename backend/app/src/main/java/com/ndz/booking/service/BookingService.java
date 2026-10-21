@@ -3,6 +3,7 @@ package com.ndz.booking.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 
 /**
@@ -29,5 +30,8 @@ public interface BookingService {
 	void cancel(UUID userId, UUID bookingId);
 
 	BookingView get(UUID userId, UUID bookingId);
+
+	/** "Đơn của tôi": đơn của {@code userId}, mới tạo trước, theo trang; không bao giờ trả đơn của người khác. */
+	List<BookingSummary> listMine(UUID userId, int page, int size);
 
 }
