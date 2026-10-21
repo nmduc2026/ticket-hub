@@ -41,6 +41,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.EventRecorderConfiguration.EventRecorder;
 import com.ndz.IntegrationTest;
+import com.ndz.MailpitApi;
 import com.ndz.MutableClock;
 import com.ndz.StripeStubConfiguration;
 import com.ndz.TestTokens;
@@ -77,6 +78,9 @@ class PaymentFlowTests {
 	EventRecorder events;
 
 	@Autowired
+	MailpitApi mailpit;
+
+	@Autowired
 	BookingExpiryService expiry;
 
 	@Autowired
@@ -86,6 +90,7 @@ class PaymentFlowTests {
 	TransactionTemplate transaction;
 
 	private final UUID customer = UUID.randomUUID();
+	private final String customerEmail = "khach-" + UUID.randomUUID() + "@example.com";
 
 	@BeforeEach
 	void prepare() {
@@ -137,6 +142,9 @@ class PaymentFlowTests {
 		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(count(
 				"select count(*) from ticket.tickets where booking_id = ? and status = 'VALID'", booking)).isEqualTo(2));
 
+		// AC-2: email vé có trong Mailpit (Notification nghe TicketIssued).
+		await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(mailpit.countTo(customerEmail)).isEqualTo(1));
+
 		List<BookingConfirmed> confirmed = events.of(BookingConfirmed.class);
 		assertThat(confirmed).hasSize(1);
 		BookingConfirmed message = confirmed.get(0);
@@ -145,7 +153,7 @@ class PaymentFlowTests {
 		assertThat(message.eventTitle()).isEqualTo("Sự kiện thử");
 		assertThat(message.venueName()).isEqualTo("Sài Gòn Arena");
 		assertThat(message.startsAt()).isEqualTo(NOW.plusSeconds(30 * 86_400));
-		assertThat(message.contactEmail()).isEqualTo("customer@tickethub.local");
+		assertThat(message.contactEmail()).isEqualTo(customerEmail);
 		assertThat(message.totalMinor()).isEqualTo(2_000_000);
 		assertThat(message.currency()).isEqualTo("VND");
 		assertThat(message.seats().stream().map(BookingConfirmed.Seat::seatId).collect(Collectors.toSet()))
@@ -201,7 +209,7 @@ class PaymentFlowTests {
 		pay(booking);
 
 		mockMvc.perform(delete("/api/v1/bookings/" + booking).header(HttpHeaders.AUTHORIZATION,
-				TestTokens.token().subject(customer).bearer())).andExpect(status().isNoContent());
+				customerToken())).andExpect(status().isNoContent());
 
 		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(paymentStatus(booking))
 				.isEqualTo("CANCELED"));
@@ -215,7 +223,7 @@ class PaymentFlowTests {
 		UUID booking = hold(event, seats(event, 1));
 
 		mockMvc.perform(delete("/api/v1/bookings/" + booking).header(HttpHeaders.AUTHORIZATION,
-				TestTokens.token().subject(customer).bearer())).andExpect(status().isNoContent());
+				customerToken())).andExpect(status().isNoContent());
 
 		await().during(Duration.ofSeconds(2)).atMost(Duration.ofSeconds(5)).untilAsserted(
 				() -> stripe.verify(0, postRequestedFor(WireMock.urlMatching("/v1/payment_intents/.*/cancel"))));
@@ -235,7 +243,7 @@ class PaymentFlowTests {
 		pay(booking);
 
 		mockMvc.perform(delete("/api/v1/bookings/" + booking).header(HttpHeaders.AUTHORIZATION,
-				TestTokens.token().subject(customer).bearer())).andExpect(status().isNoContent());
+				customerToken())).andExpect(status().isNoContent());
 
 		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(paymentStatus(booking))
 				.isEqualTo("SUCCEEDED"));
@@ -254,7 +262,7 @@ class PaymentFlowTests {
 		pay(booking);
 
 		mockMvc.perform(delete("/api/v1/bookings/" + booking).header(HttpHeaders.AUTHORIZATION,
-				TestTokens.token().subject(customer).bearer())).andExpect(status().isNoContent());
+				customerToken())).andExpect(status().isNoContent());
 
 		await().atMost(Duration.ofSeconds(15))
 				.untilAsserted(() -> stripe.verify(1, postRequestedFor(urlEqualTo(CANCEL_URL))));
@@ -262,6 +270,10 @@ class PaymentFlowTests {
 	}
 
 	// ---- helpers ----
+
+	private String customerToken() {
+		return TestTokens.token().subject(customer).email(customerEmail).bearer();
+	}
 
 	private static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder intent(String status) {
 		return aResponse().withHeader("Content-Type", "application/json")
@@ -274,7 +286,7 @@ class PaymentFlowTests {
 	private UUID hold(UUID event, List<UUID> seats) throws Exception {
 		String ids = seats.stream().map(id -> "\"" + id + "\"").collect(Collectors.joining(","));
 		String body = mockMvc.perform(post("/api/v1/bookings")
-				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(customer).bearer())
+				.header(HttpHeaders.AUTHORIZATION, customerToken())
 				.header("Idempotency-Key", UUID.randomUUID().toString()).contentType(MediaType.APPLICATION_JSON)
 				.content("{\"eventId\":\"%s\",\"seatIds\":[%s]}".formatted(event, ids))).andExpect(status().isCreated())
 				.andReturn().getResponse().getContentAsString();
@@ -283,7 +295,7 @@ class PaymentFlowTests {
 
 	private void pay(UUID booking) throws Exception {
 		mockMvc.perform(post("/api/v1/payments")
-				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(customer).bearer())
+				.header(HttpHeaders.AUTHORIZATION, customerToken())
 				.header("Idempotency-Key", UUID.randomUUID().toString()).contentType(MediaType.APPLICATION_JSON)
 				.content("{\"bookingId\":\"%s\"}".formatted(booking))).andExpect(status().isCreated());
 	}

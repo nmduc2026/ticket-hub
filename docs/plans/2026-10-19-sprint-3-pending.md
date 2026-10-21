@@ -23,4 +23,6 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 | 2 | Thêm `STRIPE_*` vào `infra/docker-compose/.env.example` và service stripe-mock vào compose | Chưa làm; cần khi chạy integration test |
 | 4 | `booking` vẫn dùng JdbcTemplate (chưa chuyển sang JPA) | SQL giữ ghế (`FOR UPDATE`, `UPDATE ... WHERE status = 'AVAILABLE'`, `RETURNING`, upsert `ON CONFLICT ... WHERE`) là chỗ đặc thù. Chuyển sang entity + Spring Data (giữ nguyên SQL bằng native query) làm được khi bạn muốn: đã có Docker, test 50 luồng và truy vấn ghế trùng (xanh 21/10) làm lưới an toàn |
 | 5 | `shared/idempotency`, `shared/storage` giữ dạng gói theo tính năng, chưa chia `config` / `util` | Chia nếu bạn muốn đồng nhất |
+| 6 | Thêm `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_SIGNING_JWK`, `MAIL_*` vào `.env.example` và truyền vào `app` khi chạy compose | Chưa làm; `TICKET_SIGNING_JWK` để trống thì Ticket sinh khoá tạm (vé phát trước đó không xác minh được sau khi khởi động lại) |
+| 7 | Phát vé vi phạm UNIQUE → `TicketIssuanceFailed` → hoàn tự động | Sprint 4; hiện vi phạm chỉ làm giao dịch lỗi (index DB vẫn chặn oversell) |
 | 3 | Retry / circuit breaker / bulkhead cho `StripeGateway` | Sprint 4 (Resilience4j); hiện chỉ có timeout 3 giây, SDK không tự retry |

@@ -33,6 +33,15 @@ spring:
     schemas: shared
     default-schema: shared
     locations: classpath:db/migration
+    # Mẫu thông báo (Thymeleaf) trong migration dùng cú pháp ${...}, không phải placeholder của Flyway.
+    placeholder-replacement: false
+
+  mail:
+    # Dev: Mailpit ở compose profile core (SMTP :1025, giao diện :8025). Cloud: SES qua biến môi trường.
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
 
   modulith:
     events:
@@ -81,3 +90,11 @@ tickethub:
     api-base: ${STRIPE_API_BASE:}
     timeout: 3s
     webhook-tolerance: 5m
+
+  ticket:
+    # Khoá ký QR ES256 dạng JWK JSON (có khoá riêng và kid) từ biến môi trường / K8s Secret. Để trống: khoá tạm (dev).
+    signing-jwk: ${TICKET_SIGNING_JWK:}
+
+  notification:
+    from: ${MAIL_FROM:Ticket Hub <no-reply@tickethub.local>}
+    web-base-url: ${WEB_BASE_URL:http://localhost:5173}

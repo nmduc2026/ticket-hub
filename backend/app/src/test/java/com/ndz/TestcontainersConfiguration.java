@@ -35,4 +35,24 @@ class TestcontainersConfiguration {
 		};
 	}
 
+	/** Mailpit: hộp thư thử cho test email vé (SMTP :1025, API :8025). */
+	@Bean
+	GenericContainer<?> mailpitContainer() {
+		return new GenericContainer<>(DockerImageName.parse("axllent/mailpit:v1.27.7")).withExposedPorts(1025, 8025)
+				.waitingFor(Wait.forHttp("/readyz").forPort(8025).forStatusCode(200));
+	}
+
+	@Bean
+	DynamicPropertyRegistrar mailProperties(GenericContainer<?> mailpitContainer) {
+		return registry -> {
+			registry.add("spring.mail.host", mailpitContainer::getHost);
+			registry.add("spring.mail.port", () -> mailpitContainer.getMappedPort(1025));
+		};
+	}
+
+	@Bean
+	MailpitApi mailpit(GenericContainer<?> mailpitContainer) {
+		return new MailpitApi("http://" + mailpitContainer.getHost() + ":" + mailpitContainer.getMappedPort(8025));
+	}
+
 }
