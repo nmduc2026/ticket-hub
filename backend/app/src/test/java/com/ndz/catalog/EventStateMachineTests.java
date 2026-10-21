@@ -60,24 +60,24 @@ class EventStateMachineTests {
 	@Test
 	void publishedAndOnSaleEventsCanBeSuspended() {
 		Event published = published();
-		published.suspend();
+		published.suspend("Thử");
 		assertThat(published.getStatus()).isEqualTo(EventStatus.SUSPENDED);
 
 		Event onSale = onSale();
-		onSale.suspend();
+		onSale.suspend("Thử");
 		assertThat(onSale.getStatus()).isEqualTo(EventStatus.SUSPENDED);
 	}
 
 	@Test
 	void resumeGoesBackToOnSaleOnlyAfterTheSaleStartedWithInventory() {
 		Event ready = onSale();
-		ready.suspend();
+		ready.suspend("Thử");
 		ready.resume(AFTER_SALE);
 		assertThat(ready.getStatus()).isEqualTo(EventStatus.ON_SALE);
 
 		Event early = published();
 		early.markInventoryReady();
-		early.suspend();
+		early.suspend("Thử");
 		early.resume(BEFORE_SALE);
 		assertThat(early.getStatus()).isEqualTo(EventStatus.PUBLISHED);
 	}
@@ -96,7 +96,7 @@ class EventStateMachineTests {
 
 	@Test
 	void invalidTransitionsAreRejectedWithConflict() {
-		assertRejected(() -> draft().suspend());
+		assertRejected(() -> draft().suspend("Thử"));
 		assertRejected(() -> draft().cancel());
 		assertRejected(() -> draft().end());
 		assertRejected(() -> published().publish(500));
@@ -105,14 +105,14 @@ class EventStateMachineTests {
 
 		Event ended = onSale();
 		ended.end();
-		assertRejected(() -> ended.suspend());
+		assertRejected(() -> ended.suspend("Thử"));
 		assertRejected(() -> ended.cancel());
 		assertRejected(() -> ended.end());
 		assertRejected(() -> ended.resume(AFTER_SALE));
 
 		Event cancelled = published();
 		cancelled.cancel();
-		assertRejected(() -> cancelled.suspend());
+		assertRejected(() -> cancelled.suspend("Thử"));
 		assertRejected(() -> cancelled.end());
 		assertRejected(() -> cancelled.resume(AFTER_SALE));
 	}
@@ -154,7 +154,7 @@ class EventStateMachineTests {
 
 	private static Event suspended() {
 		Event event = onSale();
-		event.suspend();
+		event.suspend("Thử");
 		return event;
 	}
 

@@ -26,6 +26,9 @@ import com.ndz.catalog.dto.response.OrganizerResponses.OrganizerPage;
 import com.ndz.catalog.dto.response.OrganizerResponses.ReviewResult;
 import com.ndz.catalog.entity.enums.OrganizerStatus;
 import com.ndz.catalog.service.OrganizerAdminService;
+import com.ndz.catalog.dto.request.SuspensionRequests;
+import com.ndz.catalog.dto.response.SuspensionResponses.OrganizerSuspension;
+import com.ndz.catalog.service.EventSuspensionService;
 import com.ndz.shared.util.CurrentUser;
 
 /** Admin duyệt hồ sơ organizer (overview.md §11.2, §7.6). */
@@ -35,9 +38,11 @@ import com.ndz.shared.util.CurrentUser;
 class AdminOrganizerController {
 
 	private final OrganizerAdminService service;
+	private final EventSuspensionService suspensions;
 
-	AdminOrganizerController(OrganizerAdminService service) {
+	AdminOrganizerController(OrganizerAdminService service, EventSuspensionService suspensions) {
 		this.service = service;
+		this.suspensions = suspensions;
 	}
 
 	@Operation(operationId = "listAdminOrganizers", summary = "Danh sách hồ sơ organizer, lọc theo trạng thái")
@@ -65,6 +70,28 @@ class AdminOrganizerController {
 	@PostMapping("/{id}/reject")
 	ReviewResult reject(@PathVariable UUID id, @Valid @RequestBody RejectRequest request) {
 		return service.reject(CurrentUser.require().id(), id, request.reason());
+	}
+
+	@Operation(operationId = "suspendOrganizer",
+			summary = "Đình chỉ organizer, tạm dừng mọi sự kiện đang bán của họ (BR-13)")
+	@ApiResponse(responseCode = "200", description = "Đã đình chỉ",
+			content = @Content(schema = @Schema(implementation = OrganizerSuspension.class)))
+	@ApiResponse(responseCode = "409", description = "ORGANIZER_STATE_INVALID (không ở APPROVED)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@PostMapping("/{id}/suspend")
+	OrganizerSuspension suspend(@PathVariable UUID id, @Valid @RequestBody SuspensionRequests.Suspend request) {
+		return suspensions.suspendOrganizer(CurrentUser.require().id(), id, request.reason());
+	}
+
+	@Operation(operationId = "reinstateOrganizer",
+			summary = "Khôi phục organizer bị đình chỉ; sự kiện vẫn tạm dừng tới khi mở lại từng cái (BR-13)")
+	@ApiResponse(responseCode = "200", description = "Đã khôi phục",
+			content = @Content(schema = @Schema(implementation = OrganizerSuspension.class)))
+	@ApiResponse(responseCode = "409", description = "ORGANIZER_STATE_INVALID (không bị đình chỉ)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@PostMapping("/{id}/reinstate")
+	OrganizerSuspension reinstate(@PathVariable UUID id, @Valid @RequestBody SuspensionRequests.Suspend request) {
+		return suspensions.reinstateOrganizer(CurrentUser.require().id(), id, request.reason());
 	}
 
 	@Operation(operationId = "bulkApproveOrganizers", summary = "Duyệt nhiều hồ sơ organizer")

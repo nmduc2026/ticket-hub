@@ -4,11 +4,13 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
 import com.ndz.booking.event.BookingHoldExpiring;
+import com.ndz.booking.event.BookingSalePaused;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
 import com.ndz.catalog.event.OrganizerApplied;
 import com.ndz.catalog.event.OrganizerApproved;
+import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.notification.service.InAppNotificationService;
 import com.ndz.ticket.event.TicketIssued;
@@ -39,6 +41,16 @@ class InAppNotificationListener {
 	@ApplicationModuleListener
 	void on(BookingHoldExpiring event) {
 		notifications.onHoldExpiring(event);
+	}
+
+	@ApplicationModuleListener
+	void on(BookingSalePaused event) {
+		notifications.onSalePaused(event);
+	}
+
+	@ApplicationModuleListener
+	void on(EventSuspended event) {
+		notifications.onEventSuspended(event);
 	}
 
 	@ApplicationModuleListener

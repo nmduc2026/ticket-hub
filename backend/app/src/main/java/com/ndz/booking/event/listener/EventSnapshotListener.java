@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import com.ndz.booking.service.EventProjectionService;
 import com.ndz.catalog.event.EventEnded;
 import com.ndz.catalog.event.EventOnSale;
+import com.ndz.catalog.event.EventResumed;
+import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.EventUpdated;
 
 /** Nghe các event còn lại của Catalog để giữ bản sao sự kiện; xử lý nằm ở {@link EventProjectionService}. */
@@ -31,6 +33,16 @@ class EventSnapshotListener {
 	@ApplicationModuleListener
 	void on(EventEnded event) {
 		projection.onEnded(event);
+	}
+
+	@ApplicationModuleListener
+	void on(EventSuspended event) {
+		projection.onSuspended(event);
+	}
+
+	@ApplicationModuleListener
+	void on(EventResumed event) {
+		projection.onResumed(event);
 	}
 
 }

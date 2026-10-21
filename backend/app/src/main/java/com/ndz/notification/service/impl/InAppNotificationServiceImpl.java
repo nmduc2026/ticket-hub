@@ -12,10 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.booking.event.BookingHoldExpiring;
+import com.ndz.booking.event.BookingSalePaused;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.account.api.AccountApi;
 import com.ndz.booking.event.RefundRequested;
+import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.OrganizerApplied;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
@@ -101,6 +103,30 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 		notify(event.userId(), NotificationType.HOLD_EXPIRING, "Sắp hết giờ giữ ghế",
 				event.eventTitle() + ": ghế sẽ được nhả nếu chưa thanh toán trong vài phút tới.",
 				"/checkout/" + event.bookingId(), event.messageId());
+	}
+
+	@Override
+	public void onSalePaused(BookingSalePaused event) {
+		String body = "CONFIRMED".equals(event.bookingStatus())
+				? event.eventTitle() + ": sự kiện tạm dừng bán. Vé của bạn vẫn giữ nguyên."
+				: event.eventTitle() + ": sự kiện tạm dừng bán, đơn đang giữ ghế có thể không thanh toán được.";
+		notify(event.userId(), NotificationType.SALE_PAUSED, "Sự kiện tạm dừng bán", body,
+				"/me/bookings", event.messageId());
+	}
+
+	@Override
+	@Transactional
+	public void onEventSuspended(EventSuspended event) {
+		notify(event.organizerId(), NotificationType.SALE_PAUSED, "Sự kiện bị tạm dừng bán",
+				event.eventTitle() + ": " + event.reason(), "/organizer/events/" + event.eventId() + "/edit",
+				event.messageId());
+		if (!event.automatic()) {
+			return; // Admin tự bấm tạm dừng: không cần báo lại Admin
+		}
+		for (AccountApi.UserContact admin : accounts.usersWithRole("ADMIN")) {
+			notify(admin.userId(), NotificationType.EVENT_AUTO_SUSPENDED, "Sự kiện tự tạm dừng",
+					event.eventTitle() + ": " + event.reason(), "/admin/events", event.messageId());
+		}
 	}
 
 	@Override

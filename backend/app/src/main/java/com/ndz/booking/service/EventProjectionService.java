@@ -3,6 +3,8 @@ package com.ndz.booking.service;
 import com.ndz.catalog.event.EventEnded;
 import com.ndz.catalog.event.EventOnSale;
 import com.ndz.catalog.event.EventPublished;
+import com.ndz.catalog.event.EventResumed;
+import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.EventUpdated;
 
 /**
@@ -25,5 +27,10 @@ public interface EventProjectionService {
 	void onOnSale(EventOnSale event);
 
 	void onEnded(EventEnded event);
+
+	/** BR-13: bản sao sang {@code SUSPENDED} (giữ ghế mới bị từ chối) và phát {@code BookingSalePaused} cho từng đơn. */
+	void onSuspended(EventSuspended event);
+
+	void onResumed(EventResumed event);
 
 }

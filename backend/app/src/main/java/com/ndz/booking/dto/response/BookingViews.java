@@ -38,6 +38,10 @@ public final class BookingViews {
 			Instant expiresAt, String latePayment, List<BookingItemView> items) {
 	}
 
+	/** Booking bị ảnh hưởng khi sự kiện tạm dừng bán (BR-13): đủ dữ liệu để phát {@code BookingSalePaused}. */
+	public record AffectedBooking(UUID bookingId, UUID userId, String contactEmail, String status) {
+	}
+
 	/** Booking sắp hết giờ giữ ghế, đủ dữ liệu để phát {@code BookingHoldExpiring}. */
 	public record HoldExpiringBooking(UUID bookingId, UUID userId, UUID eventId, String eventTitle, String contactEmail,
 			Instant expiresAt) {

@@ -49,6 +49,9 @@ public class Organizer {
 	@Audited
 	private boolean payoutReady;
 
+	@Audited
+	private String suspensionReason;
+
 	@Column(nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -119,6 +122,33 @@ public class Organizer {
 		this.rejectionReason = reason;
 	}
 
+	/**
+	 * Admin đình chỉ organizer (BR-13): mọi sự kiện đang bán của họ tạm dừng theo (service xử lý).
+	 *
+	 * @throws BusinessException {@code ORGANIZER_STATE_INVALID} nếu organizer không ở {@code APPROVED}
+	 */
+	public void suspend(String reason) {
+		if (status != OrganizerStatus.APPROVED) {
+			throw new BusinessException(ErrorCode.ORGANIZER_STATE_INVALID, "Chỉ đình chỉ được ban tổ chức đang hoạt động");
+		}
+		this.status = OrganizerStatus.SUSPENDED;
+		this.suspensionReason = reason;
+	}
+
+	/**
+	 * Admin khôi phục organizer bị đình chỉ về {@code APPROVED}; sự kiện vẫn tạm dừng tới khi Admin mở lại từng cái
+	 * (BR-13).
+	 *
+	 * @throws BusinessException {@code ORGANIZER_STATE_INVALID} nếu organizer không bị đình chỉ
+	 */
+	public void reinstate() {
+		if (status != OrganizerStatus.SUSPENDED) {
+			throw new BusinessException(ErrorCode.ORGANIZER_STATE_INVALID, "Ban tổ chức không bị đình chỉ");
+		}
+		this.status = OrganizerStatus.APPROVED;
+		this.suspensionReason = null;
+	}
+
 	public boolean isPending() {
 		return status == OrganizerStatus.PENDING;
 	}
@@ -158,6 +188,15 @@ public class Organizer {
 
 	public String getRejectionReason() {
 		return rejectionReason;
+	}
+
+	/** Bản sao {@code charges_enabled} của Payment (BR-05, BR-13). */
+	public boolean isPayoutReady() {
+		return payoutReady;
+	}
+
+	public String getSuspensionReason() {
+		return suspensionReason;
 	}
 
 	public OrganizerType getOrganizerType() {

@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.UUID;
 
 import com.ndz.booking.event.BookingHoldExpiring;
+import com.ndz.booking.event.BookingSalePaused;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
+import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.OrganizerApplied;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
@@ -35,6 +37,12 @@ public interface InAppNotificationService {
 
 	/** Khách: "sắp hết giờ giữ ghế", dẫn về trang thanh toán của booking. */
 	void onHoldExpiring(BookingHoldExpiring event);
+
+	/** Khách có đơn của sự kiện bị tạm dừng bán (BR-13): mỗi đơn một thông báo. */
+	void onSalePaused(BookingSalePaused event);
+
+	/** Organizer của sự kiện; Admin thêm khi tạm dừng tự động (organizer bị đình chỉ / mất charges_enabled). */
+	void onEventSuspended(EventSuspended event);
 
 	/** Đã hoàn tiền xong; hoàn tự động không có người nhận thì bỏ qua. */
 	void onRefundCompleted(RefundCompleted event);

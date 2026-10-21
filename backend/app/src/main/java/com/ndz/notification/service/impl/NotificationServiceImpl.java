@@ -15,6 +15,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.booking.event.BookingHoldExpiring;
+import com.ndz.booking.event.BookingSalePaused;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
@@ -49,6 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
 	static final String ORGANIZER_REJECTED_CONSUMER = "notification.organizer-rejected";
 	static final String ORGANIZER_REJECTED = "ORGANIZER_REJECTED";
 	static final String HOLD_EXPIRING_CONSUMER = "notification.hold-expiring";
+	static final String SALE_PAUSED_CONSUMER = "notification.sale-paused";
 
 	/** BR-11: lưu UTC, chỉ đổi sang giờ Việt Nam ở lớp hiển thị. */
 	private static final DateTimeFormatter DISPLAY_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
@@ -123,6 +125,22 @@ public class NotificationServiceImpl implements NotificationService {
 				Map.of("eventTitle", event.eventTitle(), "expiresAt", DISPLAY_TIME.format(event.expiresAt()),
 						"checkoutUrl", properties.webBaseUrl() + "/checkout/" + event.bookingId()),
 				"sắp hết giờ giữ ghế của booking " + event.bookingId());
+	}
+
+	@Override
+	public void onSalePaused(BookingSalePaused event) {
+		if (!processed.markProcessed(SALE_PAUSED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua BookingSalePaused đã xử lý {}", event.messageId());
+			return;
+		}
+		if (!emailEnabled(event.userId(), NotificationType.SALE_PAUSED)) {
+			log.info("Người dùng {} đã tắt email {}, không gửi", event.userId(), NotificationType.SALE_PAUSED);
+			return;
+		}
+		sendEmail(NotificationType.SALE_PAUSED.name(), event.userId(), event.messageId(), event.contactEmail(),
+				Map.of("eventTitle", event.eventTitle(), "confirmed", "CONFIRMED".equals(event.bookingStatus()),
+						"bookingsUrl", properties.webBaseUrl() + "/me/bookings"),
+				"tạm dừng bán của booking " + event.bookingId());
 	}
 
 	/** Loại bắt buộc luôn gửi; loại tuỳ chọn theo cờ {@code email} trong cài đặt (mặc định bật). */

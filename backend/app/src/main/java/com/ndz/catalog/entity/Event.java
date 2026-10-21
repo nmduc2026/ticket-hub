@@ -65,6 +65,9 @@ public class Event {
 	@Column(name = "doors_open_at")
 	private Instant doorsOpenAt;
 
+	@Column(name = "suspension_reason")
+	private String suspensionReason;
+
 	@Column(name = "age_restriction")
 	private Short ageRestriction;
 
@@ -196,15 +199,17 @@ public class Event {
 		transition(EnumSet.of(EventStatus.PUBLISHED, EventStatus.ON_SALE, EventStatus.SUSPENDED), EventStatus.ENDED);
 	}
 
-	/** Tạm dừng bán (BR-13). */
-	public void suspend() {
+	/** Tạm dừng bán (BR-13), ghi lý do để Admin / organizer thấy. */
+	public void suspend(String reason) {
 		transition(EnumSet.of(EventStatus.PUBLISHED, EventStatus.ON_SALE), EventStatus.SUSPENDED);
+		this.suspensionReason = reason;
 	}
 
 	/** Mở bán lại: về ON_SALE nếu đã qua giờ mở bán và có tồn kho, ngược lại về PUBLISHED (BR-13). */
 	public void resume(Instant now) {
 		transition(EnumSet.of(EventStatus.SUSPENDED),
 				inventoryReady && !now.isBefore(saleStartsAt) ? EventStatus.ON_SALE : EventStatus.PUBLISHED);
+		this.suspensionReason = null;
 	}
 
 	/** Admin huỷ sự kiện (BR-08). */
@@ -276,6 +281,10 @@ public class Event {
 
 	public Instant getSaleStartsAt() {
 		return saleStartsAt;
+	}
+
+	public String getSuspensionReason() {
+		return suspensionReason;
 	}
 
 	public Instant getDoorsOpenAt() {

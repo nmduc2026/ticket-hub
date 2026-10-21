@@ -20,6 +20,9 @@ public interface EventRepository extends JpaRepository<Event, UUID>, JpaSpecific
 
 	List<Event> findByOrganizerId(UUID organizerId, Pageable pageable);
 
+	/** Sự kiện của organizer ở các trạng thái cho trước (tạm dừng mọi sự kiện đang bán, BR-13). */
+	List<Event> findByOrganizerIdAndStatusIn(UUID organizerId, Collection<EventStatus> statuses);
+
 	/** Sự kiện đã publish, tới giờ mở bán và có tồn kho: ứng viên chuyển sang ON_SALE (theo lô). */
 	List<Event> findTop100ByStatusAndInventoryReadyTrueAndSaleStartsAtLessThanEqualOrderBySaleStartsAt(
 			EventStatus status, Instant now);

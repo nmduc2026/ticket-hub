@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
+import com.ndz.booking.dto.response.BookingViews.AffectedBooking;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
@@ -49,6 +50,9 @@ public interface BookingRepositoryCustom {
 	/** Nhả các ghế đang giữ của booking về {@code AVAILABLE}; trả về id các ghế đã nhả. */
 	@Transactional
 	List<UUID> releaseSeats(UUID bookingId);
+
+	/** Booking {@code PENDING_PAYMENT} / {@code CONFIRMED} của sự kiện (báo khách khi tạm dừng bán, BR-13). */
+	List<AffectedBooking> affectedBySalePause(UUID eventId);
 
 	/**
 	 * Đánh dấu đã báo "sắp hết giờ giữ ghế" cho tối đa {@code limit} booking {@code PENDING_PAYMENT} chưa bắt đầu

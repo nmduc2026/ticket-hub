@@ -12,6 +12,7 @@ public enum NotificationType {
 	REFUND_FAILED("Hoàn tiền cần xử lý", true),
 	EVENT_CANCELLED("Sự kiện bị huỷ", true),
 	SALE_PAUSED("Tạm dừng bán", false),
+	EVENT_AUTO_SUSPENDED("Sự kiện tự tạm dừng", false),
 	HOLD_EXPIRING("Sắp hết giờ giữ ghế", false),
 	CUSTOMER_REFUND_REQUESTED("Khách yêu cầu hoàn vé", false),
 	ORGANIZER_APPLICATION_PENDING("Hồ sơ organizer chờ duyệt", false),

@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.ndz.booking.dto.response.BookingViews.AffectedBooking;
+import com.ndz.booking.event.BookingSalePaused;
+import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
 import com.ndz.booking.repository.SeatInventoryRepository;
@@ -19,6 +22,8 @@ import com.ndz.catalog.api.CatalogApi.SellableSeat;
 import com.ndz.catalog.event.EventEnded;
 import com.ndz.catalog.event.EventOnSale;
 import com.ndz.catalog.event.EventPublished;
+import com.ndz.catalog.event.EventResumed;
+import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.EventUpdated;
 import com.ndz.catalog.event.SeatInventoryReady;
 import com.ndz.shared.event.IntegrationEvent;
@@ -33,16 +38,18 @@ public class EventProjectionServiceImpl implements EventProjectionService {
 	private static final Logger log = LoggerFactory.getLogger(EventProjectionServiceImpl.class);
 
 	private final ProcessedEventRepository processed;
+	private final BookingRepository bookings;
 	private final CatalogApi catalog;
 	private final SeatInventoryRepository inventory;
 	private final EventSnapshotRepository snapshots;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
-	EventProjectionServiceImpl(ProcessedEventRepository processed, CatalogApi catalog,
+	EventProjectionServiceImpl(ProcessedEventRepository processed, BookingRepository bookings, CatalogApi catalog,
 			SeatInventoryRepository inventory, EventSnapshotRepository snapshots, ApplicationEventPublisher publisher,
 			Clock clock) {
 		this.processed = processed;
+		this.bookings = bookings;
 		this.catalog = catalog;
 		this.inventory = inventory;
 		this.snapshots = snapshots;
@@ -90,6 +97,33 @@ public class EventProjectionServiceImpl implements EventProjectionService {
 		}
 		apply(event.eventId(), event.occurredAt(),
 				snapshots.updateStatus(event.eventId(), "ENDED", event.occurredAt()), "EventEnded");
+	}
+
+	@Override
+	public void onSuspended(EventSuspended event) {
+		if (alreadyProcessed(event)) {
+			return;
+		}
+		boolean applied = snapshots.updateStatus(event.eventId(), "SUSPENDED", event.occurredAt());
+		apply(event.eventId(), event.occurredAt(), applied, "EventSuspended");
+		if (!applied) {
+			return;
+		}
+		// Cùng transaction với dòng processed_events: gửi lại event không phát thêm thông báo.
+		List<AffectedBooking> affected = bookings.affectedBySalePause(event.eventId());
+		affected.forEach(booking -> publisher.publishEvent(new BookingSalePaused(Uuid7.next(clock), event.occurredAt(),
+				booking.bookingId(), booking.userId(), event.eventId(), event.eventTitle(), booking.contactEmail(),
+				booking.status())));
+		log.info("Sự kiện {} tạm dừng bán: báo {} đơn", event.eventId(), affected.size());
+	}
+
+	@Override
+	public void onResumed(EventResumed event) {
+		if (alreadyProcessed(event)) {
+			return;
+		}
+		apply(event.eventId(), event.occurredAt(),
+				snapshots.updateStatus(event.eventId(), event.status(), event.occurredAt()), "EventResumed");
 	}
 
 	private boolean alreadyProcessed(IntegrationEvent event) {

@@ -10,6 +10,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
 import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
+import com.ndz.booking.dto.response.BookingViews.AffectedBooking;
 import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
@@ -178,6 +179,18 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 	@Override
 	public List<UUID> releaseSoldSeats(UUID bookingId) {
 		return releaseWhere(bookingId, "SOLD");
+	}
+
+	@Override
+	public List<AffectedBooking> affectedBySalePause(UUID eventId) {
+		return em.createQuery("""
+				select b.id, b.userId, b.contactEmail, b.status from Booking b
+				where b.eventId = :eventId and b.status in :statuses order by b.id
+				""", Object[].class).setParameter("eventId", eventId)
+				.setParameter("statuses", List.of(BookingStatus.PENDING_PAYMENT, BookingStatus.CONFIRMED)).getResultList()
+				.stream().map(row -> new AffectedBooking((UUID) row[0], (UUID) row[1], (String) row[2],
+						((BookingStatus) row[3]).name()))
+				.toList();
 	}
 
 	@Override
