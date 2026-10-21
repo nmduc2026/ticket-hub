@@ -12,6 +12,7 @@ import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
+import com.ndz.booking.dto.response.BookingViews.HoldExpiringBooking;
 import com.ndz.booking.dto.response.BookingViews.HeldSeat;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
@@ -48,6 +49,13 @@ public interface BookingRepositoryCustom {
 	/** Nhả các ghế đang giữ của booking về {@code AVAILABLE}; trả về id các ghế đã nhả. */
 	@Transactional
 	List<UUID> releaseSeats(UUID bookingId);
+
+	/**
+	 * Đánh dấu đã báo "sắp hết giờ giữ ghế" cho tối đa {@code limit} booking {@code PENDING_PAYMENT} chưa bắt đầu
+	 * thanh toán, chưa báo, còn hạn nhưng hết hạn trước {@code threshold}; trả về các booking vừa đánh dấu.
+	 */
+	@Transactional
+	List<HoldExpiringBooking> markHoldExpiringNotified(Instant now, Instant threshold, int limit);
 
 	/** Nhả các ghế đã bán của booking đã hoàn về {@code AVAILABLE}; trả về id các ghế đã nhả. */
 	@Transactional

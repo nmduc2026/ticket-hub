@@ -1,5 +1,6 @@
 package com.ndz.notification.service;
 
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
@@ -20,6 +21,9 @@ public interface NotificationService {
 	 * Idempotent theo {@code messageId}; gửi lỗi xử lý như {@link #onTicketIssued}.
 	 */
 	void onRefundCompleted(RefundCompleted event);
+
+	/** Email "sắp hết giờ giữ ghế": loại tuỳ chọn, chỉ gửi khi khách bật email cho loại này. */
+	void onHoldExpiring(BookingHoldExpiring event);
 
 	/**
 	 * Gửi email kết quả duyệt hồ sơ organizer tới email liên hệ trong hồ sơ. Idempotent theo {@code messageId}; gửi lỗi

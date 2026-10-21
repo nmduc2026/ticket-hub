@@ -10,4 +10,11 @@ public interface BookingExpiryService {
 	 */
 	int expireDueBookings();
 
+	/**
+	 * Phát {@code BookingHoldExpiring} cho booking chưa bắt đầu thanh toán còn ≤ 2 phút giữ ghế, mỗi booking một lần.
+	 *
+	 * @return số booking đã báo
+	 */
+	int notifyExpiringHolds();
+
 }

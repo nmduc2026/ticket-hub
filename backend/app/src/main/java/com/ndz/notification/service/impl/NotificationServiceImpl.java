@@ -14,6 +14,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
@@ -24,7 +25,10 @@ import com.ndz.notification.entity.NotificationLog;
 import com.ndz.notification.entity.Template;
 import com.ndz.notification.entity.Template.TemplateId;
 import com.ndz.notification.entity.enums.Channel;
+import com.ndz.notification.entity.enums.NotificationType;
 import com.ndz.notification.repository.NotificationLogRepository;
+import com.ndz.notification.repository.NotificationPreferenceRepository;
+import com.ndz.notification.repository.NotificationPreferenceRepository.Preference;
 import com.ndz.notification.repository.NotificationProcessedEventRepository;
 import com.ndz.notification.repository.TemplateRepository;
 import com.ndz.notification.service.NotificationService;
@@ -44,6 +48,7 @@ public class NotificationServiceImpl implements NotificationService {
 	static final String ORGANIZER_APPROVED = "ORGANIZER_APPROVED";
 	static final String ORGANIZER_REJECTED_CONSUMER = "notification.organizer-rejected";
 	static final String ORGANIZER_REJECTED = "ORGANIZER_REJECTED";
+	static final String HOLD_EXPIRING_CONSUMER = "notification.hold-expiring";
 
 	/** BR-11: lưu UTC, chỉ đổi sang giờ Việt Nam ở lớp hiển thị. */
 	private static final DateTimeFormatter DISPLAY_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
@@ -58,12 +63,15 @@ public class NotificationServiceImpl implements NotificationService {
 	private final EmailSender emailSender;
 	private final NotificationProperties properties;
 	private final TransactionTemplate newTransaction;
+	private final NotificationPreferenceRepository preferences;
 	private final Clock clock;
 
 	NotificationServiceImpl(NotificationProcessedEventRepository processed, TemplateRepository templates,
 			NotificationLogRepository logs, TemplateRenderer renderer, EmailSender emailSender,
-			NotificationProperties properties, PlatformTransactionManager transactions, Clock clock) {
+			NotificationProperties properties, PlatformTransactionManager transactions,
+			NotificationPreferenceRepository preferences, Clock clock) {
 		this.processed = processed;
+		this.preferences = preferences;
 		this.templates = templates;
 		this.logs = logs;
 		this.renderer = renderer;
@@ -99,6 +107,27 @@ public class NotificationServiceImpl implements NotificationService {
 				Map.of("eventTitle", event.eventTitle() == null ? "" : event.eventTitle(), "amount",
 						MoneyFormat.format(event.amountMinor(), event.currency())),
 				"hoàn tiền " + event.refundId());
+	}
+
+	@Override
+	public void onHoldExpiring(BookingHoldExpiring event) {
+		if (!processed.markProcessed(HOLD_EXPIRING_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua BookingHoldExpiring đã xử lý {}", event.messageId());
+			return;
+		}
+		if (!emailEnabled(event.userId(), NotificationType.HOLD_EXPIRING)) {
+			log.info("Người dùng {} đã tắt email {}, không gửi", event.userId(), NotificationType.HOLD_EXPIRING);
+			return;
+		}
+		sendEmail(NotificationType.HOLD_EXPIRING.name(), event.userId(), event.messageId(), event.contactEmail(),
+				Map.of("eventTitle", event.eventTitle(), "expiresAt", DISPLAY_TIME.format(event.expiresAt()),
+						"checkoutUrl", properties.webBaseUrl() + "/checkout/" + event.bookingId()),
+				"sắp hết giờ giữ ghế của booking " + event.bookingId());
+	}
+
+	/** Loại bắt buộc luôn gửi; loại tuỳ chọn theo cờ {@code email} trong cài đặt (mặc định bật). */
+	private boolean emailEnabled(UUID userId, NotificationType type) {
+		return type.mandatory() || preferences.findAll(userId).getOrDefault(type.name(), Preference.DEFAULT).email();
 	}
 
 	@Override

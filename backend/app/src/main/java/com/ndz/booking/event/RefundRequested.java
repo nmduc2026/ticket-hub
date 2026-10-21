@@ -8,11 +8,12 @@ import com.ndz.shared.event.IntegrationEvent;
 /**
  * Booking đã chuyển sang {@code REFUND_REQUESTED} (overview.md §7.4): Ticket thu hồi mọi vé của booking ngay (BR-09),
  * Payment tạo bản ghi hoàn và gọi Stripe, Notification báo cho khách. {@code reason} quyết định số tiền hoàn: lý do
- * khách yêu cầu hoàn trừ phí nền tảng, các lý do còn lại hoàn 100% (BR-07, BR-08).
+ * khách yêu cầu hoàn trừ phí nền tảng, các lý do còn lại hoàn 100% (BR-07, BR-08). {@code organizerId} chỉ có khi khách
+ * vừa gửi yêu cầu hoàn (để organizer của sự kiện được báo); hoàn thủ công và hoàn do lỗi phát vé để trống.
  */
 public record RefundRequested(UUID messageId, Instant occurredAt, UUID bookingId, UUID userId, UUID eventId,
-		String eventTitle, String contactEmail, String reason, long refundAmountMinor, String currency)
-		implements IntegrationEvent {
+		String eventTitle, String contactEmail, String reason, long refundAmountMinor, String currency,
+		UUID organizerId) implements IntegrationEvent {
 
 	/** Khách yêu cầu hoàn (BR-07): hoàn tổng đã trả trừ phí nền tảng. */
 	public static final String CUSTOMER_REQUEST = "CUSTOMER_REQUEST";

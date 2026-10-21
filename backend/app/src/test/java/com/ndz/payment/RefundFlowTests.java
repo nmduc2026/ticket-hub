@@ -380,7 +380,7 @@ class RefundFlowTests {
 
 	private RefundRequested refundRequested(String reason, long amount) {
 		return new RefundRequested(UUID.randomUUID(), NOW, bookingId, customer, eventId, "Sự kiện thử", email, reason,
-				amount, "VND");
+				amount, "VND", null);
 	}
 
 	private void publishRefundRequested(String reason, long amount) {

@@ -14,6 +14,7 @@ import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
+import com.ndz.booking.dto.response.BookingViews.HoldExpiringBooking;
 import com.ndz.booking.dto.response.BookingViews.HeldSeat;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
@@ -162,11 +163,11 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 	public ConfirmationData confirmationData(UUID bookingId) {
 		Object[] row = em.createQuery("""
 				select b.id, b.userId, b.eventId, e.title, e.startsAt, e.venueName, b.contactEmail, b.totalMinor,
-				       b.currency
+				       b.currency, e.organizerId
 				from Booking b join EventSnapshot e on e.eventId = b.eventId where b.id = :id
 				""", Object[].class).setParameter("id", bookingId).getSingleResult();
 		return new ConfirmationData((UUID) row[0], (UUID) row[1], (UUID) row[2], (String) row[3], (Instant) row[4],
-				(String) row[5], (String) row[6], (Long) row[7], (String) row[8], items(bookingId));
+				(String) row[5], (String) row[6], (Long) row[7], (String) row[8], (UUID) row[9], items(bookingId));
 	}
 
 	@Override
@@ -177,6 +178,32 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 	@Override
 	public List<UUID> releaseSoldSeats(UUID bookingId) {
 		return releaseWhere(bookingId, "SOLD");
+	}
+
+	@Override
+	public List<HoldExpiringBooking> markHoldExpiringNotified(Instant now, Instant threshold, int limit) {
+		em.flush();
+		// Đánh dấu và đọc cùng một câu lệnh: hai lần chạy chồng nhau không báo trùng một booking.
+		List<?> rows = em.createNativeQuery("""
+				UPDATE booking.bookings b SET hold_expiring_notified_at = :now, version = b.version + 1
+				FROM booking.event_snapshots e
+				WHERE e.event_id = b.event_id
+				  AND b.id IN (SELECT id FROM booking.bookings
+				               WHERE status = 'PENDING_PAYMENT' AND payment_started_at IS NULL
+				                 AND hold_expiring_notified_at IS NULL AND expires_at > :now AND expires_at <= :threshold
+				               ORDER BY expires_at LIMIT :limit FOR UPDATE SKIP LOCKED)
+				RETURNING b.id, b.user_id, b.event_id, e.title, b.contact_email, b.expires_at
+				""").setParameter("now", now).setParameter("threshold", threshold).setParameter("limit", limit)
+				.getResultList();
+		em.clear();
+		return rows.stream().map(Object[].class::cast)
+				.map(row -> new HoldExpiringBooking((UUID) row[0], (UUID) row[1], (UUID) row[2], (String) row[3],
+						(String) row[4], toInstant(row[5])))
+				.toList();
+	}
+
+	private static Instant toInstant(Object value) {
+		return value instanceof java.time.OffsetDateTime offset ? offset.toInstant() : (Instant) value;
 	}
 
 	private List<UUID> releaseWhere(UUID bookingId, String fromStatus) {

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.account.api.AccountApi;
@@ -81,11 +82,25 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 	}
 
 	@Override
+	@Transactional
 	public void onRefundRequested(RefundRequested event) {
 		notify(event.userId(), NotificationType.REFUND_REQUESTED, "Đã nhận yêu cầu hoàn vé",
 				event.eventTitle() + ": vé đã bị thu hồi, bạn sẽ nhận lại "
 						+ MoneyFormat.format(event.refundAmountMinor(), event.currency()) + ".",
 				"/me/bookings", event.messageId());
+		if (event.organizerId() != null) {
+			// Organizer của sự kiện (overview.md §6.5); chỉ có khi khách vừa gửi yêu cầu, hoàn thủ công không báo lại.
+			notify(event.organizerId(), NotificationType.CUSTOMER_REFUND_REQUESTED, "Khách yêu cầu hoàn vé",
+					event.eventTitle() + ": một đơn vừa được yêu cầu hoàn, vé đã thu hồi và ghế sẽ mở bán lại.",
+					"/organizer/orders", event.messageId());
+		}
+	}
+
+	@Override
+	public void onHoldExpiring(BookingHoldExpiring event) {
+		notify(event.userId(), NotificationType.HOLD_EXPIRING, "Sắp hết giờ giữ ghế",
+				event.eventTitle() + ": ghế sẽ được nhả nếu chưa thanh toán trong vài phút tới.",
+				"/checkout/" + event.bookingId(), event.messageId());
 	}
 
 	@Override

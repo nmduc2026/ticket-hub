@@ -74,7 +74,7 @@ public class BookingAdminServiceImpl implements BookingAdminService {
 		ConfirmationData data = bookings.confirmationData(bookingId);
 		publisher.publishEvent(new RefundRequested(Uuid7.next(clock), now, bookingId, booking.userId(),
 				booking.eventId(), data.eventTitle(), data.contactEmail(), context.reason(), context.amountMinor(),
-				data.currency()));
+				data.currency(), null));
 		log.warn("Admin hoàn thủ công booking {} ({}, {})", bookingId, context.reason(), context.amountMinor());
 		return new RefundResult(bookingId, BookingStatus.REFUND_REQUESTED, context.amountMinor());
 	}

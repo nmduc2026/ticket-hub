@@ -3,6 +3,7 @@ package com.ndz.notification.event.listener;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
@@ -33,6 +34,11 @@ class InAppNotificationListener {
 	@ApplicationModuleListener
 	void on(RefundRequested event) {
 		notifications.onRefundRequested(event);
+	}
+
+	@ApplicationModuleListener
+	void on(BookingHoldExpiring event) {
+		notifications.onHoldExpiring(event);
 	}
 
 	@ApplicationModuleListener

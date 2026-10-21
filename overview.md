@@ -257,7 +257,8 @@ seat_inventory  (event_id, seat_id, tier_id, tier_name, section_code, row_label,
 bookings        (id, user_id, event_id,
                  status[PENDING_PAYMENT|CONFIRMED|EXPIRED|CANCELLED|REFUND_REQUESTED|REFUNDED|REFUND_FAILED],
                  total_minor, currency, expires_at, payment_started_at NULL, confirmed_at NULL, contact_email,
-                 late_payment NULL [REFUND_PENDING|REFUNDED|REFUND_FAILED], version)
+                 late_payment NULL [REFUND_PENDING|REFUNDED|REFUND_FAILED], hold_expiring_notified_at NULL, version)
+                 -- hold_expiring_notified_at: đã phát BookingHoldExpiring (mỗi booking một lần, §6.5)
                  -- late_payment: thanh toán đến muộn không giữ lại được ghế, theo dõi tiền hoàn tự động (§7.3)
                  -- payment_started_at: ghi khi Payment tạo PaymentIntent, dùng cho ân hạn BR-03
                  -- confirmed_at: lúc booking CONFIRMED, mốc doanh thu theo ngày (nhóm theo ngày Asia/Ho_Chi_Minh)
@@ -339,7 +340,7 @@ notification_preferences (user_id, type, email BOOLEAN, in_app BOOLEAN, PRIMARY 
 
 Notification **chỉ nghe event**, không hỏi ngược module khác: dữ liệu cần để gửi (người nhận, email, tên sự kiện) đi trong payload. Thông báo cần dữ liệu của module khác thì module sở hữu dữ liệu tự phát event theo từng người nhận: Booking phát `BookingHoldExpiring` cho booking chưa bắt đầu thanh toán và còn ≤ 2 phút giữ ghế, `BookingSalePaused` cho từng booking `PENDING_PAYMENT` / `CONFIRMED` của sự kiện bị tạm dừng. Ngoại lệ duy nhất là danh sách Admin, lấy qua interface công khai của Account (khi tách service: API nội bộ, client `tickethub-internal`).
 
-Thông báo về vé, hoàn tiền, huỷ sự kiện và kết quả duyệt hồ sơ organizer luôn gửi (không tắt được trong `notification_preferences`). Hộp thư giữ 90 ngày; job ShedLock xoá bản cũ hơn.
+Thông báo về vé, hoàn tiền, huỷ sự kiện và kết quả duyệt hồ sơ organizer luôn gửi (không tắt được trong `notification_preferences`). Loại còn lại gửi email theo cờ `email` và hiện trong app theo cờ `in_app` của người nhận (mặc định bật cả hai). Thông báo cho organizer khi khách yêu cầu hoàn chỉ có trong app, vì payload `RefundRequested` không mang email của organizer. Hộp thư giữ 90 ngày; job ShedLock xoá bản cũ hơn.
 
 ### 6.6. Account
 

@@ -30,4 +30,14 @@ class ExpireBookingsJob {
 		}
 	}
 
+	/** Báo "sắp hết giờ giữ ghế" (overview.md §6.5): cùng nhịp với job hết hạn để không trễ quá 30 giây. */
+	@Scheduled(fixedDelayString = "${tickethub.booking.expire-interval:30s}")
+	@SchedulerLock(name = "notify-expiring-holds", lockAtMostFor = "PT2M", lockAtLeastFor = "PT5S")
+	void notifyExpiringHolds() {
+		int notified = expiry.notifyExpiringHolds();
+		if (notified > 0) {
+			log.info("HoldExpiring: báo {} booking sắp hết giờ giữ ghế", notified);
+		}
+	}
+
 }

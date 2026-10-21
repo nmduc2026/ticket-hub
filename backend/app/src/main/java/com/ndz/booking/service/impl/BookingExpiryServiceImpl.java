@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.booking.event.BookingExpired;
+import com.ndz.booking.event.BookingHoldExpiring;
+import com.ndz.booking.dto.response.BookingViews.HoldExpiringBooking;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.repository.BookingRepository;
@@ -70,6 +72,27 @@ public class BookingExpiryServiceImpl implements BookingExpiryService {
 			// Lô chưa đầy thì đã hết việc; lô không có booking nào đổi được (vừa được thanh toán / huỷ) thì dừng để khỏi lặp.
 			if (due.size() < properties.expiryBatchSize() || expiredInBatch == 0) {
 				return expired;
+			}
+		}
+	}
+
+	@Override
+	public int notifyExpiringHolds() {
+		int notified = 0;
+		while (true) {
+			Instant now = clock.instant();
+			Integer batch = transaction.execute(status -> {
+				List<HoldExpiringBooking> due = bookings.markHoldExpiringNotified(now,
+						now.plus(properties.holdExpiringNotice()), properties.expiryBatchSize());
+				due.forEach(booking -> publisher.publishEvent(new BookingHoldExpiring(Uuid7.next(clock), now,
+						booking.bookingId(), booking.userId(), booking.eventId(), booking.eventTitle(),
+						booking.contactEmail(), booking.expiresAt())));
+				return due.size();
+			});
+			int count = batch == null ? 0 : batch;
+			notified += count;
+			if (count < properties.expiryBatchSize()) {
+				return notified;
 			}
 		}
 	}

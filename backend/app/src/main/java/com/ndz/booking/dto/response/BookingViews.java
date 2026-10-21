@@ -38,9 +38,15 @@ public final class BookingViews {
 			Instant expiresAt, String latePayment, List<BookingItemView> items) {
 	}
 
+	/** Booking sắp hết giờ giữ ghế, đủ dữ liệu để phát {@code BookingHoldExpiring}. */
+	public record HoldExpiringBooking(UUID bookingId, UUID userId, UUID eventId, String eventTitle, String contactEmail,
+			Instant expiresAt) {
+	}
+
 	/** Dữ liệu Booking đóng gói vào {@code BookingConfirmed} cho Ticket và Notification (không cần bản sao riêng). */
 	public record ConfirmationData(UUID bookingId, UUID userId, UUID eventId, String eventTitle, Instant startsAt,
-			String venueName, String contactEmail, long totalMinor, String currency, List<BookingItemView> items) {
+			String venueName, String contactEmail, long totalMinor, String currency, UUID organizerId,
+			List<BookingItemView> items) {
 	}
 
 	/** Số tiền và mức phí của booking để Payment tạo thanh toán. */

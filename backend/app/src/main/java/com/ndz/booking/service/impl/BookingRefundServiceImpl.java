@@ -82,7 +82,7 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 		}
 		publisher.publishEvent(new RefundRequested(Uuid7.next(clock), now, bookingId, userId, data.eventId(),
 				data.eventTitle(), data.contactEmail(), RefundRequested.CUSTOMER_REQUEST, refundAmount,
-				data.currency()));
+				data.currency(), data.organizerId()));
 		log.info("Booking {} yêu cầu hoàn {} {}", bookingId, refundAmount, data.currency());
 		return new RefundResult(bookingId, BookingStatus.REFUND_REQUESTED, refundAmount);
 	}
@@ -108,7 +108,7 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 		}
 		publisher.publishEvent(new RefundRequested(Uuid7.next(clock), now, event.bookingId(), event.userId(),
 				event.eventId(), event.eventTitle(), event.contactEmail(), RefundRequested.TICKET_ISSUANCE_FAILED,
-				event.totalMinor(), event.currency()));
+				event.totalMinor(), event.currency(), null));
 		log.error("Booking {} chuyển REFUND_REQUESTED vì không phát được vé (ghế trùng {}): hoàn 100%",
 				event.bookingId(), event.conflictingSeatIds());
 	}

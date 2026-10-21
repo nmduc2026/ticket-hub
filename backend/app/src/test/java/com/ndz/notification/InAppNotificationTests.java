@@ -31,6 +31,7 @@ import com.ndz.IntegrationTest;
 import com.ndz.MailpitApi;
 import com.ndz.MutableClock;
 import com.ndz.TestTokens;
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
@@ -108,7 +109,7 @@ class InAppNotificationTests {
 	@DisplayName("AC-14: yêu cầu hoàn tạo 1 thông báo kèm số tiền nhận lại; hoàn xong và hoàn lỗi mỗi loại 1 thông báo")
 	void refundEventsEachCreateOneNotification() throws Exception {
 		publish(new RefundRequested(UUID.randomUUID(), NOW, UUID.randomUUID(), buyer, UUID.randomUUID(), "Sự kiện thử",
-				"a@b.c", RefundRequested.CUSTOMER_REQUEST, 950_000, "VND"));
+				"a@b.c", RefundRequested.CUSTOMER_REQUEST, 950_000, "VND", null));
 		publish(new RefundCompleted(UUID.randomUUID(), NOW, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
 				buyer, 950_000, "VND", "a@b.c", "Sự kiện thử"));
 		publish(new RefundFailed(UUID.randomUUID(), NOW, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), buyer,
@@ -123,6 +124,51 @@ class InAppNotificationTests {
 		assertThat(count("select count(*) from notification.notifications where type = 'REFUND_COMPLETED'")).isEqualTo(1);
 		assertThat(jdbc.queryForObject("select body from notification.notifications where type = 'REFUND_REQUESTED'",
 				String.class)).contains("950.000 ₫");
+	}
+
+	@Test
+	@DisplayName("AC-7: khách yêu cầu hoàn → organizer của sự kiện nhận đúng 1 thông báo; gửi lại event không tạo thêm")
+	void organizerIsToldOnceWhenACustomerRequestsARefund() throws Exception {
+		UUID organizer = UUID.randomUUID();
+		RefundRequested requested = new RefundRequested(UUID.randomUUID(), NOW, UUID.randomUUID(), buyer,
+				UUID.randomUUID(), "Sự kiện thử", "a@b.c", RefundRequested.CUSTOMER_REQUEST, 950_000, "VND", organizer);
+
+		publish(requested);
+		publish(requested);
+
+		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(count(organizer)).isEqualTo(1));
+		await().during(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
+				.untilAsserted(() -> assertThat(count(organizer)).isEqualTo(1));
+		list(organizer, "").andExpect(jsonPath("$.items[0].type").value("CUSTOMER_REFUND_REQUESTED"))
+				.andExpect(jsonPath("$.items[0].link").value("/organizer/orders"));
+	}
+
+	@Test
+	@DisplayName("AC-7: BookingHoldExpiring → khách nhận 1 thông báo trong app và 1 email; tắt cờ email thì chỉ còn thông báo trong app")
+	void holdExpiringRespectsTheEmailFlag() throws Exception {
+		String withEmail = "hold-" + UUID.randomUUID() + "@tickethub.local";
+		String withoutEmail = "hold-" + UUID.randomUUID() + "@tickethub.local";
+		mockMvc.perform(put("/api/v1/me/notification-preferences").header(HttpHeaders.AUTHORIZATION, bearer(someoneElse))
+				.contentType(MediaType.APPLICATION_JSON).content("""
+						{"preferences":[{"type":"HOLD_EXPIRING","email":false,"inApp":true}]}""")).andExpect(status().isOk());
+		BookingHoldExpiring mine = holdExpiring(buyer, withEmail);
+
+		publish(mine);
+		publish(mine);
+		publish(holdExpiring(someoneElse, withoutEmail));
+
+		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
+			assertThat(count(buyer)).isEqualTo(1);
+			assertThat(count(someoneElse)).isEqualTo(1);
+			assertThat(mailpit.countTo(withEmail)).isEqualTo(1);
+		});
+		await().during(Duration.ofSeconds(1)).atMost(Duration.ofSeconds(3))
+				.untilAsserted(() -> assertThat(mailpit.countTo(withEmail)).isEqualTo(1));
+		assertThat(mailpit.countTo(withoutEmail)).isZero();
+		assertThat(mailpit.subjectsTo(withEmail)).containsExactly("Sắp hết giờ giữ ghế của bạn");
+		list(buyer, "").andExpect(jsonPath("$.items[0].type").value("HOLD_EXPIRING"))
+				.andExpect(jsonPath("$.items[0].link").value("/checkout/" + mine.bookingId()));
+		mailpit.clear();
 	}
 
 	@Test
@@ -292,6 +338,11 @@ class InAppNotificationTests {
 
 	private void publish(Object event) {
 		transaction.executeWithoutResult(status -> publisher.publishEvent(event));
+	}
+
+	private static BookingHoldExpiring holdExpiring(UUID user, String email) {
+		return new BookingHoldExpiring(UUID.randomUUID(), NOW, UUID.randomUUID(), user, UUID.randomUUID(), "Sự kiện thử",
+				email, NOW.plus(Duration.ofMinutes(2)));
 	}
 
 	private TicketIssued ticketIssued(UUID user, int tickets) {

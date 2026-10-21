@@ -3,6 +3,7 @@ package com.ndz.notification.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
@@ -31,6 +32,9 @@ public interface InAppNotificationService {
 
 	/** Đã nhận yêu cầu hoàn → báo số tiền sẽ nhận lại. */
 	void onRefundRequested(RefundRequested event);
+
+	/** Khách: "sắp hết giờ giữ ghế", dẫn về trang thanh toán của booking. */
+	void onHoldExpiring(BookingHoldExpiring event);
 
 	/** Đã hoàn tiền xong; hoàn tự động không có người nhận thì bỏ qua. */
 	void onRefundCompleted(RefundCompleted event);

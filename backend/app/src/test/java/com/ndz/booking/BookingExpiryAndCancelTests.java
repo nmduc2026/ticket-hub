@@ -37,6 +37,7 @@ import com.ndz.MutableClock;
 import com.ndz.TestTokens;
 import com.ndz.booking.event.BookingCancelled;
 import com.ndz.booking.event.BookingExpired;
+import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.service.BookingExpiryService;
 
 /**
@@ -103,6 +104,32 @@ class BookingExpiryAndCancelTests {
 		assertThat(applicationEvents.stream(BookingExpired.class).filter(e -> e.bookingId().equals(bookingId))
 				.count()).isEqualTo(1);
 		hold(UUID.randomUUID(), event, seats); // người khác giữ lại được đúng các ghế đó
+	}
+
+	@Test
+	@DisplayName("AC-7 (§6.5): booking chưa bắt đầu thanh toán còn ≤ 2 phút → đúng 1 BookingHoldExpiring; chạy lại không phát thêm")
+	void aHoldAboutToExpireIsAnnouncedExactlyOnce() throws Exception {
+		UUID event = onSaleEvent();
+		UUID user = UUID.randomUUID();
+		UUID bookingId = hold(user, event, seats(event, 1));
+		UUID paying = hold(UUID.randomUUID(), event, seats(event, 1));
+		jdbc.update("update booking.bookings set payment_started_at = ? where id = ?", Timestamp.from(NOW), paying);
+
+		clock.setInstant(HOLD_ENDS.minusSeconds(121));
+		assertThat(expiry.notifyExpiringHolds()).isZero();
+		clock.setInstant(HOLD_ENDS.minusSeconds(120));
+		assertThat(expiry.notifyExpiringHolds()).isEqualTo(1);
+		clock.setInstant(HOLD_ENDS.minusSeconds(30));
+		assertThat(expiry.notifyExpiringHolds()).isZero();
+
+		List<BookingHoldExpiring> published = applicationEvents.stream(BookingHoldExpiring.class).toList();
+		assertThat(published).singleElement().satisfies(notice -> {
+			assertThat(notice.bookingId()).isEqualTo(bookingId);
+			assertThat(notice.userId()).isEqualTo(user);
+			assertThat(notice.eventTitle()).isNotBlank();
+			assertThat(notice.contactEmail()).isNotBlank();
+			assertThat(notice.expiresAt()).isEqualTo(HOLD_ENDS);
+		});
 	}
 
 	@Test
