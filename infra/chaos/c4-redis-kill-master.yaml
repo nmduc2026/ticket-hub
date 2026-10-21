@@ -1,0 +1,15 @@
+# Kill đúng một pod Redis (mặc định redis-0, master ban đầu) để kiểm Sentinel bầu master mới (AC-6 của Sprint 5):
+# giữ ghế chạy lại không cần restart app, người đã đăng nhập giữ được session.
+# Nếu master hiện tại không phải redis-0, đổi `pods` cho khớp: kubectl -n tickethub exec redis-1 -c sentinel -- redis-cli -p 26379 sentinel get-master-addr-by-name tickethub
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: c4-redis-kill-master
+  namespace: tickethub
+spec:
+  action: pod-kill
+  mode: all
+  selector:
+    pods:
+      tickethub: [redis-0]
+  gracePeriod: 0

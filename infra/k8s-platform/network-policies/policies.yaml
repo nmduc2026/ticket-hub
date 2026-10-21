@@ -51,7 +51,7 @@ spec:
     - from:
         - podSelector:
             matchExpressions:
-              - { key: tickethub/role, operator: In, values: [app, keycloak] }
+              - { key: tickethub/role, operator: In, values: [app, keycloak, postgres-pooler] }
     # Các instance của cụm nói chuyện với nhau: replication, pg_rewind, kiểm tra trạng thái.
     - from:
         - podSelector:
@@ -74,7 +74,7 @@ spec:
     - from:
         - podSelector:
             matchExpressions:
-              - { key: tickethub/role, operator: In, values: [app, gateway] }
+              - { key: tickethub/role, operator: In, values: [app, gateway, redis] }
 ---
 # Gateway và app gọi Keycloak trong cụm (discovery, JWKS).
 apiVersion: networking.k8s.io/v1
@@ -106,3 +106,23 @@ spec:
     - from:
         - podSelector:
             matchLabels: { tickethub/role: app }
+---
+# App (và Keycloak) nối vào PgBouncer; chỉ Pooler nối tiếp vào Postgres (policy allow-app-and-keycloak-to-postgres).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-pooler
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: postgres-pooler }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app] }
+    # Operator CNPG gọi cổng trạng thái của Pooler.
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: cnpg-system }

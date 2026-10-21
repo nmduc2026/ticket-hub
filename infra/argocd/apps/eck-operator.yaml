@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: eck-operator
+  namespace: argocd
+  annotations:
+    # Cùng đợt với các operator khác (wave 0); CRD Elasticsearch / Kibana / Beat phải có trước app logging.
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://helm.elastic.co
+    chart: eck-operator
+    # Chưa xác nhận phiên bản trên mạng: kiểm bằng `helm search repo elastic/eck-operator` trước khi đồng bộ (docs/ops/logging.md).
+    targetRevision: 3.1.0
+    helm:
+      valuesObject:
+        resources:
+          requests: { cpu: 50m, memory: 150Mi }
+          limits: { memory: 300Mi }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: elastic-system
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]

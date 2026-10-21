@@ -1,0 +1,32 @@
+# PgBouncer của CloudNativePG (overview.md §17, ADR 0034): app nối vào Pooler thay vì thẳng vào Postgres, nên số kết nối
+# thật tới Postgres bị chặn ở default_pool_size dù app có nhiều pod hay pool HikariCP lớn.
+# Service: tickethub-pg-pooler-rw (cổng 5432). Flyway chạy migration nối thẳng tickethub-pg-rw (khoá advisory theo phiên).
+apiVersion: postgresql.cnpg.io/v1
+kind: Pooler
+metadata:
+  name: tickethub-pg-pooler-rw
+  namespace: tickethub
+  annotations:
+    # Sau Cluster (wave 1).
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  cluster:
+    name: tickethub-pg
+  instances: 2
+  type: rw
+  pgbouncer:
+    # transaction: gom kết nối tốt nhất. Prepared statement của pgjdbc/Hibernate chạy được nhờ max_prepared_statements
+    # (PgBouncer >= 1.21). Phương án đã cân nhắc và điều kiện quay về session: docs/adr/0034-pgbouncer-pool-mode.md.
+    poolMode: transaction
+    parameters:
+      max_client_conn: "1000"
+      default_pool_size: "20"
+      max_prepared_statements: "200"
+  template:
+    metadata:
+      labels:
+        # Pod Pooler được NetworkPolicy cho phép nối vào Postgres; app nối vào Pooler.
+        tickethub/role: postgres-pooler
+        app.kubernetes.io/part-of: tickethub
+    spec:
+      containers: []

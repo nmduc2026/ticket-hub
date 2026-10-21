@@ -1,0 +1,30 @@
+# Log tập trung (overview.md §16.1, ADR 0010): Elasticsearch 1 node + Kibana + Filebeat trên staging 32GB.
+# Phiên bản Elastic Stack chưa kiểm trên cụm; đổi `version` ở đủ 3 file cho khớp (docs/ops/logging.md).
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: tickethub
+  namespace: logging
+spec:
+  version: 9.1.4
+  nodeSets:
+    - name: default
+      count: 1
+      config:
+        node.store.allow_mmap: false
+        # Một node: không cần replica shard.
+        index.number_of_replicas: 0
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - { name: ES_JAVA_OPTS, value: "-Xms1g -Xmx1g" }
+              resources:
+                requests: { cpu: 250m, memory: 2Gi }
+                limits: { memory: 2Gi }
+      volumeClaimTemplates:
+        - metadata: { name: elasticsearch-data }
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources: { requests: { storage: 10Gi } }

@@ -9,6 +9,12 @@ postgres:
 
 redis:
   image: redis:7.4.5
+  # Sentinel: 3 pod, mỗi pod chạy redis + sentinel; quorum 2. Tắt thì chạy một Redis đơn (templates/redis.yaml).
+  sentinel:
+    enabled: true
+    replicas: 3
+    masterName: tickethub
+    quorum: 2
   resources:
     requests: { cpu: 50m, memory: 64Mi }
     limits: { memory: 256Mi }

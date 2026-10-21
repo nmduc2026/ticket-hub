@@ -26,6 +26,9 @@ env:
   APP_URI: http://app:8081
   REDIS_HOST: redis
   REDIS_PORT: "6379"
+  # Nối Redis qua Sentinel (chart core, redis.sentinel.enabled): đổi master không cần restart. Biến này ghi đè REDIS_HOST.
+  SPRING_DATA_REDIS_SENTINEL_MASTER: tickethub
+  SPRING_DATA_REDIS_SENTINEL_NODES: redis-0.redis-headless:26379,redis-1.redis-headless:26379,redis-2.redis-headless:26379
   KEYCLOAK_ISSUER_URI: https://auth.tickethub.localhost/realms/tickethub
   GATEWAY_COOKIE_SECURE: "true"
   # Trace xuyên Gateway → app (docs/ops/observability.md).
