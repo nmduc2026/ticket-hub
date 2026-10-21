@@ -208,6 +208,75 @@
         }
       }
     },
+    "/api/v1/payments" : {
+      "post" : {
+        "tags" : [ "payment-controller" ],
+        "summary" : "Bắt đầu thanh toán, nhận clientSecret của Stripe",
+        "description" : "Bắt buộc header Idempotency-Key. Còn dưới 90 giây giữ ghế thì từ chối (BR-03).",
+        "operationId" : "createPayment",
+        "parameters" : [ {
+          "name" : "Idempotency-Key",
+          "in" : "header",
+          "description" : "Khoá chống gửi lặp (1-128 ký tự in được)",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreatePaymentRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "404" : {
+            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "HOLD_EXPIRING (còn dưới 90 giây) hoặc BOOKING_NOT_PAYABLE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "PAYMENT_PROVIDER_UNAVAILABLE (Stripe không phản hồi)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Payment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizer/events" : {
       "get" : {
         "tags" : [ "organizer-event-controller" ],
@@ -1111,6 +1180,43 @@
           }
         },
         "required" : [ "name" ]
+      },
+      "CreatePaymentRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        },
+        "required" : [ "bookingId" ]
+      },
+      "Payment" : {
+        "type" : "object",
+        "properties" : {
+          "paymentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "clientSecret" : {
+            "type" : "string",
+            "description" : "Dùng với Stripe Payment Element ở trình duyệt; không lưu, không log"
+          },
+          "amountMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Tổng tiền, đơn vị nhỏ nhất của tiền tệ (VND không nhân 100)"
+          },
+          "platformFeeMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Phí nền tảng đã gồm trong tổng tiền, không hoàn lại (BR-06, BR-07)"
+          },
+          "currency" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "amountMinor", "clientSecret", "currency", "paymentId", "platformFeeMinor" ]
       },
       "CreateBookingRequest" : {
         "type" : "object",

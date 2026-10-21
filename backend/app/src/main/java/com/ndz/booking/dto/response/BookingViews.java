@@ -34,4 +34,8 @@ public final class BookingViews {
 			Instant expiresAt, List<BookingItemView> items) {
 	}
 
+	/** Số tiền và mức phí của booking để Payment tạo thanh toán. */
+	public record PaymentInfo(long totalMinor, String currency, int platformFeeBps) {
+	}
+
 }

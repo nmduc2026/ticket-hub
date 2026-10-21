@@ -14,6 +14,7 @@ import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
+import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
 
 /**
@@ -144,6 +145,22 @@ public class BookingRepository {
 	public boolean transition(UUID bookingId, BookingStatus from, BookingStatus to) {
 		return jdbc.update("UPDATE booking.bookings SET status = ?, version = version + 1 WHERE id = ? AND status = ?",
 				to.name(), bookingId, from.name()) == 1;
+	}
+
+	/** Ghi mốc bắt đầu thanh toán một lần (BR-03: từ đó booking được ân hạn thêm); gọi lại không đổi mốc. */
+	public void markPaymentStarted(UUID bookingId, Instant now) {
+		jdbc.update("UPDATE booking.bookings SET payment_started_at = ?, version = version + 1 "
+				+ "WHERE id = ? AND payment_started_at IS NULL", Timestamp.from(now), bookingId);
+	}
+
+	/** Số tiền, tiền tệ và mức phí nền tảng đã chốt ở bản sao sự kiện (BR-06) của booking. */
+	public PaymentInfo paymentInfo(UUID bookingId) {
+		return jdbc.queryForObject("""
+				SELECT b.total_minor, b.currency, e.platform_fee_bps
+				FROM booking.bookings b JOIN booking.event_snapshots e ON e.event_id = b.event_id
+				WHERE b.id = ?
+				""", (rs, i) -> new PaymentInfo(rs.getLong("total_minor"), rs.getString("currency"),
+				rs.getInt("platform_fee_bps")), bookingId);
 	}
 
 	/** Nhả các ghế đang giữ của booking về {@code AVAILABLE}; trả về id các ghế đã nhả. */
