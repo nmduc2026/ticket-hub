@@ -14,6 +14,7 @@ import com.ndz.catalog.service.EventBannerService;
 import com.ndz.catalog.service.OrganizerEventService;
 import com.ndz.catalog.entity.enums.EventStatus;
 import com.ndz.catalog.entity.Event;
+import com.ndz.catalog.mapper.EventUpdatedFactory;
 import com.ndz.catalog.repository.EventRepository;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;

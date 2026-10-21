@@ -33,6 +33,7 @@ import com.ndz.catalog.entity.TicketTier;
 import com.ndz.catalog.entity.TierSection;
 import com.ndz.catalog.entity.enums.EventStatus;
 import com.ndz.catalog.mapper.EventMapper;
+import com.ndz.catalog.mapper.EventUpdatedFactory;
 import com.ndz.catalog.repository.CatalogReadRepository;
 import com.ndz.catalog.repository.EventRepository;
 import com.ndz.catalog.repository.EventSpecifications;
