@@ -1,4 +1,7 @@
-package com.ndz.backend.payment.internal.stripe;
+package com.ndz.backend.payment.client;
+
+import com.ndz.backend.payment.config.StripeConfiguration;
+import com.ndz.backend.payment.config.StripeProperties;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;

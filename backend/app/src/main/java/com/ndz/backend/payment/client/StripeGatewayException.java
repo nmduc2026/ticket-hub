@@ -1,4 +1,4 @@
-package com.ndz.backend.payment.internal.stripe;
+package com.ndz.backend.payment.client;
 
 /**
  * Lời gọi Stripe thất bại. {@code code} là mã lỗi của Stripe (vd. {@code payment_intent_unexpected_state}) khi có;

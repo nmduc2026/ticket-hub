@@ -1,4 +1,4 @@
-package com.ndz.backend.payment.internal.stripe;
+package com.ndz.backend.payment.client;
 
 import java.util.Map;
 import java.util.UUID;

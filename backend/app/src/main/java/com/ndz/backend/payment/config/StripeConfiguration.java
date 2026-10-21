@@ -1,4 +1,4 @@
-package com.ndz.backend.payment.internal.stripe;
+package com.ndz.backend.payment.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,11 +7,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
+import com.ndz.backend.payment.client.StripeGateway;
 import com.stripe.StripeClient;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(StripeProperties.class)
-class StripeConfiguration {
+public class StripeConfiguration {
 
 	private static final Logger log = LoggerFactory.getLogger(StripeConfiguration.class);
 
@@ -19,7 +20,7 @@ class StripeConfiguration {
 	private static final String UNCONFIGURED_KEY = "unconfigured";
 
 	@Bean
-	StripeClient stripeClient(StripeProperties properties) {
+	public StripeClient stripeClient(StripeProperties properties) {
 		boolean configured = StringUtils.hasText(properties.secretKey());
 		if (!configured) {
 			log.warn("tickethub.stripe.secret-key chưa đặt: các lời gọi Stripe sẽ thất bại");
@@ -36,7 +37,7 @@ class StripeConfiguration {
 	}
 
 	@Bean
-	StripeGateway stripeGateway(StripeClient client) {
+	public StripeGateway stripeGateway(StripeClient client) {
 		return new StripeGateway(client);
 	}
 

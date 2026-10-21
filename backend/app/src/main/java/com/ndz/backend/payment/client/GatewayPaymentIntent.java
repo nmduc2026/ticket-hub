@@ -1,4 +1,4 @@
-package com.ndz.backend.payment.internal.stripe;
+package com.ndz.backend.payment.client;
 
 /**
  * Bản chụp PaymentIntent mà domain cần, tách khỏi kiểu của SDK. {@code status} giữ nguyên chuỗi của Stripe

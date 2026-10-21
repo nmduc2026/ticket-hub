@@ -1,4 +1,4 @@
-package com.ndz.backend.payment.internal.stripe;
+package com.ndz.backend.payment.config;
 
 import java.time.Duration;
 
