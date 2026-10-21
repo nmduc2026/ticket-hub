@@ -24,12 +24,22 @@
           }
         } ],
         "responses" : {
-          "404" : {
-            "description" : "Không có hoặc không phải sự kiện của bạn (EVENT_NOT_FOUND)",
+          "200" : {
+            "description" : "Chi tiết sự kiện",
             "content" : {
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "Không có hoặc không phải sự kiện của bạn (EVENT_NOT_FOUND)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -61,12 +71,22 @@
           "required" : true
         },
         "responses" : {
-          "409" : {
-            "description" : "EVENT_LOCKED",
+          "200" : {
+            "description" : "Chi tiết sự kiện",
             "content" : {
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "EVENT_LOCKED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -363,8 +383,8 @@
           }
         } ],
         "responses" : {
-          "409" : {
-            "description" : "PUBLISH_NOT_ALLOWED (kèm reasons) hoặc INVALID_EVENT_TRANSITION",
+          "200" : {
+            "description" : "Chi tiết sự kiện",
             "content" : {
               "*/*" : {
                 "schema" : {
@@ -373,12 +393,22 @@
               }
             }
           },
+          "409" : {
+            "description" : "PUBLISH_NOT_ALLOWED (kèm reasons) hoặc INVALID_EVENT_TRANSITION",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "422" : {
             "description" : "PUBLISH_INCOMPLETE (kèm missing) hoặc INVALID_EVENT_TIMES",
             "content" : {
-              "*/*" : {
+              "application/problem+json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -418,12 +448,22 @@
           }
         },
         "responses" : {
-          "422" : {
-            "description" : "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE",
+          "200" : {
+            "description" : "Chi tiết sự kiện",
             "content" : {
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }

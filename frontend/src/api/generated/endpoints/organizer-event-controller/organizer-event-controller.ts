@@ -28,6 +28,7 @@ import type {
   ListOrganizerEventsParams,
   OrganizerEventDetail,
   OrganizerEventPage,
+  ProblemDetail,
   TicketTier,
   TicketTierRequest,
   TierSectionAssignment,
@@ -43,17 +44,24 @@ import { apiFetch } from '../../../../lib/api-client';
 /**
  * @summary Chi tiết sự kiện của tôi
  */
-export type getOrganizerEventResponse404 = {
+export type getOrganizerEventResponse200 = {
   data: OrganizerEventDetail
+  status: 200
+}
+
+export type getOrganizerEventResponse404 = {
+  data: ProblemDetail
   status: 404
 }
     
-;
+export type getOrganizerEventResponseSuccess = (getOrganizerEventResponse200) & {
+  headers: Headers;
+};
 export type getOrganizerEventResponseError = (getOrganizerEventResponse404) & {
   headers: Headers;
 };
 
-export type getOrganizerEventResponse = (getOrganizerEventResponseError)
+export type getOrganizerEventResponse = (getOrganizerEventResponseSuccess | getOrganizerEventResponseError)
 
 export const getGetOrganizerEventUrl = (eventId: string,) => {
 
@@ -85,7 +93,7 @@ export const getGetOrganizerEventQueryKey = (eventId?: string,) => {
     }
 
     
-export const getGetOrganizerEventQueryOptions = <TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = OrganizerEventDetail>(eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizerEvent>>, TError, TData>>, }
+export const getGetOrganizerEventQueryOptions = <TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = ProblemDetail>(eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizerEvent>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -104,10 +112,10 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type GetOrganizerEventQueryResult = NonNullable<Awaited<ReturnType<typeof getOrganizerEvent>>>
-export type GetOrganizerEventQueryError = OrganizerEventDetail
+export type GetOrganizerEventQueryError = ProblemDetail
 
 
-export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = OrganizerEventDetail>(
+export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = ProblemDetail>(
  eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizerEvent>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getOrganizerEvent>>,
@@ -117,7 +125,7 @@ export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrgani
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = OrganizerEventDetail>(
+export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = ProblemDetail>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizerEvent>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getOrganizerEvent>>,
@@ -127,7 +135,7 @@ export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrgani
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = OrganizerEventDetail>(
+export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = ProblemDetail>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizerEvent>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -135,7 +143,7 @@ export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrgani
  * @summary Chi tiết sự kiện của tôi
  */
 
-export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = OrganizerEventDetail>(
+export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrganizerEvent>>, TError = ProblemDetail>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getOrganizerEvent>>, TError, TData>>, }
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -155,17 +163,24 @@ export function useGetOrganizerEvent<TData = Awaited<ReturnType<typeof getOrgani
  * Sau publish chỉ đổi được tiêu đề, mô tả, danh mục; đổi thông tin bán vé trả EVENT_LOCKED (BR-14)
  * @summary Sửa sự kiện
  */
-export type updateOrganizerEventResponse409 = {
+export type updateOrganizerEventResponse200 = {
   data: OrganizerEventDetail
+  status: 200
+}
+
+export type updateOrganizerEventResponse409 = {
+  data: ProblemDetail
   status: 409
 }
     
-;
+export type updateOrganizerEventResponseSuccess = (updateOrganizerEventResponse200) & {
+  headers: Headers;
+};
 export type updateOrganizerEventResponseError = (updateOrganizerEventResponse409) & {
   headers: Headers;
 };
 
-export type updateOrganizerEventResponse = (updateOrganizerEventResponseError)
+export type updateOrganizerEventResponse = (updateOrganizerEventResponseSuccess | updateOrganizerEventResponseError)
 
 export const getUpdateOrganizerEventUrl = (eventId: string,) => {
 
@@ -191,7 +206,7 @@ export const updateOrganizerEvent = async (eventId: string,
 
 
 
-export const getUpdateOrganizerEventMutationOptions = <TError = OrganizerEventDetail,
+export const getUpdateOrganizerEventMutationOptions = <TError = ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrganizerEvent>>, TError,{eventId: string;data: EventRequest}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof updateOrganizerEvent>>, TError,{eventId: string;data: EventRequest}, TContext> => {
 
@@ -218,12 +233,12 @@ const {mutation: mutationOptions} = options ?
 
     export type UpdateOrganizerEventMutationResult = NonNullable<Awaited<ReturnType<typeof updateOrganizerEvent>>>
     export type UpdateOrganizerEventMutationBody = EventRequest
-    export type UpdateOrganizerEventMutationError = OrganizerEventDetail
+    export type UpdateOrganizerEventMutationError = ProblemDetail
 
     /**
  * @summary Sửa sự kiện
  */
-export const useUpdateOrganizerEvent = <TError = OrganizerEventDetail,
+export const useUpdateOrganizerEvent = <TError = ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateOrganizerEvent>>, TError,{eventId: string;data: EventRequest}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof updateOrganizerEvent>>,
@@ -898,22 +913,29 @@ export const useCreateTicketTier = <TError = unknown,
  * Kiểm BR-05 (organizer đã duyệt và nhận được tiền), chốt mức phí nền tảng (BR-06), khoá thông tin bán vé (BR-14)
  * @summary Publish sự kiện
  */
-export type publishOrganizerEventResponse409 = {
+export type publishOrganizerEventResponse200 = {
   data: OrganizerEventDetail
+  status: 200
+}
+
+export type publishOrganizerEventResponse409 = {
+  data: ProblemDetail
   status: 409
 }
 
 export type publishOrganizerEventResponse422 = {
-  data: OrganizerEventDetail
+  data: ProblemDetail
   status: 422
 }
     
-;
+export type publishOrganizerEventResponseSuccess = (publishOrganizerEventResponse200) & {
+  headers: Headers;
+};
 export type publishOrganizerEventResponseError = (publishOrganizerEventResponse409 | publishOrganizerEventResponse422) & {
   headers: Headers;
 };
 
-export type publishOrganizerEventResponse = (publishOrganizerEventResponseError)
+export type publishOrganizerEventResponse = (publishOrganizerEventResponseSuccess | publishOrganizerEventResponseError)
 
 export const getPublishOrganizerEventUrl = (eventId: string,) => {
 
@@ -937,7 +959,7 @@ export const publishOrganizerEvent = async (eventId: string, options?: RequestIn
 
 
 
-export const getPublishOrganizerEventMutationOptions = <TError = OrganizerEventDetail | OrganizerEventDetail,
+export const getPublishOrganizerEventMutationOptions = <TError = ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishOrganizerEvent>>, TError,{eventId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof publishOrganizerEvent>>, TError,{eventId: string}, TContext> => {
 
@@ -964,12 +986,12 @@ const {mutation: mutationOptions} = options ?
 
     export type PublishOrganizerEventMutationResult = NonNullable<Awaited<ReturnType<typeof publishOrganizerEvent>>>
     
-    export type PublishOrganizerEventMutationError = OrganizerEventDetail | OrganizerEventDetail
+    export type PublishOrganizerEventMutationError = ProblemDetail | ProblemDetail
 
     /**
  * @summary Publish sự kiện
  */
-export const usePublishOrganizerEvent = <TError = OrganizerEventDetail | OrganizerEventDetail,
+export const usePublishOrganizerEvent = <TError = ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof publishOrganizerEvent>>, TError,{eventId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof publishOrganizerEvent>>,
@@ -986,17 +1008,24 @@ export const usePublishOrganizerEvent = <TError = OrganizerEventDetail | Organiz
  * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
  * @summary Tải ảnh banner
  */
-export type uploadEventBannerResponse422 = {
+export type uploadEventBannerResponse200 = {
   data: OrganizerEventDetail
+  status: 200
+}
+
+export type uploadEventBannerResponse422 = {
+  data: ProblemDetail
   status: 422
 }
     
-;
+export type uploadEventBannerResponseSuccess = (uploadEventBannerResponse200) & {
+  headers: Headers;
+};
 export type uploadEventBannerResponseError = (uploadEventBannerResponse422) & {
   headers: Headers;
 };
 
-export type uploadEventBannerResponse = (uploadEventBannerResponseError)
+export type uploadEventBannerResponse = (uploadEventBannerResponseSuccess | uploadEventBannerResponseError)
 
 export const getUploadEventBannerUrl = (eventId: string,) => {
 
@@ -1024,7 +1053,7 @@ formData.append(`file`, uploadEventBannerBody.file)
 
 
 
-export const getUploadEventBannerMutationOptions = <TError = OrganizerEventDetail,
+export const getUploadEventBannerMutationOptions = <TError = ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEventBanner>>, TError,{eventId: string;data: UploadEventBannerBody}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof uploadEventBanner>>, TError,{eventId: string;data: UploadEventBannerBody}, TContext> => {
 
@@ -1051,12 +1080,12 @@ const {mutation: mutationOptions} = options ?
 
     export type UploadEventBannerMutationResult = NonNullable<Awaited<ReturnType<typeof uploadEventBanner>>>
     export type UploadEventBannerMutationBody = UploadEventBannerBody
-    export type UploadEventBannerMutationError = OrganizerEventDetail
+    export type UploadEventBannerMutationError = ProblemDetail
 
     /**
  * @summary Tải ảnh banner
  */
-export const useUploadEventBanner = <TError = OrganizerEventDetail,
+export const useUploadEventBanner = <TError = ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadEventBanner>>, TError,{eventId: string;data: UploadEventBannerBody}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof uploadEventBanner>>,

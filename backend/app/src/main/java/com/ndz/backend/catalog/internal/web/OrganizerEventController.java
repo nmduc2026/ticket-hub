@@ -8,11 +8,14 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -74,7 +77,10 @@ class OrganizerEventController {
 	}
 
 	@Operation(operationId = "getOrganizerEvent", summary = "Chi tiết sự kiện của tôi")
-	@ApiResponse(responseCode = "404", description = "Không có hoặc không phải sự kiện của bạn (EVENT_NOT_FOUND)")
+	@ApiResponse(responseCode = "200", description = "Chi tiết sự kiện",
+			content = @Content(schema = @Schema(implementation = Detail.class)))
+	@ApiResponse(responseCode = "404", description = "Không có hoặc không phải sự kiện của bạn (EVENT_NOT_FOUND)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@GetMapping("/{eventId}")
 	Detail get(@PathVariable UUID eventId) {
 		return Detail.from(service.get(CurrentUser.require().id(), eventId));
@@ -89,7 +95,10 @@ class OrganizerEventController {
 
 	@Operation(operationId = "updateOrganizerEvent", summary = "Sửa sự kiện",
 			description = "Sau publish chỉ đổi được tiêu đề, mô tả, danh mục; đổi thông tin bán vé trả EVENT_LOCKED (BR-14)")
-	@ApiResponse(responseCode = "409", description = "EVENT_LOCKED")
+	@ApiResponse(responseCode = "200", description = "Chi tiết sự kiện",
+			content = @Content(schema = @Schema(implementation = Detail.class)))
+	@ApiResponse(responseCode = "409", description = "EVENT_LOCKED",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PutMapping("/{eventId}")
 	Detail update(@PathVariable UUID eventId, @Valid @RequestBody EventRequest request) {
 		return Detail.from(service.update(CurrentUser.require().id(), eventId, request.toContent()));
@@ -97,8 +106,12 @@ class OrganizerEventController {
 
 	@Operation(operationId = "publishOrganizerEvent", summary = "Publish sự kiện",
 			description = "Kiểm BR-05 (organizer đã duyệt và nhận được tiền), chốt mức phí nền tảng (BR-06), khoá thông tin bán vé (BR-14)")
-	@ApiResponse(responseCode = "409", description = "PUBLISH_NOT_ALLOWED (kèm reasons) hoặc INVALID_EVENT_TRANSITION")
-	@ApiResponse(responseCode = "422", description = "PUBLISH_INCOMPLETE (kèm missing) hoặc INVALID_EVENT_TIMES")
+	@ApiResponse(responseCode = "200", description = "Chi tiết sự kiện",
+			content = @Content(schema = @Schema(implementation = Detail.class)))
+	@ApiResponse(responseCode = "409", description = "PUBLISH_NOT_ALLOWED (kèm reasons) hoặc INVALID_EVENT_TRANSITION",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "422", description = "PUBLISH_INCOMPLETE (kèm missing) hoặc INVALID_EVENT_TIMES",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping("/{eventId}/publish")
 	Detail publish(@PathVariable UUID eventId) {
 		return Detail.from(lifecycle.publish(CurrentUser.require().id(), eventId));
@@ -106,7 +119,10 @@ class OrganizerEventController {
 
 	@Operation(operationId = "uploadEventBanner", summary = "Tải ảnh banner",
 			description = "jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)")
-	@ApiResponse(responseCode = "422", description = "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE")
+	@ApiResponse(responseCode = "200", description = "Chi tiết sự kiện",
+			content = @Content(schema = @Schema(implementation = Detail.class)))
+	@ApiResponse(responseCode = "422", description = "UNSUPPORTED_IMAGE_TYPE, IMAGE_TOO_LARGE hoặc EMPTY_FILE",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping(path = "/{eventId}/banner", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	Detail uploadBanner(@PathVariable UUID eventId, @RequestPart("file") MultipartFile file) throws IOException {
 		return Detail.from(banners.upload(CurrentUser.require().id(), eventId, file.getBytes()));
