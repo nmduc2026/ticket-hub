@@ -14,8 +14,8 @@ import com.ndz.backend.booking.internal.domain.EventViews.SearchCriteria;
 import com.ndz.backend.booking.internal.domain.EventViews.SeatState;
 import com.ndz.backend.booking.internal.domain.EventViews.TierAvailability;
 import com.ndz.backend.booking.internal.persistence.PublicEventQueries;
-import com.ndz.backend.catalog.CatalogApi;
-import com.ndz.backend.catalog.CatalogApi.SeatMapLayout;
+import com.ndz.backend.catalog.api.CatalogApi;
+import com.ndz.backend.catalog.api.CatalogApi.SeatMapLayout;
 import com.ndz.backend.shared.exception.BusinessException;
 import com.ndz.backend.shared.exception.ErrorCode;
 

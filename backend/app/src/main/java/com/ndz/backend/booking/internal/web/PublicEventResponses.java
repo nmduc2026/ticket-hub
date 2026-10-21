@@ -15,9 +15,9 @@ import com.ndz.backend.booking.internal.domain.EventViews.EventListItem;
 import com.ndz.backend.booking.internal.domain.EventViews.EventPage;
 import com.ndz.backend.booking.internal.domain.EventViews.SeatState;
 import com.ndz.backend.booking.internal.domain.EventViews.TierAvailability;
-import com.ndz.backend.catalog.CatalogApi.LayoutElement;
-import com.ndz.backend.catalog.CatalogApi.LayoutSeat;
-import com.ndz.backend.catalog.CatalogApi.LayoutSection;
+import com.ndz.backend.catalog.api.CatalogApi.LayoutElement;
+import com.ndz.backend.catalog.api.CatalogApi.LayoutSeat;
+import com.ndz.backend.catalog.api.CatalogApi.LayoutSection;
 
 /** Response của API công khai về sự kiện. */
 final class PublicEventResponses {

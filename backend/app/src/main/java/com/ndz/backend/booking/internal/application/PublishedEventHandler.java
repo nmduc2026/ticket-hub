@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
 import com.ndz.backend.booking.internal.persistence.EventSnapshotRepository;
 import com.ndz.backend.booking.internal.persistence.ProcessedEventRepository;
 import com.ndz.backend.booking.internal.persistence.SeatInventoryRepository;
-import com.ndz.backend.catalog.CatalogApi;
-import com.ndz.backend.catalog.CatalogApi.SellableSeat;
-import com.ndz.backend.catalog.events.EventPublished;
-import com.ndz.backend.catalog.events.SeatInventoryReady;
+import com.ndz.backend.catalog.api.CatalogApi;
+import com.ndz.backend.catalog.api.CatalogApi.SellableSeat;
+import com.ndz.backend.catalog.event.EventPublished;
+import com.ndz.backend.catalog.event.SeatInventoryReady;
 import com.ndz.backend.shared.util.Uuid7;
 
 /**

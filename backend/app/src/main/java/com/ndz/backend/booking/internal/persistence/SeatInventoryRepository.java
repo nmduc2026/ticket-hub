@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
-import com.ndz.backend.catalog.CatalogApi.SellableSeat;
+import com.ndz.backend.catalog.api.CatalogApi.SellableSeat;
 
 /** Tồn kho ghế theo sự kiện (overview.md §6.2). */
 @Repository

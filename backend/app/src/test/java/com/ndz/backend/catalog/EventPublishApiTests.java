@@ -30,12 +30,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.ndz.backend.IntegrationTest;
 import com.ndz.backend.MutableClock;
 import com.ndz.backend.TestTokens;
-import com.ndz.backend.catalog.events.EventEnded;
-import com.ndz.backend.catalog.events.EventOnSale;
-import com.ndz.backend.catalog.events.EventPublished;
-import com.ndz.backend.catalog.events.EventUpdated;
-import com.ndz.backend.catalog.events.SeatInventoryReady;
-import com.ndz.backend.catalog.internal.application.EventLifecycleService;
+import com.ndz.backend.catalog.event.EventEnded;
+import com.ndz.backend.catalog.event.EventOnSale;
+import com.ndz.backend.catalog.event.EventPublished;
+import com.ndz.backend.catalog.event.EventUpdated;
+import com.ndz.backend.catalog.event.SeatInventoryReady;
+import com.ndz.backend.catalog.service.EventLifecycleService;
 import com.ndz.backend.shared.util.Uuid7;
 
 /**

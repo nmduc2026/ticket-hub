@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-import com.ndz.backend.catalog.internal.domain.ImageType;
+import com.ndz.backend.catalog.entity.enums.ImageType;
 
 class ImageTypeTests {
 

@@ -10,9 +10,9 @@ import org.springframework.stereotype.Component;
 
 import com.ndz.backend.booking.internal.persistence.EventSnapshotRepository;
 import com.ndz.backend.booking.internal.persistence.ProcessedEventRepository;
-import com.ndz.backend.catalog.events.EventEnded;
-import com.ndz.backend.catalog.events.EventOnSale;
-import com.ndz.backend.catalog.events.EventUpdated;
+import com.ndz.backend.catalog.event.EventEnded;
+import com.ndz.backend.catalog.event.EventOnSale;
+import com.ndz.backend.catalog.event.EventUpdated;
 import com.ndz.backend.shared.event.IntegrationEvent;
 
 /**

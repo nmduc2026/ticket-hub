@@ -9,8 +9,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.ndz.backend.booking.internal.domain.BookingViews.EventRules;
-import com.ndz.backend.catalog.events.EventPublished;
-import com.ndz.backend.catalog.events.EventUpdated;
+import com.ndz.backend.catalog.event.EventPublished;
+import com.ndz.backend.catalog.event.EventUpdated;
 
 /**
  * Bản sao thông tin sự kiện của Booking (overview.md §6.2). Mọi cập nhật có điều kiện {@code last_event_at < occurredAt}

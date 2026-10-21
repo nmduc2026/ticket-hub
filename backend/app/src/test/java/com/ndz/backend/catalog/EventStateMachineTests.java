@@ -9,9 +9,9 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ndz.backend.catalog.internal.domain.Event;
-import com.ndz.backend.catalog.internal.domain.EventContent;
-import com.ndz.backend.catalog.internal.domain.EventStatus;
+import com.ndz.backend.catalog.entity.Event;
+import com.ndz.backend.catalog.entity.EventContent;
+import com.ndz.backend.catalog.entity.enums.EventStatus;
 import com.ndz.backend.shared.exception.BusinessException;
 
 /** Máy trạng thái sự kiện (overview.md §7.7): mỗi chuyển hợp lệ và các chuyển không hợp lệ bị từ chối. */
