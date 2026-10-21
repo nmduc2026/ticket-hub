@@ -11,9 +11,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.ndz.booking.event.BookingConfirmed;
+import com.ndz.booking.event.TicketIssuanceFailed;
 import com.ndz.booking.event.TicketRevoked;
 import com.ndz.shared.util.Uuid7;
 import com.ndz.ticket.entity.Ticket;
+import com.ndz.ticket.entity.enums.TicketStatus;
 import com.ndz.ticket.event.TicketIssued;
 import com.ndz.ticket.repository.RevokedBookingRepository;
 import com.ndz.ticket.repository.TicketProcessedEventRepository;
@@ -66,6 +68,20 @@ public class TicketIssuanceServiceImpl implements TicketIssuanceService {
 					ticket.getBookingId(), ticket.getSeatId())));
 			log.warn("Booking {} đã yêu cầu hoàn trước khi phát vé: {} vé phát ra ở trạng thái thu hồi",
 					event.bookingId(), issued.size());
+			return;
+		}
+		List<UUID> conflicts = event.seats().stream().map(BookingConfirmed.Seat::seatId)
+				.filter(seatId -> tickets.existsByEventIdAndSeatIdAndStatusNot(event.eventId(), seatId,
+						TicketStatus.REVOKED))
+				.toList();
+		if (!conflicts.isEmpty()) {
+			// Lỗi nghiệp vụ, không thử lại (§7.3): phát vé cho ghế này sẽ vi phạm UNIQUE. Hoàn tiền thay vì bán trùng.
+			publisher.publishEvent(new TicketIssuanceFailed(Uuid7.next(clock), now, event.bookingId(), event.userId(),
+					event.eventId(), event.eventTitle(), event.contactEmail(), conflicts, event.totalMinor(),
+					event.currency()));
+			// Alert mức cao (overview.md §16.3): lớp 2 chống oversell đã để lọt.
+			log.error("Không phát được vé cho booking {}: ghế {} đã có vé chưa thu hồi (BR-01)", event.bookingId(),
+					conflicts);
 			return;
 		}
 		// Index duy nhất (event_id, seat_id) chưa thu hồi là chốt chặn cuối: vi phạm thì lỗi ném ra và hoàn tác.

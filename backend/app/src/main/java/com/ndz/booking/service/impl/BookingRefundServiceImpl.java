@@ -20,6 +20,7 @@ import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
+import com.ndz.booking.event.TicketIssuanceFailed;
 import com.ndz.booking.event.TicketRevoked;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
@@ -33,6 +34,7 @@ import com.ndz.shared.util.Uuid7;
 public class BookingRefundServiceImpl implements BookingRefundService {
 
 	static final String CONSUMER = "booking.ticket-revoked";
+	static final String ISSUANCE_FAILED_CONSUMER = "booking.ticket-issuance-failed";
 	static final String COMPLETED_CONSUMER = "booking.refund-completed";
 	static final String FAILED_CONSUMER = "booking.refund-failed";
 
@@ -82,6 +84,32 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 				data.currency()));
 		log.info("Booking {} yêu cầu hoàn {} {}", bookingId, refundAmount, data.currency());
 		return new RefundResult(bookingId, BookingStatus.REFUND_REQUESTED, refundAmount);
+	}
+
+	@Override
+	public void onTicketIssuanceFailed(TicketIssuanceFailed event) {
+		if (!processed.markProcessed(ISSUANCE_FAILED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua TicketIssuanceFailed đã xử lý {}", event.messageId());
+			return;
+		}
+		LockedBooking booking = bookings.lockBooking(event.bookingId()).orElse(null);
+		if (booking == null || booking.status() != BookingStatus.CONFIRMED) {
+			// Không đoán: có tiền, không vé, booking không ở trạng thái hoàn được. Cần người xem (§16.3).
+			log.error("TicketIssuanceFailed cho booking {} đang {}: không chuyển sang hoàn được", event.bookingId(),
+					booking == null ? "không tồn tại" : booking.status());
+			return;
+		}
+		Instant now = clock.instant();
+		booking.status().requireTransitionTo(BookingStatus.REFUND_REQUESTED);
+		if (!bookings.markRefundRequested(event.bookingId(), RefundRequested.TICKET_ISSUANCE_FAILED,
+				event.totalMinor(), now)) {
+			throw new IllegalStateException("Booking " + event.bookingId() + " đã bị chuyển trạng thái khi đang khoá");
+		}
+		publisher.publishEvent(new RefundRequested(Uuid7.next(clock), now, event.bookingId(), event.userId(),
+				event.eventId(), event.eventTitle(), event.contactEmail(), RefundRequested.TICKET_ISSUANCE_FAILED,
+				event.totalMinor(), event.currency()));
+		log.error("Booking {} chuyển REFUND_REQUESTED vì không phát được vé (ghế trùng {}): hoàn 100%",
+				event.bookingId(), event.conflictingSeatIds());
 	}
 
 	@Override

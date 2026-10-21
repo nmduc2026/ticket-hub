@@ -18,7 +18,8 @@ import org.springframework.test.context.ActiveProfiles;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-@SpringBootTest
+// Job gửi lại event treo tắt trong test (interval dài): test tự gọi IncompleteEventPublications khi cần kiểm retry.
+@SpringBootTest(properties = "tickethub.events.republish-interval=24h")
 @AutoConfigureMockMvc
 // `seed`: dữ liệu mẫu của catalog (organizer test, 1 địa điểm, sơ đồ 500 ghế); mọi test dùng chung một context.
 @ActiveProfiles("seed")
