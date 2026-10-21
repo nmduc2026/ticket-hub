@@ -45,8 +45,15 @@ public final class BookingResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant createdAt,
 			@Schema(description = "REQUESTED, REFUNDED hoặc FAILED khi đơn đã yêu cầu hoàn; ngược lại vắng mặt",
 					nullable = true) String refundStatus,
-			@Schema(description = "Số tiền khách nhận lại khi hoàn vé, đơn vị nhỏ nhất của tiền tệ",
-					nullable = true) Long refundAmountMinor) {
+			@Schema(description = "Số tiền khách nhận lại đã chốt khi yêu cầu hoàn, đơn vị nhỏ nhất của tiền tệ",
+					nullable = true) Long refundAmountMinor,
+			@Schema(description = "Số vé của đơn", requiredMode = Schema.RequiredMode.REQUIRED) int ticketCount,
+			@Schema(description = "Phí nền tảng trong tổng tiền, không hoàn lại (BR-07)",
+					requiredMode = Schema.RequiredMode.REQUIRED) long platformFeeMinor,
+			@Schema(description = "Số tiền nhận lại nếu hoàn ngay; chỉ có với đơn CONFIRMED", nullable = true)
+			Long refundableAmountMinor,
+			@Schema(description = "Hạn cuối yêu cầu hoàn; chỉ có với đơn CONFIRMED", nullable = true)
+			Instant refundDeadline) {
 	}
 
 	@Schema(name = "BookingRefund")

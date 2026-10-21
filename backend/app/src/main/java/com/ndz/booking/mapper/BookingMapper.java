@@ -27,7 +27,8 @@ public class BookingMapper {
 	public SummaryResponse toSummary(BookingSummary summary) {
 		return new SummaryResponse(summary.bookingId(), summary.eventTitle(), summary.startsAt(), summary.status(),
 				summary.totalMinor(), summary.currency(), summary.createdAt(), summary.refundStatus(),
-				summary.refundAmountMinor());
+				summary.refundAmountMinor(), summary.ticketCount(), summary.platformFeeMinor(),
+				summary.refundableAmountMinor(), summary.refundDeadline());
 	}
 
 	public RefundResponse toRefund(RefundResult result) {

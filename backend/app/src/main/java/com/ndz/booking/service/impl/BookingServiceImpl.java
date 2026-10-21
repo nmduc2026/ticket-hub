@@ -142,7 +142,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional(readOnly = true)
 	public List<BookingSummary> listMine(UUID userId, int page, int size) {
 		int limit = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
-		return bookings.findByUser(userId, limit, Math.max(page, 0) * limit);
+		return bookings.findByUser(userId, limit, Math.max(page, 0) * limit, properties.refundCutoff());
 	}
 
 	private void validateRequest(String contactEmail, List<UUID> seatIds) {

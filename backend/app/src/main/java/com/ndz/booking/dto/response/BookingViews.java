@@ -48,7 +48,8 @@ public final class BookingViews {
 	 * {@code REQUESTED}, {@code REFUNDED}, {@code FAILED} khi đơn đã qua bước yêu cầu hoàn, ngược lại null.
 	 */
 	public record BookingSummary(UUID bookingId, String eventTitle, Instant startsAt, String status, long totalMinor,
-			String currency, Instant createdAt, String refundStatus, Long refundAmountMinor) {
+			String currency, Instant createdAt, String refundStatus, Long refundAmountMinor, int ticketCount,
+			long platformFeeMinor, Long refundableAmountMinor, Instant refundDeadline) {
 	}
 
 	/** Một dòng trong danh sách đơn của Admin; {@code failedAt} chỉ có với đơn từng hoàn thất bại. */

@@ -23,6 +23,7 @@ import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
+import com.ndz.shared.util.PlatformFee;
 
 /**
  * Đơn đặt vé và việc giữ ghế trong tồn kho (overview.md §10, lớp 2 — Postgres là nguồn sự thật). Các hàm khoá / cập
@@ -182,10 +183,11 @@ public class BookingRepository {
 	}
 
 	/** Đơn của chính người dùng, mới tạo trước, theo trang (chống IDOR: lọc theo {@code user_id}). */
-	public List<BookingSummary> findByUser(UUID userId, int limit, int offset) {
+	public List<BookingSummary> findByUser(UUID userId, int limit, int offset, Duration refundCutoff) {
 		return jdbc.query("""
 				SELECT b.id, e.title, e.starts_at, b.status, b.total_minor, b.currency, b.created_at,
-				       b.refund_amount_minor,
+				       b.refund_amount_minor, e.platform_fee_bps,
+				       (SELECT count(*) FROM booking.booking_items i WHERE i.booking_id = b.id) AS ticket_count,
 				       CASE b.status WHEN 'REFUND_REQUESTED' THEN 'REQUESTED' WHEN 'REFUNDED' THEN 'REFUNDED'
 				                     WHEN 'REFUND_FAILED' THEN 'FAILED' END AS refund_status
 				FROM booking.bookings b JOIN booking.event_snapshots e ON e.event_id = b.event_id
@@ -195,7 +197,16 @@ public class BookingRepository {
 				""", (rs, i) -> new BookingSummary(rs.getObject("id", UUID.class), rs.getString("title"),
 				rs.getTimestamp("starts_at").toInstant(), rs.getString("status"), rs.getLong("total_minor"),
 				rs.getString("currency"), rs.getTimestamp("created_at").toInstant(), rs.getString("refund_status"),
-				rs.getObject("refund_amount_minor", Long.class)), userId, limit, offset);
+				rs.getObject("refund_amount_minor", Long.class), rs.getInt("ticket_count"),
+				PlatformFee.of(rs.getLong("total_minor"), rs.getInt("platform_fee_bps")),
+				refundable(rs.getString("status"), rs.getLong("total_minor"), rs.getInt("platform_fee_bps")),
+				"CONFIRMED".equals(rs.getString("status"))
+						? rs.getTimestamp("starts_at").toInstant().minus(refundCutoff) : null), userId, limit, offset);
+	}
+
+	/** Số tiền khách nhận lại nếu hoàn ngay (BR-07); chỉ có ý nghĩa với đơn đã xác nhận. */
+	private static Long refundable(String status, long totalMinor, int feeBps) {
+		return "CONFIRMED".equals(status) ? totalMinor - PlatformFee.of(totalMinor, feeBps) : null;
 	}
 
 	/**

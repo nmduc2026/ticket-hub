@@ -129,6 +129,22 @@ class BookingRefundTests {
 		assertThat(events.of(RefundRequested.class)).isEmpty();
 	}
 
+	@Test
+	@DisplayName("GET /me/bookings báo sẵn số vé, phí không hoàn, số tiền nhận lại và hạn hoàn của đơn CONFIRMED")
+	void myBookingsExposeTheRefundTermsOfAConfirmedBooking() throws Exception {
+		Instant startsAt = NOW.plus(Duration.ofDays(30));
+		UUID event = event(startsAt);
+		UUID booking = confirmedBooking(event, 2);
+
+		mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/v1/me/bookings")
+				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(customer).bearer()))
+				.andExpect(status().isOk()).andExpect(jsonPath("$[0].bookingId").value(booking.toString()))
+				.andExpect(jsonPath("$[0].ticketCount").value(2)).andExpect(jsonPath("$[0].totalMinor").value(2_000_000))
+				.andExpect(jsonPath("$[0].platformFeeMinor").value(100_000))
+				.andExpect(jsonPath("$[0].refundableAmountMinor").value(1_900_000))
+				.andExpect(jsonPath("$[0].refundDeadline").value(startsAt.minus(CUTOFF).toString()));
+	}
+
 	// ---- AC-2: các lỗi còn lại ----
 
 	@Test
