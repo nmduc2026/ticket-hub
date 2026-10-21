@@ -11,6 +11,7 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 | 3 | Chạy lab AWS 1 | `terraform apply` luôn hỏi từng lần; cần tài khoản AWS, checklist bảo vệ và bảng thăm dò Free plan (việc treo Sprint 1 số 4, 5) | `infra/terraform/aws/lab1/README.md`; xong thì `destroy` và `verify-clean.sh` |
 | 4 | Push `feature/sprint-2`, mở PR | Push / PR cần báo trước | Duyệt rồi ra lệnh |
 | 5 | Hoàn tất hạng mục 16 và làm hạng mục 17 | Hạng mục 16 mới verify phần FE và test backend không cần Docker; hạng mục 17 (review cuối sprint theo skill `tech-lead`, kèm subagent review SQL giữ ghế) chưa làm vì cần verify backend xong trước | Sau mục 1: cập nhật `docs/test/sprint-2-verify.md`, rồi gọi review |
+| 7 | Chạy lại toàn bộ test BE của `catalog`, `booking`, `account` sau refactor cấu trúc package | Code Sprint 2 đã được chuyển sang cấu trúc chia theo tầng (nhánh `feature/sprint-3`) mà chưa chạy test cần Docker | Xem bảng "Refactor cấu trúc BE" ở `2026-10-19-sprint-3-pending.md` |
 | 6 | Chạy lại `OpenApiContractTests` | `openapi.json` được sửa tay (response 200 và Problem Details cho booking và organizer) nên chưa chắc khớp bản springdoc sinh ra | Khi bật Docker: nếu test ghi file khác thì commit bản mới rồi `npm run api:generate` |
 
 ## Việc kỹ thuật còn lại

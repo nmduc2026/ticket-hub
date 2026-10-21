@@ -21,8 +21,9 @@ import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.lang.ConditionEvents;
 
 /**
- * Quy tắc kiến trúc bổ sung cho Modulith {@code verify()}: nội bộ module, `shared` độc lập, controller không gọi
- * repository. Mỗi quy tắc có test chứng minh nó bắt được vi phạm trên fixture.
+ * Quy tắc kiến trúc bổ sung cho Modulith {@code verify()}: chỉ {@code api} và {@code event} của module là công khai,
+ * `shared` độc lập, controller chỉ gọi service và chỉ thấy dto, service là interface. Mỗi quy tắc có test chứng minh
+ * nó bắt được vi phạm trên fixture.
  */
 class ArchitectureTests {
 
@@ -30,6 +31,7 @@ class ArchitectureTests {
 	private static final String FIXTURES = "com.ndz.archfixtures";
 	private static final List<String> BUSINESS_MODULES = List.of("account", "catalog", "booking", "payment", "ticket",
 			"notification");
+	private static final List<String> FIXTURE_MODULES = List.of("booking", "catalog");
 
 	private static final JavaClasses APP = new ClassFileImporter()
 			.withImportOption(new ImportOption.DoNotIncludeTests())
@@ -42,8 +44,8 @@ class ArchitectureTests {
 	}
 
 	@Test
-	void internalClassesAreUsedOnlyByTheirOwnModule() {
-		internalClassesAreUsedOnlyByTheirOwnModuleRule(ROOT).check(APP);
+	void nonPublicPackagesAreUsedOnlyByTheirOwnModule() {
+		nonPublicPackagesAreUsedOnlyByTheirOwnModuleRule(ROOT).check(APP);
 	}
 
 	@Test
@@ -52,13 +54,24 @@ class ArchitectureTests {
 	}
 
 	@Test
-	void controllersDoNotUsePersistenceDirectly() {
-		controllersDoNotUsePersistenceDirectlyRule().check(APP);
+	void controllersCallOnlyServiceInterfaces() {
+		controllersCallOnlyServiceInterfacesRule().check(APP);
 	}
 
 	@Test
-	void internalRuleCatchesAccessFromAnotherModule() {
-		assertThatThrownBy(() -> internalClassesAreUsedOnlyByTheirOwnModuleRule(FIXTURES).check(FIXTURE_CLASSES))
+	void controllersDoNotUseEntities() {
+		controllersDoNotUseEntitiesRule().check(APP);
+	}
+
+	@Test
+	void serviceTypesAreInterfacesAndImplementationsEndWithImpl() {
+		serviceTypesAreInterfacesRule().check(APP);
+		serviceImplementationsEndWithImplRule().check(APP);
+	}
+
+	@Test
+	void nonPublicPackageRuleCatchesAccessFromAnotherModule() {
+		assertThatThrownBy(() -> nonPublicPackagesAreUsedOnlyByTheirOwnModuleRule(FIXTURES).check(FIXTURE_CLASSES))
 				.isInstanceOf(AssertionError.class)
 				.hasMessageContaining("Intruder")
 				.hasMessageContaining("SeatLock");
@@ -66,10 +79,25 @@ class ArchitectureTests {
 
 	@Test
 	void controllerRuleCatchesDirectRepositoryUse() {
-		assertThatThrownBy(() -> controllersDoNotUsePersistenceDirectlyRule().check(FIXTURE_CLASSES))
+		assertThatThrownBy(() -> controllersCallOnlyServiceInterfacesRule().check(FIXTURE_CLASSES))
 				.isInstanceOf(AssertionError.class)
 				.hasMessageContaining("EventController")
 				.hasMessageContaining("EventRepository");
+	}
+
+	@Test
+	void controllerRuleCatchesDirectEntityUse() {
+		assertThatThrownBy(() -> controllersDoNotUseEntitiesRule().check(FIXTURE_CLASSES))
+				.isInstanceOf(AssertionError.class)
+				.hasMessageContaining("LeakyController")
+				.hasMessageContaining("Event");
+	}
+
+	@Test
+	void serviceRuleCatchesConcreteClassInServicePackage() {
+		assertThatThrownBy(() -> serviceTypesAreInterfacesRule().check(FIXTURE_CLASSES))
+				.isInstanceOf(AssertionError.class)
+				.hasMessageContaining("EventService");
 	}
 
 	@Test
@@ -79,8 +107,10 @@ class ArchitectureTests {
 				.hasMessageContaining("shared");
 	}
 
-	private static ArchRule internalClassesAreUsedOnlyByTheirOwnModuleRule(String root) {
-		return classes().that().resideInAPackage(root + ".*.internal..")
+	/** Chỉ package gốc, {@code api} và {@code event} của module là công khai; package khác chỉ module đó được dùng. */
+	private static ArchRule nonPublicPackagesAreUsedOnlyByTheirOwnModuleRule(String root) {
+		return classes().that(DescribedPredicate.describe("reside in a non-public package of a module",
+				(JavaClass javaClass) -> isNonPublicPackage(javaClass.getPackageName(), root)))
 				.should(new ArchCondition<JavaClass>("be used only by classes of their own module") {
 					@Override
 					public void check(JavaClass target, ConditionEvents events) {
@@ -106,11 +136,49 @@ class ArchitectureTests {
 				.allowEmptyShould(true);
 	}
 
-	private static ArchRule controllersDoNotUsePersistenceDirectlyRule() {
-		return noClasses().that().resideInAPackage("..internal.web..")
-				.should().dependOnClassesThat().resideInAPackage("..internal.persistence..")
-				.because("controller chỉ gọi application service")
+	private static ArchRule controllersCallOnlyServiceInterfacesRule() {
+		return noClasses().that().resideInAPackage("..controller..")
+				.should().dependOnClassesThat().resideInAnyPackage("..repository..", "..service.impl..")
+				.because("controller chỉ gọi interface service")
 				.allowEmptyShould(true);
+	}
+
+	private static ArchRule controllersDoNotUseEntitiesRule() {
+		return noClasses().that().resideInAPackage("..controller..")
+				.should().dependOnClassesThat().resideInAPackage("..entity")
+				.because("controller chỉ thấy dto; entity không ra khỏi service (enum ở entity.enums được phép)")
+				.allowEmptyShould(true);
+	}
+
+	private static ArchRule serviceTypesAreInterfacesRule() {
+		return classes().that().resideInAPackage("..service")
+				.should().beInterfaces()
+				.because("service khai báo bằng interface, cài đặt nằm ở service.impl")
+				.allowEmptyShould(true);
+	}
+
+	private static ArchRule serviceImplementationsEndWithImplRule() {
+		return classes().that().resideInAPackage("..service.impl")
+				.and().areTopLevelClasses()
+				.should().haveSimpleNameEndingWith("Impl")
+				.allowEmptyShould(true);
+	}
+
+	private static boolean isNonPublicPackage(String packageName, String root) {
+		if (!packageName.startsWith(root + ".")) {
+			return false;
+		}
+		String rest = packageName.substring(root.length() + 1);
+		int dot = rest.indexOf('.');
+		if (dot < 0) {
+			return false;
+		}
+		String module = rest.substring(0, dot);
+		if (!BUSINESS_MODULES.contains(module) && !FIXTURE_MODULES.contains(module)) {
+			return false;
+		}
+		String sub = rest.substring(dot + 1);
+		return !sub.equals("api") && !sub.equals("event");
 	}
 
 	private static String moduleOf(String packageName, String root) {
