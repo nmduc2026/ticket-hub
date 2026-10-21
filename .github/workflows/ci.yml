@@ -224,3 +224,59 @@ jobs:
             ${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
             ${{ env.IMAGE_NAME }}:main
           cache-from: type=gha,scope=${{ matrix.image }}
+
+  # Ghi tag image mới vào values của Helm; ArgoCD thấy commit này và đồng bộ vào k3d (GitOps, overview.md §19.3).
+  # Commit bằng GITHUB_TOKEN không kích hoạt lại workflow. Nếu nhánh main bắt buộc PR thì bước push bị từ chối:
+  # cho phép github-actions bỏ qua bảo vệ, hoặc đổi sang mở PR tự động (docs/ops/gitops.md).
+  update-image-tags:
+    name: Cập nhật image tag trong Helm values
+    needs: [images]
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Sửa tag
+        run: |
+          for chart in app gateway frontend; do
+            sed -i -E "s|^(  tag: ).*|\1sha-${GITHUB_SHA}|" "infra/helm/${chart}/values.yaml"
+          done
+      - name: Commit và push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add infra/helm/*/values.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "chore(deploy): image tag sha-${GITHUB_SHA::7} [skip ci]"
+          git push origin HEAD:main
+
+  # OWASP Dependency-Check cho thư viện Maven. Cần secret NVD_API_KEY (miễn phí) để tải CVE nhanh; chưa có thì bỏ qua.
+  dependency-check:
+    name: OWASP Dependency-Check (backend)
+    runs-on: ubuntu-24.04
+    env:
+      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+        if: ${{ env.NVD_API_KEY != '' }}
+      - uses: actions/setup-java@v4.7.1
+        if: ${{ env.NVD_API_KEY != '' }}
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      # Chặn khi có lỗ hổng CVSS >= 9 (CRITICAL).
+      - name: Quét phụ thuộc
+        if: ${{ env.NVD_API_KEY != '' }}
+        working-directory: backend
+        run: >
+          ./mvnw -B -ntp org.owasp:dependency-check-maven:12.1.6:aggregate
+          -DnvdApiKey=${NVD_API_KEY} -DfailBuildOnCVSS=9 -Dformats=HTML
+      - uses: actions/upload-artifact@v4.6.2
+        if: ${{ env.NVD_API_KEY != '' && always() }}
+        with:
+          name: dependency-check-report
+          path: backend/target/dependency-check-report.html
+          if-no-files-found: ignore
+          retention-days: 7

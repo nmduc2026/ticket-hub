@@ -1,0 +1,100 @@
+# Mặc định chặn mọi traffic vào namespace tickethub, rồi mở đúng đường cần dùng (overview.md §13.4 Mạng).
+# Chỉ Envoy Gateway nhận traffic từ ngoài; app chỉ nhận từ gateway BFF; DB chỉ nhận từ app và keycloak.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: tickethub
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-envoy-to-edge-services
+  namespace: tickethub
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: tickethub/role, operator: In, values: [gateway, frontend, keycloak] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-app
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: app }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { tickethub/role: gateway }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-and-keycloak-to-postgres
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: postgres }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app, keycloak] }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-and-app-to-redis
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: redis }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app, gateway] }
+---
+# Gateway và app gọi Keycloak trong cụm (discovery, JWKS).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-services-to-keycloak
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: keycloak }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app, gateway] }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-mailpit-s3mock
+  namespace: tickethub
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: tickethub/role, operator: In, values: [mailpit, s3mock] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { tickethub/role: app }
