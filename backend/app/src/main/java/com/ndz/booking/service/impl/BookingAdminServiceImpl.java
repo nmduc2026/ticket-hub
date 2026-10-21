@@ -3,6 +3,7 @@ package com.ndz.booking.service.impl;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -20,6 +21,8 @@ import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.event.RefundRequested;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.service.BookingAdminService;
+import com.ndz.shared.audit.AuditAction;
+import com.ndz.shared.audit.AuditLogService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 import com.ndz.shared.util.Uuid7;
@@ -33,11 +36,14 @@ public class BookingAdminServiceImpl implements BookingAdminService {
 
 	private final BookingRepository bookings;
 	private final ApplicationEventPublisher publisher;
+	private final AuditLogService audit;
 	private final Clock clock;
 
-	BookingAdminServiceImpl(BookingRepository bookings, ApplicationEventPublisher publisher, Clock clock) {
+	BookingAdminServiceImpl(BookingRepository bookings, ApplicationEventPublisher publisher, AuditLogService audit,
+			Clock clock) {
 		this.bookings = bookings;
 		this.publisher = publisher;
+		this.audit = audit;
 		this.clock = clock;
 	}
 
@@ -50,7 +56,7 @@ public class BookingAdminServiceImpl implements BookingAdminService {
 
 	@Override
 	@Transactional
-	public RefundResult retryRefund(UUID bookingId) {
+	public RefundResult retryRefund(UUID adminId, UUID bookingId) {
 		LockedBooking booking = bookings.lockBooking(bookingId).orElseThrow(
 				() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy đơn đặt vé"));
 		if (booking.status() != BookingStatus.REFUND_FAILED) {
@@ -62,6 +68,9 @@ public class BookingAdminServiceImpl implements BookingAdminService {
 			throw new BusinessException(ErrorCode.BOOKING_NOT_REFUNDABLE, "Chỉ hoàn thủ công được đơn hoàn thất bại");
 		}
 		RefundContext context = bookings.refundContext(bookingId);
+		audit.record(adminId, AuditAction.REFUND_RETRIED, "booking", bookingId,
+				Map.of("status", BookingStatus.REFUND_FAILED.name()),
+				Map.of("status", BookingStatus.REFUND_REQUESTED.name(), "amountMinor", context.amountMinor()));
 		ConfirmationData data = bookings.confirmationData(bookingId);
 		publisher.publishEvent(new RefundRequested(Uuid7.next(clock), now, bookingId, booking.userId(),
 				booking.eventId(), data.eventTitle(), data.contactEmail(), context.reason(), context.amountMinor(),

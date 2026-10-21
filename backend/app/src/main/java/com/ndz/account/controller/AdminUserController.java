@@ -61,7 +61,7 @@ class AdminUserController {
 	@Operation(operationId = "unlockUser", summary = "Mở khoá tài khoản")
 	@PostMapping("/{id}/unlock")
 	LockResult unlock(@PathVariable UUID id) {
-		return service.unlock(id);
+		return service.unlock(CurrentUser.require().id(), id);
 	}
 
 }

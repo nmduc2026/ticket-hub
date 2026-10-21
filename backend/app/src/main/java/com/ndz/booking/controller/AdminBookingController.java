@@ -24,6 +24,7 @@ import com.ndz.booking.dto.response.BookingResponses.RefundResponse;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.mapper.BookingMapper;
 import com.ndz.booking.service.BookingAdminService;
+import com.ndz.shared.util.CurrentUser;
 
 /** Admin tìm đơn và hoàn thủ công đơn hoàn thất bại (overview.md §7.4, §11.2). */
 @RestController
@@ -69,7 +70,7 @@ class AdminBookingController {
 	@PostMapping("/{bookingId}/refund")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	RefundResponse retryRefund(@PathVariable UUID bookingId) {
-		return mapper.toRefund(service.retryRefund(bookingId));
+		return mapper.toRefund(service.retryRefund(CurrentUser.require().id(), bookingId));
 	}
 
 }

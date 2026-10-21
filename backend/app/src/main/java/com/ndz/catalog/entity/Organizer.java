@@ -11,6 +11,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
+import org.hibernate.envers.AuditTable;
+import org.hibernate.envers.Audited;
+
 import com.ndz.catalog.entity.enums.OrganizerStatus;
 import com.ndz.catalog.entity.enums.OrganizerType;
 import com.ndz.shared.exception.BusinessException;
@@ -22,22 +25,28 @@ import com.ndz.shared.exception.ErrorCode;
  */
 @Entity
 @Table(schema = "catalog", name = "organizers")
+@AuditTable(schema = "catalog", value = "organizers_aud")
 public class Organizer {
 
 	@Id
 	private UUID id;
 
+	@Audited
 	@Column(nullable = false)
 	private String displayName;
 
+	@Audited
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private OrganizerStatus status;
 
+	@Audited
 	private Instant approvedAt;
 
+	@Audited
 	private String rejectionReason;
 
+	@Audited
 	private boolean payoutReady;
 
 	@Column(nullable = false, updatable = false)

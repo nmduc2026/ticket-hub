@@ -317,6 +317,10 @@ class RefundFlowTests {
 		assertThat(requests.get(1).getBodyAsString()).contains("amount=950000"); // đúng số tiền đã chốt lần đầu
 		assertThat(jdbc.queryForList("select status from ticket.tickets where booking_id = ?", String.class, bookingId))
 				.containsOnly("REVOKED");
+		// Hoàn thủ công là thao tác quản trị: có đúng một dòng audit với người thao tác (AC-10 của Sprint 5).
+		assertThat(jdbc.queryForList(
+				"select actor_id from shared.audit_log where action = 'REFUND_RETRIED' and target_id = ?", UUID.class,
+				bookingId.toString())).containsExactly(TestTokens.ADMIN_ID);
 	}
 
 	@Test

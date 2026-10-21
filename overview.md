@@ -349,6 +349,9 @@ user_profiles  (user_id PK = Keycloak sub, email, full_name, username,
 idempotency_keys (scope, user_id, key, request_hash, status[IN_PROGRESS|COMPLETED],
                   response_status, response_body, response_content_type, created_at, expires_at,
                   PRIMARY KEY (scope, user_id, key))
+audit_log        (id, actor_id, action, target_type, target_id, before_state JSONB, after_state JSONB, created_at)
+                 -- mỗi thao tác quản trị một dòng, ghi cùng transaction (§13.4)
+revinfo          (rev, revtstmp, actor_id)   -- Envers: lịch sử thay đổi entity quản trị nằm ở bảng <entity>_aud của module
 ```
 
 - Dùng cho mọi API bắt buộc `Idempotency-Key` (§11.1); cài đặt một lần trong `platform-web` / package `shared`.

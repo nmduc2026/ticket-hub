@@ -19,6 +19,6 @@ public interface BookingAdminService {
 	 *
 	 * @throws com.ndz.shared.exception.BusinessException {@code BOOKING_NOT_FOUND} hoặc {@code BOOKING_NOT_REFUNDABLE}
 	 */
-	RefundResult retryRefund(UUID bookingId);
+	RefundResult retryRefund(UUID adminId, UUID bookingId);
 
 }

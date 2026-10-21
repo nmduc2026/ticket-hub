@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -26,6 +27,8 @@ import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.catalog.mapper.OrganizerMapper;
 import com.ndz.catalog.repository.OrganizerRepository;
 import com.ndz.catalog.service.OrganizerAdminService;
+import com.ndz.shared.audit.AuditAction;
+import com.ndz.shared.audit.AuditLogService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
 import com.ndz.shared.util.Uuid7;
@@ -44,13 +47,15 @@ public class OrganizerAdminServiceImpl implements OrganizerAdminService {
 	private final OrganizerRepository organizers;
 	private final OrganizerMapper mapper;
 	private final ApplicationEventPublisher publisher;
+	private final AuditLogService audit;
 	private final Clock clock;
 
 	OrganizerAdminServiceImpl(OrganizerRepository organizers, OrganizerMapper mapper,
-			ApplicationEventPublisher publisher, Clock clock) {
+			ApplicationEventPublisher publisher, AuditLogService audit, Clock clock) {
 		this.organizers = organizers;
 		this.mapper = mapper;
 		this.publisher = publisher;
+		this.audit = audit;
 		this.clock = clock;
 	}
 
@@ -78,6 +83,9 @@ public class OrganizerAdminServiceImpl implements OrganizerAdminService {
 		Organizer organizer = organizers.lockById(organizerId).orElseThrow(OrganizerAdminServiceImpl::notFound);
 		String trimmed = reason.trim();
 		organizer.reject(trimmed);
+		audit.record(adminId, AuditAction.ORGANIZER_REJECTED, "organizer", organizerId,
+				Map.of("status", OrganizerStatus.PENDING.name()),
+				Map.of("status", organizer.getStatus().name(), "reason", trimmed));
 		publisher.publishEvent(new OrganizerRejected(Uuid7.next(clock), clock.instant(), organizerId,
 				organizer.getDisplayName(), organizer.getContactEmail(), trimmed));
 		log.info("Admin {} từ chối hồ sơ organizer {}", adminId, organizerId);
@@ -108,6 +116,8 @@ public class OrganizerAdminServiceImpl implements OrganizerAdminService {
 	private void approveLocked(UUID adminId, Organizer organizer) {
 		Instant now = clock.instant();
 		organizer.approve(now);
+		audit.record(adminId, AuditAction.ORGANIZER_APPROVED, "organizer", organizer.getId(),
+				Map.of("status", OrganizerStatus.PENDING.name()), Map.of("status", organizer.getStatus().name()));
 		publisher.publishEvent(new OrganizerApproved(Uuid7.next(clock), now, organizer.getId(),
 				organizer.getDisplayName(), organizer.getContactEmail()));
 		log.info("Admin {} duyệt organizer {}", adminId, organizer.getId());

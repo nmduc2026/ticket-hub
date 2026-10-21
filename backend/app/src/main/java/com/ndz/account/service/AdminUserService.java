@@ -29,6 +29,6 @@ public interface AdminUserService {
 	 */
 	LockResult lock(UUID adminId, UUID userId);
 
-	LockResult unlock(UUID userId);
+	LockResult unlock(UUID adminId, UUID userId);
 
 }

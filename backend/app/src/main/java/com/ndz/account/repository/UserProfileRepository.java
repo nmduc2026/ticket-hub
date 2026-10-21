@@ -48,10 +48,4 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, UUID>,
 			""", nativeQuery = true)
 	int addRole(@Param("userId") UUID userId, @Param("role") String role, @Param("now") Instant now);
 
-	@Transactional
-	@Modifying(flushAutomatically = true, clearAutomatically = true)
-	@Query(value = "UPDATE account.user_profiles SET enabled = :enabled, updated_at = :now WHERE user_id = :userId",
-			nativeQuery = true)
-	int setEnabled(@Param("userId") UUID userId, @Param("enabled") boolean enabled, @Param("now") Instant now);
-
 }

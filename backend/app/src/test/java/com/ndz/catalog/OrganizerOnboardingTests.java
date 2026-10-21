@@ -199,6 +199,49 @@ class OrganizerOnboardingTests {
 	}
 
 	@Test
+	void everyReviewWritesOneAuditRowWithTheAdminAndAnEnversRevision() throws Exception {
+		UUID rejected = UUID.randomUUID();
+		// Người được duyệt có thật trong Keycloak để việc gán role không lỗi và để lại event dở.
+		applicant = keycloak.createUser("audit-" + Instant.now().toEpochMilli(), "audit@example.test");
+		apply(applicant, form("BUSINESS", "0312345678")).andExpect(status().isCreated());
+		apply(rejected, form("BUSINESS", "0312345678")).andExpect(status().isCreated());
+		UUID approvedByAdmin = TestTokens.ADMIN_ID;
+
+		reject(rejected, "{\"reason\": \"Thiếu giấy phép\"}").andExpect(status().isOk());
+		approve(applicant).andExpect(status().isOk());
+
+		assertThat(jdbc.queryForMap("""
+				select actor_id, action, target_type, before_state ->> 'status' as before_status,
+				       after_state ->> 'status' as after_status
+				from shared.audit_log where target_id = ?
+				""", applicant.toString())).containsEntry("actor_id", approvedByAdmin)
+				.containsEntry("action", "ORGANIZER_APPROVED").containsEntry("target_type", "organizer")
+				.containsEntry("before_status", "PENDING").containsEntry("after_status", "APPROVED");
+		assertThat(jdbc.queryForObject("select after_state ->> 'reason' from shared.audit_log where target_id = ?",
+				String.class, rejected.toString())).isEqualTo("Thiếu giấy phép");
+		// Envers: một revision cho lúc tạo hồ sơ và một cho lúc duyệt, kèm người thao tác.
+		assertThat(jdbc.queryForList("""
+				select a.status from catalog.organizers_aud a where a.id = ? order by a.rev
+				""", String.class, applicant)).containsExactly("PENDING", "APPROVED");
+		assertThat(jdbc.queryForObject("""
+				select r.actor_id from catalog.organizers_aud a join shared.revinfo r on r.rev = a.rev
+				where a.id = ? and a.status = 'APPROVED'
+				""", UUID.class, applicant)).isEqualTo(approvedByAdmin);
+	}
+
+	@Test
+	void aRejectedOrForbiddenReviewWritesNoAuditRow() throws Exception {
+		apply(applicant, form("BUSINESS", "0312345678")).andExpect(status().isCreated());
+
+		reject(applicant, "{\"reason\": \"\"}").andExpect(status().isBadRequest());
+		mockMvc.perform(post(ADMIN_ORGANIZERS + "/" + applicant + "/approve").header(HttpHeaders.AUTHORIZATION,
+				customer(applicant))).andExpect(status().isForbidden());
+
+		assertThat(jdbc.queryForObject("select count(*) from shared.audit_log where target_id = ?", Integer.class,
+				applicant.toString())).isZero();
+	}
+
+	@Test
 	void reviewingAnApplicationThatIsNotPendingIs409() throws Exception {
 		apply(applicant, form("BUSINESS", "0312345678")).andExpect(status().isCreated());
 		reject(applicant, "{\"reason\": \"Thiếu giấy phép\"}").andExpect(status().isOk());

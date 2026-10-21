@@ -143,6 +143,43 @@ class AdminUserApiTests {
 	}
 
 	@Test
+	void lockAndUnlockEachWriteOneAuditRowAndRepeatedLockWritesNone() throws Exception {
+		String username = "audit-" + Instant.now().toEpochMilli();
+		UUID user = keycloak.createUser(username, username + DOMAIN);
+		touchProfile(user, username);
+
+		mockMvc.perform(post(USERS + "/" + user + "/lock").header(HttpHeaders.AUTHORIZATION, admin()))
+				.andExpect(status().isOk());
+		mockMvc.perform(post(USERS + "/" + user + "/lock").header(HttpHeaders.AUTHORIZATION, admin()))
+				.andExpect(status().isOk());
+		mockMvc.perform(post(USERS + "/" + user + "/unlock").header(HttpHeaders.AUTHORIZATION, admin()))
+				.andExpect(status().isOk());
+
+		assertThat(jdbc.queryForList("select action from shared.audit_log where target_id = ? order by created_at",
+				String.class, user.toString())).containsExactly("USER_LOCKED", "USER_UNLOCKED");
+		assertThat(jdbc.queryForObject("""
+				select count(*) from shared.audit_log
+				where target_id = ? and actor_id = ? and before_state ->> 'enabled' = 'true'
+				  and after_state ->> 'enabled' = 'false'
+				""", Integer.class, user.toString(), TestTokens.ADMIN_ID)).isEqualTo(1);
+		// Envers ghi lịch sử enabled của hồ sơ: bị khoá rồi mở lại.
+		assertThat(jdbc.queryForList("select enabled from account.user_profiles_aud where user_id = ? order by rev",
+				Boolean.class, user)).containsExactly(false, true);
+	}
+
+	@Test
+	void lockingYourselfOrAnUnknownUserWritesNoAuditRow() throws Exception {
+		mockMvc.perform(post(USERS + "/" + TestTokens.ADMIN_ID + "/lock").header(HttpHeaders.AUTHORIZATION, admin()))
+				.andExpect(status().isUnprocessableContent());
+		UUID unknown = UUID.randomUUID();
+		mockMvc.perform(post(USERS + "/" + unknown + "/lock").header(HttpHeaders.AUTHORIZATION, admin()))
+				.andExpect(status().isNotFound());
+
+		assertThat(jdbc.queryForObject("select count(*) from shared.audit_log where target_id in (?, ?)",
+				Integer.class, TestTokens.ADMIN_ID.toString(), unknown.toString())).isZero();
+	}
+
+	@Test
 	void adminCannotLockThemselves() throws Exception {
 		mockMvc.perform(post(USERS + "/" + TestTokens.ADMIN_ID + "/lock").header(HttpHeaders.AUTHORIZATION, admin()))
 				.andExpect(status().isUnprocessableContent()).andExpect(jsonPath("$.code").value("CANNOT_LOCK_SELF"));
