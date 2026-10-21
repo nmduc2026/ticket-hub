@@ -1,7 +1,10 @@
 package com.ndz.catalog.service.impl;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +44,13 @@ class CatalogApiImpl implements CatalogApi {
 	@Transactional(readOnly = true)
 	public Optional<EventSchedule> eventSchedule(UUID eventId) {
 		return events.findById(eventId).map(event -> new EventSchedule(event.getStartsAt(), event.getEndsAt()));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Map<UUID, GuestInfo> guestInfo(Collection<UUID> eventIds) {
+		return events.findAllById(eventIds).stream().collect(Collectors.toMap(event -> event.getId(),
+				event -> new GuestInfo(event.getDoorsOpenAt(), event.getAgeRestriction(), event.getRules())));
 	}
 
 	@Override

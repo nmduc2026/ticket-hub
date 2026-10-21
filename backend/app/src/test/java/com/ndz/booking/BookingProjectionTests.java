@@ -2,8 +2,10 @@ package com.ndz.booking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Duration;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -157,7 +160,7 @@ class BookingProjectionTests {
 		insertHeldSeat(eventId, booking);
 		EventPublished again = new EventPublished(Uuid7.next(), Instant.now(), eventId, TestTokens.ORGANIZER_ID,
 				"Giữ nguyên", null, null, null, UUID.fromString(VENUE), "Sài Gòn Arena", UUID.fromString("00000000-0000-7000-8000-0000000a0001"), "Thành phố Hồ Chí Minh",
-				UUID.fromString(SEAT_MAP), SALE_STARTS.plusSeconds(86_400), EVENT_ENDS, SALE_STARTS, 6, 500, false);
+				UUID.fromString(SEAT_MAP), SALE_STARTS.plusSeconds(86_400), EVENT_ENDS, SALE_STARTS, 6, 500, false, null, null, null);
 
 		transaction.executeWithoutResult(status -> publisher.publishEvent(again)); // message mới, cùng sự kiện
 		awaitNoIncompletePublications();
@@ -190,12 +193,33 @@ class BookingProjectionTests {
 	}
 
 	@Test
+	@DisplayName("AC-6 (BR-14): sửa giờ mở cửa, độ tuổi, quy định sau publish → EventUpdated cập nhật bản sao, trang sự kiện hiện bản mới")
+	void guestInfoEditsFollowIntoTheSnapshotAndThePublicPage() throws Exception {
+		String id = publishedEvent("Thông tin khách", SECTION_A);
+		UUID eventId = UUID.fromString(id);
+		awaitInventoryReady(eventId);
+		String doorsOpenAt = SALE_STARTS.plusSeconds(86_400 - 3600).toString();
+		String edited = body("Thông tin khách").replace("}",
+				",\"doorsOpenAt\":\"%s\",\"ageRestriction\":16,\"rules\":\"Không mang đồ ăn\"}".formatted(doorsOpenAt));
+
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON).content(edited), organizer())
+				.andExpect(status().isOk());
+
+		await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertThat(snapshotValue(eventId, "rules"))
+				.isEqualTo("Không mang đồ ăn"));
+		assertThat(snapshotValue(eventId, "age_restriction")).isEqualTo("16");
+		mockMvc.perform(get("/api/v1/events/" + id)).andExpect(status().isOk())
+				.andExpect(jsonPath("$.doorsOpenAt").value(doorsOpenAt)).andExpect(jsonPath("$.ageRestriction").value(16))
+				.andExpect(jsonPath("$.rules").value("Không mang đồ ăn"));
+	}
+
+	@Test
 	void anOlderEventNeverOverwritesNewerData() throws Exception {
 		String id = publishedEvent("Tên hiện tại", SECTION_A);
 		UUID eventId = UUID.fromString(id);
 		awaitInventoryReady(eventId);
 		EventUpdated stale = new EventUpdated(Uuid7.next(), Instant.parse("2020-01-01T00:00:00Z"), eventId,
-				"Tên rất cũ", null, null, null);
+				"Tên rất cũ", null, null, null, null, null, null);
 
 		transaction.executeWithoutResult(status -> publisher.publishEvent(stale));
 		awaitNoIncompletePublications();
@@ -228,7 +252,7 @@ class BookingProjectionTests {
 				((java.sql.Timestamp) snapshot.get("last_event_at")).toInstant(), eventId, TestTokens.ORGANIZER_ID,
 				(String) snapshot.get("title"), null, null, null, UUID.fromString(VENUE), "Sài Gòn Arena",
 				UUID.fromString("00000000-0000-7000-8000-0000000a0001"), "Thành phố Hồ Chí Minh", UUID.fromString(SEAT_MAP), SALE_STARTS.plusSeconds(86_400), EVENT_ENDS,
-				SALE_STARTS, 6, 500, false);
+				SALE_STARTS, 6, 500, false, null, null, null);
 	}
 
 	private void insertHeldSeat(UUID eventId, UUID bookingId) {

@@ -9,7 +9,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.ndz.catalog.event.EventUpdated;
 import com.ndz.catalog.dto.response.EventResponses.Detail;
 import com.ndz.catalog.service.EventBannerService;
 import com.ndz.catalog.service.OrganizerEventService;
@@ -68,8 +67,7 @@ public class EventBannerServiceImpl implements EventBannerService {
 				String previous = event.changeBanner(storage.publicUrl(key));
 				events.save(event);
 				if (event.getStatus() != EventStatus.DRAFT) {
-					publisher.publishEvent(new EventUpdated(Uuid7.next(clock), clock.instant(), event.getId(),
-							event.getTitle(), event.getDescription(), event.getCategory(), event.getBannerUrl()));
+					publisher.publishEvent(EventUpdatedFactory.of(event, clock));
 				}
 				return previous;
 			});

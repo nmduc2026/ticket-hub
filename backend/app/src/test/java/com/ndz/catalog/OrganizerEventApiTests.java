@@ -13,6 +13,7 @@ import java.util.UUID;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -194,6 +195,42 @@ class OrganizerEventApiTests {
 		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
 				.content(bodyLike("Đã publish", "Mô tả mới", "Âm nhạc", (short) 4)), organizer())
 				.andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EVENT_LOCKED"));
+	}
+
+	@Test
+	@DisplayName("AC-6 (BR-14): sau publish sửa được giờ mở cửa, độ tuổi, quy định; xoá trắng cũng được")
+	void afterPublishGuestInfoCanChange() throws Exception {
+		String id = createEvent("Thông tin khách");
+		publish(id);
+
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(bodyWithGuestInfo("\"2027-01-02T10:30:00Z\"", "18", "\"Không mang đồ ăn\"")), organizer())
+				.andExpect(status().isOk()).andExpect(jsonPath("$.doorsOpenAt").value("2027-01-02T10:30:00Z"))
+				.andExpect(jsonPath("$.ageRestriction").value(18)).andExpect(jsonPath("$.rules").value("Không mang đồ ăn"));
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(bodyWithGuestInfo("null", "null", "\"  \"")), organizer())
+				.andExpect(status().isOk()).andExpect(jsonPath("$.doorsOpenAt").doesNotExist())
+				.andExpect(jsonPath("$.ageRestriction").doesNotExist()).andExpect(jsonPath("$.rules").doesNotExist());
+	}
+
+	@Test
+	@DisplayName("Giờ mở cửa sau giờ diễn → 422 DOORS_OPEN_AFTER_START, cả nháp lẫn đã publish; độ tuổi 0 → 400")
+	void doorsCannotOpenAfterTheShowStarts() throws Exception {
+		String draft = createEvent("Mở cửa nháp");
+		String published = createEvent("Mở cửa đã publish");
+		publish(published);
+
+		for (String id : new String[] { draft, published }) {
+			call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
+					.content(bodyWithGuestInfo("\"2027-01-02T12:00:01Z\"", "null", "null")), organizer())
+					.andExpect(status().isUnprocessableContent())
+					.andExpect(jsonPath("$.code").value("DOORS_OPEN_AFTER_START"));
+		}
+		call(put(EVENTS + "/" + draft).contentType(MediaType.APPLICATION_JSON)
+				.content(bodyWithGuestInfo("\"2027-01-02T12:00:00Z\"", "null", "null")), organizer())
+				.andExpect(status().isOk());
+		call(put(EVENTS + "/" + draft).contentType(MediaType.APPLICATION_JSON)
+				.content(bodyWithGuestInfo("null", "0", "null")), organizer()).andExpect(status().isBadRequest());
 	}
 
 	@Test
@@ -407,6 +444,12 @@ class OrganizerEventApiTests {
 				{"title":"%s","description":"Mô tả","category":"Âm nhạc","venueId":"%s","seatMapId":"%s",
 				"startsAt":"%s","endsAt":"%s","saleStartsAt":"%s"}""".formatted(title, VENUE, SEAT_MAP, startsAt, endsAt,
 				saleStartsAt);
+	}
+
+	/** Cùng nội dung với {@link #body(String)} kèm giờ mở cửa, độ tuổi, quy định (giá trị JSON nguyên văn). */
+	private static String bodyWithGuestInfo(String doorsOpenAt, String ageRestriction, String rules) {
+		return body("Thông tin khách").replace("}", ",\"doorsOpenAt\":%s,\"ageRestriction\":%s,\"rules\":%s}"
+				.formatted(doorsOpenAt, ageRestriction, rules));
 	}
 
 	/** Cùng thông tin bán vé với {@link #body(String)}, chỉ đổi thông tin hiển thị (và tuỳ chọn số vé mỗi người). */

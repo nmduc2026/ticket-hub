@@ -95,7 +95,8 @@ public class EventLifecycleServiceImpl implements EventLifecycleService {
 		publisher.publishEvent(new EventPublished(Uuid7.next(clock), now, event.getId(), organizerId, event.getTitle(),
 				event.getDescription(), event.getCategory(), event.getBannerUrl(), event.getVenueId(), venue.name(),
 				venue.cityId(), venue.cityName(), event.getSeatMapId(), event.getStartsAt(), event.getEndsAt(),
-				event.getSaleStartsAt(), event.getMaxTicketsPerUser(), feeBps, event.isHighDemand()));
+				event.getSaleStartsAt(), event.getMaxTicketsPerUser(), feeBps, event.isHighDemand(),
+				event.getDoorsOpenAt(), event.getAgeRestriction(), event.getRules()));
 		log.info("Sự kiện {} đã publish, phí nền tảng {} bps", event.getId(), feeBps);
 		return eventService.get(organizerId, eventId);
 	}

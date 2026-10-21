@@ -82,13 +82,14 @@ public class PublicEventQueries {
 		List<Object[]> rows = em.createQuery("""
 				select e.eventId, e.title, e.description, e.category, e.bannerUrl, e.organizerId, e.venueId, e.venueName,
 				       e.cityName, e.startsAt, e.endsAt, e.saleStartsAt, e.status, e.highDemand, e.maxTicketsPerUser,
-				       e.seatMapId, e.currency
+				       e.seatMapId, e.currency, e.doorsOpenAt, e.ageRestriction, e.rules
 				from EventSnapshot e where e.eventId = :eventId
 				""", Object[].class).setParameter("eventId", eventId).getResultList();
 		return rows.stream().findFirst().map(row -> new EventDetail((UUID) row[0], (String) row[1], (String) row[2],
 				(String) row[3], (String) row[4], (UUID) row[5], (UUID) row[6], (String) row[7], (String) row[8],
 				(Instant) row[9], (Instant) row[10], (Instant) row[11], (String) row[12], (Boolean) row[13],
-				((Short) row[14]).intValue(), (UUID) row[15], (String) row[16]));
+				((Short) row[14]).intValue(), (UUID) row[15], (String) row[16], (Instant) row[17], (Short) row[18],
+				(String) row[19]));
 	}
 
 	public List<TierAvailability> tiers(UUID eventId) {

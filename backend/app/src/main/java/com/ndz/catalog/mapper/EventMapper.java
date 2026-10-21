@@ -25,7 +25,12 @@ public class EventMapper {
 	public EventContent toContent(EventRequest request) {
 		return new EventContent(request.title().trim(), request.description(), request.category(), request.venueId(),
 				request.seatMapId(), request.startsAt(), request.endsAt(), request.saleStartsAt(),
-				request.maxTicketsPerUser() == null ? DEFAULT_MAX_TICKETS_PER_USER : request.maxTicketsPerUser());
+				request.maxTicketsPerUser() == null ? DEFAULT_MAX_TICKETS_PER_USER : request.maxTicketsPerUser(),
+				request.doorsOpenAt(), request.ageRestriction(), blankToNull(request.rules()));
+	}
+
+	private static String blankToNull(String value) {
+		return value == null || value.isBlank() ? null : value.strip();
 	}
 
 	public Summary toSummary(Event event, String venueName) {
@@ -39,7 +44,8 @@ public class EventMapper {
 				event.getBannerUrl(), event.getStatus(), event.getVenueId(), venueName, event.getSeatMapId(),
 				event.getStartsAt(), event.getEndsAt(), event.getSaleStartsAt(), event.getMaxTicketsPerUser(),
 				event.getPlatformFeeBps(), event.isInventoryReady(), event.getStatus() != EventStatus.DRAFT,
-				tiers.stream().map(this::toTier).toList(), assignments.stream().map(this::toAssignment).toList());
+				tiers.stream().map(this::toTier).toList(), assignments.stream().map(this::toAssignment).toList(),
+				event.getDoorsOpenAt(), event.getAgeRestriction(), event.getRules());
 	}
 
 	public Tier toTier(TicketTier tier) {

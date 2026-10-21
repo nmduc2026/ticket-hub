@@ -241,6 +241,31 @@ class TicketApiTests {
 	}
 
 	@Test
+	@DisplayName("AC-6: vé hiện giờ mở cửa, độ tuổi, quy định hiện tại của sự kiện (đọc từ Catalog, không chụp vào vé)")
+	void ticketsShowTheCurrentGuestInfoOfTheEvent() throws Exception {
+		BookingConfirmed mine = confirmed(customer, 1);
+		jdbc.update("""
+				insert into catalog.events (id, organizer_id, title, doors_open_at, age_restriction, rules)
+				values (?, ?, 'Sự kiện thử', ?, 18, 'Cũ')
+				""", mine.eventId(), TestTokens.ORGANIZER_ID, java.sql.Timestamp.from(STARTS_AT.minusSeconds(3600)));
+		try {
+			publish(mine);
+			awaitTickets(mine.bookingId(), 1);
+			jdbc.update("update catalog.events set rules = 'Không mang đồ ăn' where id = ?", mine.eventId());
+
+			mockMvc.perform(get("/api/v1/me/tickets").header(HttpHeaders.AUTHORIZATION,
+					TestTokens.token().subject(customer).bearer())).andExpect(status().isOk())
+					.andExpect(jsonPath("$[0].eventId").value(mine.eventId().toString()))
+					.andExpect(jsonPath("$[0].doorsOpenAt").value(STARTS_AT.minusSeconds(3600).toString()))
+					.andExpect(jsonPath("$[0].ageRestriction").value(18))
+					.andExpect(jsonPath("$[0].rules").value("Không mang đồ ăn"));
+		}
+		finally {
+			jdbc.update("delete from catalog.events where id = ?", mine.eventId());
+		}
+	}
+
+	@Test
 	void paginationLimitsTheNumberOfTickets() throws Exception {
 		BookingConfirmed mine = confirmed(customer, 3);
 		publish(mine);

@@ -204,6 +204,30 @@ describe('tab Thông tin chung (BR-14)', () => {
     })
   })
 
+  it('sau publish: giờ mở cửa, quy định vẫn sửa được; giờ mở cửa tính theo ngày diễn (AC-6)', async () => {
+    const published = eventDetail({ status: 'PUBLISHED', salesInfoLocked: true })
+    const state = mockOrganizerApi(published)
+    let body: Record<string, unknown> = {}
+    server.use(
+      http.put(`/api/v1/organizer/events/${EVENT_ID}`, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...state.detail, doorsOpenAt: body.doorsOpenAt, rules: body.rules })
+      }),
+    )
+    const user = userEvent.setup()
+    renderAt(`/organizer/events/${EVENT_ID}/edit`)
+
+    const doors = await screen.findByLabelText('Mở cửa', undefined, T)
+    expect(doors).toBeEnabled()
+    await user.type(doors, '19:00')
+    await user.type(screen.getByLabelText('Quy định tại sự kiện'), 'Không mang đồ ăn')
+    await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+
+    await waitFor(() => expect(body.rules).toBe('Không mang đồ ăn'))
+    expect(new Date(String(body.doorsOpenAt)).toISOString()).toBe('2026-11-15T12:00:00.000Z')
+    expect(body).toMatchObject({ startsAt: '2026-11-15T13:00:00Z' })
+  })
+
   it('bản nháp: sửa ngày giờ theo giờ Việt Nam và gửi lên ISO UTC', async () => {
     mockOrganizerApi(eventDetail())
     let body: Record<string, unknown> = {}

@@ -28,4 +28,7 @@ export interface OrganizerEventDetail {
   salesInfoLocked: boolean;
   tiers: TicketTier[];
   tierSections: TierSectionAssignment[];
+  doorsOpenAt?: string;
+  ageRestriction?: number;
+  rules?: string;
 }

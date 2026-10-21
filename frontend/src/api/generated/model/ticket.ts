@@ -9,6 +9,7 @@ import type { TicketStatus } from './ticketStatus';
 
 export interface Ticket {
   ticketId: string;
+  eventId: string;
   eventTitle: string;
   startsAt: string;
   venueName: string;
@@ -17,4 +18,10 @@ export interface Ticket {
   status: TicketStatus;
   /** JWT ES256 để vẽ mã QR; xác minh bằng khoá công khai theo kid */
   qrToken: string;
+  /** Giờ mở cửa hiện tại của sự kiện */
+  doorsOpenAt?: string;
+  /** Số tuổi tối thiểu; trống là không giới hạn */
+  ageRestriction?: number;
+  /** Quy định khi tham dự */
+  rules?: string;
 }

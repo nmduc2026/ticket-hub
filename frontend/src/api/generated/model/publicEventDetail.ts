@@ -24,4 +24,10 @@ export interface PublicEventDetail {
   /** true khi mọi hạng vé hết ghế (tính từ tồn kho, không lưu trong DB) */
   soldOut: boolean;
   tiers: PublicTier[];
+  /** Giờ mở cửa; trống nếu ban tổ chức chưa nhập */
+  doorsOpenAt?: string;
+  /** Số tuổi tối thiểu; trống là không giới hạn */
+  ageRestriction?: number;
+  /** Quy định khi tham dự */
+  rules?: string;
 }

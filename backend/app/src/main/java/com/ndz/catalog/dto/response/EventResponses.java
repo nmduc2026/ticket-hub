@@ -49,7 +49,10 @@ public final class EventResponses {
 			@Schema(description = "true khi đã publish: thông tin bán vé chỉ đọc (BR-14)",
 					requiredMode = Schema.RequiredMode.REQUIRED) boolean salesInfoLocked,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Tier> tiers,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Assignment> tierSections) {
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Assignment> tierSections,
+			Instant doorsOpenAt,
+			Short ageRestriction,
+			String rules) {
 
 	}
 

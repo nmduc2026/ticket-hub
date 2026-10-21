@@ -1,7 +1,9 @@
 package com.ndz.catalog.api;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +33,16 @@ public interface CatalogApi {
 
 	/** {@code startsAt}, {@code endsAt} có thể trống khi sự kiện còn nháp. */
 	record EventSchedule(Instant startsAt, Instant endsAt) {
+	}
+
+	/**
+	 * Thông tin cho khách hiện tại của các sự kiện (sửa được sau publish nên không chụp lại vào vé). Sự kiện không có
+	 * thì không có trong kết quả.
+	 */
+	Map<UUID, GuestInfo> guestInfo(Collection<UUID> eventIds);
+
+	/** Mọi trường có thể trống. */
+	record GuestInfo(Instant doorsOpenAt, Short ageRestriction, String rules) {
 	}
 
 	/** Sự kiện của một organizer, mới diễn trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). */

@@ -4,6 +4,7 @@ import { ticketTab } from './ticketGroups'
 
 const base: Ticket = {
   ticketId: 't1',
+  eventId: 'e1',
   eventTitle: 'Đêm nhạc',
   startsAt: '2026-11-15T13:00:00Z',
   venueName: 'Nhà hát',

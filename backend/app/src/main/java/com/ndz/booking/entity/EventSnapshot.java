@@ -50,6 +50,12 @@ public class EventSnapshot {
 
 	private Instant saleStartsAt;
 
+	private Instant doorsOpenAt;
+
+	private Short ageRestriction;
+
+	private String rules;
+
 	private String status;
 
 	private boolean highDemand;

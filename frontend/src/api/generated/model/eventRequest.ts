@@ -31,4 +31,18 @@ export interface EventRequest {
    * @maximum 100
    */
   maxTicketsPerUser?: number;
+  /** Giờ mở cửa, không được sau giờ diễn */
+  doorsOpenAt?: string;
+  /**
+   * Số tuổi tối thiểu; trống là không giới hạn
+   * @minimum 1
+   * @maximum 99
+   */
+  ageRestriction?: number;
+  /**
+   * Quy định khi tham dự (văn bản)
+   * @minLength 0
+   * @maxLength 5000
+   */
+  rules?: string;
 }

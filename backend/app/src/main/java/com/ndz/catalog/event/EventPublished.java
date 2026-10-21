@@ -12,5 +12,6 @@ import com.ndz.shared.event.IntegrationEvent;
 public record EventPublished(UUID messageId, Instant occurredAt, UUID eventId, UUID organizerId, String title,
 		String description, String category, String bannerUrl, UUID venueId, String venueName, UUID cityId, String cityName,
 		UUID seatMapId, Instant startsAt, Instant endsAt, Instant saleStartsAt, int maxTicketsPerUser,
-		int platformFeeBps, boolean highDemand) implements IntegrationEvent {
+		int platformFeeBps, boolean highDemand, Instant doorsOpenAt, Short ageRestriction, String rules)
+		implements IntegrationEvent {
 }

@@ -16,6 +16,7 @@ public final class TicketResponses {
 	@Schema(name = "Ticket")
 	public record TicketResponse(
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID ticketId,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID eventId,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String eventTitle,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant startsAt,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String venueName,
@@ -23,7 +24,10 @@ public final class TicketResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String tierName,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) TicketStatus status,
 			@Schema(description = "JWT ES256 để vẽ mã QR; xác minh bằng khoá công khai theo kid",
-					requiredMode = Schema.RequiredMode.REQUIRED) String qrToken) {
+					requiredMode = Schema.RequiredMode.REQUIRED) String qrToken,
+			@Schema(description = "Giờ mở cửa hiện tại của sự kiện") Instant doorsOpenAt,
+			@Schema(description = "Số tuổi tối thiểu; trống là không giới hạn") Short ageRestriction,
+			@Schema(description = "Quy định khi tham dự") String rules) {
 	}
 
 	@Schema(name = "TicketSeat")

@@ -70,7 +70,10 @@ public final class PublicEventResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int maxTicketsPerUser,
 			@Schema(description = "true khi mọi hạng vé hết ghế (tính từ tồn kho, không lưu trong DB)",
 					requiredMode = Schema.RequiredMode.REQUIRED) boolean soldOut,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Tier> tiers) {
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Tier> tiers,
+			@Schema(description = "Giờ mở cửa; trống nếu ban tổ chức chưa nhập") Instant doorsOpenAt,
+			@Schema(description = "Số tuổi tối thiểu; trống là không giới hạn") Short ageRestriction,
+			@Schema(description = "Quy định khi tham dự") String rules) {
 
 	}
 

@@ -11,6 +11,7 @@ import { useListVenueSeatMaps, useListVenues } from '@/api/generated/endpoints/v
 import type { OrganizerEventDetail } from '@/api/generated/model'
 import {
   updateOrganizerEventBodyDescriptionMax,
+  updateOrganizerEventBodyRulesMax,
   updateOrganizerEventBodyTitleMax,
 } from '@/api/generated/zod/organizer-event-controller/organizer-event-controller.zod'
 import { Field } from '@/components/form/Field'
@@ -31,13 +32,19 @@ import { useOrganizerEvent } from './useOrganizerEvent'
 
 const required = 'organizerEvents.form.required'
 
+/** Mốc độ tuổi hay dùng; giá trị khác đã lưu (nhập qua API) vẫn hiện trong danh sách. */
+const AGE_OPTIONS = [13, 16, 18]
+
 const formSchema = z.object({
   title: z.string().trim().min(1, required).max(updateOrganizerEventBodyTitleMax),
   category: z.string().min(1, required),
   description: z.string().trim().min(1, required).max(updateOrganizerEventBodyDescriptionMax),
+  ageRestriction: z.string(),
+  rules: z.string().max(updateOrganizerEventBodyRulesMax),
   date: z.string().min(1, required),
   startTime: z.string().min(1, required),
   endTime: z.string(),
+  doorsTime: z.string(),
   venueId: z.string().min(1, required),
   seatMapId: z.string().min(1, required),
 })
@@ -49,9 +56,12 @@ function toFormValues(event: OrganizerEventDetail): FormValues {
     title: event.title,
     category: event.category ?? '',
     description: event.description ?? '',
+    ageRestriction: event.ageRestriction == null ? '' : String(event.ageRestriction),
+    rules: event.rules ?? '',
     date: start.date,
     startTime: start.time,
     endTime: isoToVnInputs(event.endsAt).time,
+    doorsTime: isoToVnInputs(event.doorsOpenAt).time,
     venueId: event.venueId ?? '',
     seatMapId: event.seatMapId ?? '',
   }
@@ -95,7 +105,11 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
 
   const fieldError = (message: string | undefined) => (message ? t(message, { defaultValue: message }) : undefined)
 
+  const ageOptions = [...new Set([...AGE_OPTIONS, ...(event.ageRestriction == null ? [] : [event.ageRestriction])])].sort((a, b) => a - b)
+
   const save = (values: FormValues) => {
+    // Giờ mở cửa cùng ngày diễn; sau publish ô ngày bị khoá nên lấy ngày từ giờ diễn đã lưu.
+    const showDate = locked ? isoToVnInputs(event.startsAt).date : values.date
     const sales = locked
       ? {}
       : (() => {
@@ -114,6 +128,9 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
           title: values.title.trim(),
           description: values.description.trim(),
           category: values.category,
+          ageRestriction: values.ageRestriction ? Number(values.ageRestriction) : undefined,
+          rules: values.rules.trim() || undefined,
+          doorsOpenAt: values.doorsTime ? vnInputsToIso(showDate, values.doorsTime) : undefined,
           ...sales,
         }),
       },
@@ -164,8 +181,29 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
             )}
           />
         </Field>
+        <Field id="info-age" label={t('organizerEvents.form.ageRestriction')}>
+          <Controller
+            control={form.control}
+            name="ageRestriction"
+            render={({ field }) => (
+              <Combobox
+                id="info-age"
+                value={field.value}
+                onChange={field.onChange}
+                placeholder={t('organizerEvents.form.ageAny')}
+                options={[
+                  { value: '', label: t('organizerEvents.form.ageAny') },
+                  ...ageOptions.map((age) => ({ value: String(age), label: t('organizerEvents.form.agePlus', { age }) })),
+                ]}
+              />
+            )}
+          />
+        </Field>
         <Field id="info-description" label={t('organizerEvents.form.description')} required error={fieldError(errors.description?.message)}>
           <Textarea id="info-description" rows={6} aria-invalid={Boolean(errors.description)} aria-describedby="info-description-error" {...form.register('description')} />
+        </Field>
+        <Field id="info-rules" label={t('organizerEvents.form.rules')} error={fieldError(errors.rules?.message)}>
+          <Textarea id="info-rules" rows={3} aria-invalid={Boolean(errors.rules)} {...form.register('rules')} />
         </Field>
       </section>
 
@@ -176,7 +214,7 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
           </h2>
           <p className="text-muted-foreground text-sm">{locked ? t('organizerEvents.form.lockedHint') : t('organizerEvents.form.timeZone')}</p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-4">
           <Field id="info-date" label={t('organizerEvents.form.date')} required error={fieldError(errors.date?.message)}>
             <Input id="info-date" type="date" disabled={locked} aria-invalid={Boolean(errors.date)} {...form.register('date')} />
           </Field>
@@ -185,6 +223,9 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
           </Field>
           <Field id="info-end" label={t('organizerEvents.form.endTime')}>
             <Input id="info-end" type="time" disabled={locked} {...form.register('endTime')} />
+          </Field>
+          <Field id="info-doors" label={t('organizerEvents.form.doorsOpen')}>
+            <Input id="info-doors" type="time" {...form.register('doorsTime')} />
           </Field>
         </div>
         <Field id="info-venue" label={t('organizerEvents.form.venue')} required hint={hint} error={fieldError(errors.venueId?.message)}>

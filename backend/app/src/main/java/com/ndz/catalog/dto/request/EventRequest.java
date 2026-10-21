@@ -13,7 +13,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Nội dung tạo / sửa sự kiện (gửi đủ mọi trường). Sau publish chỉ {@code title}, {@code description},
- * {@code category} được đổi; các trường còn lại phải giữ nguyên, nếu không trả {@code EVENT_LOCKED} (BR-14).
+ * {@code category}, {@code doorsOpenAt}, {@code ageRestriction}, {@code rules} được đổi; các trường còn lại phải giữ
+ * nguyên, nếu không trả {@code EVENT_LOCKED} (BR-14).
  */
 @Schema(name = "EventRequest")
 public record EventRequest(
@@ -25,6 +26,9 @@ public record EventRequest(
 		Instant startsAt,
 		Instant endsAt,
 		Instant saleStartsAt,
-		@Min(1) @Max(100) Short maxTicketsPerUser) {
+		@Min(1) @Max(100) Short maxTicketsPerUser,
+		@Schema(description = "Giờ mở cửa, không được sau giờ diễn") Instant doorsOpenAt,
+		@Schema(description = "Số tuổi tối thiểu; trống là không giới hạn") @Min(1) @Max(99) Short ageRestriction,
+		@Schema(description = "Quy định khi tham dự (văn bản)") @Size(max = 5000) String rules) {
 
 }

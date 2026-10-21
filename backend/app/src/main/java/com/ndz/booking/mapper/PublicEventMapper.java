@@ -44,7 +44,8 @@ public class PublicEventMapper {
 		return new Detail(event.id(), event.title(), event.description(), event.category(), event.bannerUrl(),
 				event.organizerId(), event.venueName(), event.cityName(), event.startsAt(), event.endsAt(),
 				event.saleStartsAt(), event.status(), event.maxTicketsPerUser(), view.soldOut(),
-				view.tiers().stream().map(this::toTier).toList());
+				view.tiers().stream().map(this::toTier).toList(), event.doorsOpenAt(), event.ageRestriction(),
+				event.rules());
 	}
 
 	public Seats toSeats(SeatMapState state) {

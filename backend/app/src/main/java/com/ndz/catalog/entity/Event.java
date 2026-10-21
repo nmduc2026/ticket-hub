@@ -62,6 +62,14 @@ public class Event {
 	@Column(name = "sale_starts_at")
 	private Instant saleStartsAt;
 
+	@Column(name = "doors_open_at")
+	private Instant doorsOpenAt;
+
+	@Column(name = "age_restriction")
+	private Short ageRestriction;
+
+	private String rules;
+
 	@Enumerated(EnumType.STRING)
 	private EventStatus status;
 
@@ -105,7 +113,7 @@ public class Event {
 		requireDisplayEditable();
 		if (status != EventStatus.DRAFT && !content.sameSalesInfoAs(this)) {
 			// BR-14: giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, giới hạn vé bị khoá sau publish
-			throw locked("Sau khi publish chỉ sửa được tiêu đề, mô tả, ảnh banner và danh mục");
+			throw locked("Sau khi publish chỉ sửa được tiêu đề, mô tả, ảnh banner, danh mục, giờ mở cửa, độ tuổi và quy định");
 		}
 		if (status == EventStatus.DRAFT) {
 			applySalesInfo(content);
@@ -148,6 +156,9 @@ public class Event {
 		this.title = content.title();
 		this.description = content.description();
 		this.category = content.category();
+		this.doorsOpenAt = content.doorsOpenAt();
+		this.ageRestriction = content.ageRestriction();
+		this.rules = content.rules();
 	}
 
 	private static BusinessException locked(String message) {
@@ -265,6 +276,18 @@ public class Event {
 
 	public Instant getSaleStartsAt() {
 		return saleStartsAt;
+	}
+
+	public Instant getDoorsOpenAt() {
+		return doorsOpenAt;
+	}
+
+	public Short getAgeRestriction() {
+		return ageRestriction;
+	}
+
+	public String getRules() {
+		return rules;
 	}
 
 	public EventStatus getStatus() {

@@ -27,7 +27,7 @@ public final class EventViews {
 	public record EventDetail(UUID id, String title, String description, String category, String bannerUrl,
 			UUID organizerId, UUID venueId, String venueName, String cityName, Instant startsAt, Instant endsAt,
 			Instant saleStartsAt, String status, boolean highDemand, int maxTicketsPerUser, UUID seatMapId,
-			String currency) {
+			String currency, Instant doorsOpenAt, Short ageRestriction, String rules) {
 	}
 
 	/** Một hạng vé của sự kiện và số ghế còn trống của hạng đó. */

@@ -27,12 +27,13 @@ public interface EventSnapshotRepository extends JpaRepository<EventSnapshot, UU
 			INSERT INTO booking.event_snapshots
 			    (event_id, organizer_id, title, description, category, banner_url, venue_id, venue_name, city_id, city_name,
 			     seat_map_id, starts_at, ends_at, sale_starts_at, status, high_demand, max_tickets_per_user,
-			     platform_fee_bps, last_event_at)
+			     platform_fee_bps, doors_open_at, age_restriction, rules, last_event_at)
 			VALUES (:#{#event.eventId()}, :#{#event.organizerId()}, :#{#event.title()}, :#{#event.description()},
 			        :#{#event.category()}, :#{#event.bannerUrl()}, :#{#event.venueId()}, :#{#event.venueName()},
 			        :#{#event.cityId()}, :#{#event.cityName()}, :#{#event.seatMapId()}, :#{#event.startsAt()},
 			        :#{#event.endsAt()}, :#{#event.saleStartsAt()}, 'PUBLISHED', :#{#event.highDemand()},
-			        :#{#event.maxTicketsPerUser()}, :#{#event.platformFeeBps()}, :#{#event.occurredAt()})
+			        :#{#event.maxTicketsPerUser()}, :#{#event.platformFeeBps()}, :#{#event.doorsOpenAt()},
+			        :#{#event.ageRestriction()}, :#{#event.rules()}, :#{#event.occurredAt()})
 			ON CONFLICT (event_id) DO UPDATE SET
 			    organizer_id = EXCLUDED.organizer_id, title = EXCLUDED.title, description = EXCLUDED.description,
 			    category = EXCLUDED.category, banner_url = EXCLUDED.banner_url, venue_id = EXCLUDED.venue_id,
@@ -40,7 +41,8 @@ public interface EventSnapshotRepository extends JpaRepository<EventSnapshot, UU
 			    seat_map_id = EXCLUDED.seat_map_id, starts_at = EXCLUDED.starts_at, ends_at = EXCLUDED.ends_at,
 			    sale_starts_at = EXCLUDED.sale_starts_at, status = 'PUBLISHED', high_demand = EXCLUDED.high_demand,
 			    max_tickets_per_user = EXCLUDED.max_tickets_per_user, platform_fee_bps = EXCLUDED.platform_fee_bps,
-			    last_event_at = EXCLUDED.last_event_at, version = booking.event_snapshots.version + 1
+			    doors_open_at = EXCLUDED.doors_open_at, age_restriction = EXCLUDED.age_restriction,
+			    rules = EXCLUDED.rules, last_event_at = EXCLUDED.last_event_at, version = booking.event_snapshots.version + 1
 			WHERE booking.event_snapshots.last_event_at < EXCLUDED.last_event_at
 			""", nativeQuery = true)
 	int upsert(@Param("event") EventPublished event);
@@ -55,7 +57,9 @@ public interface EventSnapshotRepository extends JpaRepository<EventSnapshot, UU
 	@Query(value = """
 			UPDATE booking.event_snapshots
 			SET title = :#{#event.title()}, description = :#{#event.description()}, category = :#{#event.category()},
-			    banner_url = :#{#event.bannerUrl()}, last_event_at = :#{#event.occurredAt()}, version = version + 1
+			    banner_url = :#{#event.bannerUrl()}, doors_open_at = :#{#event.doorsOpenAt()},
+			    age_restriction = :#{#event.ageRestriction()}, rules = :#{#event.rules()},
+			    last_event_at = :#{#event.occurredAt()}, version = version + 1
 			WHERE event_id = :#{#event.eventId()} AND last_event_at < :#{#event.occurredAt()}
 			""", nativeQuery = true)
 	int applyDisplay(@Param("event") EventUpdated event);

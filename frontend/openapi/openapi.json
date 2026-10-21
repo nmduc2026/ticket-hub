@@ -1885,6 +1885,24 @@
             "format" : "int32",
             "maximum" : 100,
             "minimum" : 1
+          },
+          "doorsOpenAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Giờ mở cửa, không được sau giờ diễn"
+          },
+          "ageRestriction" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số tuổi tối thiểu; trống là không giới hạn",
+            "maximum" : 99,
+            "minimum" : 1
+          },
+          "rules" : {
+            "type" : "string",
+            "description" : "Quy định khi tham dự (văn bản)",
+            "maxLength" : 5000,
+            "minLength" : 0
           }
         },
         "required" : [ "title" ]
@@ -1961,6 +1979,17 @@
             "items" : {
               "$ref" : "#/components/schemas/TierSectionAssignment"
             }
+          },
+          "doorsOpenAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "ageRestriction" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "rules" : {
+            "type" : "string"
           }
         },
         "required" : [ "id", "inventoryReady", "maxTicketsPerUser", "salesInfoLocked", "status", "tierSections", "tiers", "title" ]
@@ -2631,6 +2660,10 @@
             "type" : "string",
             "format" : "uuid"
           },
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
           "eventTitle" : {
             "type" : "string"
           },
@@ -2654,9 +2687,23 @@
           "qrToken" : {
             "type" : "string",
             "description" : "JWT ES256 để vẽ mã QR; xác minh bằng khoá công khai theo kid"
+          },
+          "doorsOpenAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Giờ mở cửa hiện tại của sự kiện"
+          },
+          "ageRestriction" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số tuổi tối thiểu; trống là không giới hạn"
+          },
+          "rules" : {
+            "type" : "string",
+            "description" : "Quy định khi tham dự"
           }
         },
-        "required" : [ "eventTitle", "qrToken", "seat", "startsAt", "status", "ticketId", "tierName", "venueName" ]
+        "required" : [ "eventId", "eventTitle", "qrToken", "seat", "startsAt", "status", "ticketId", "tierName", "venueName" ]
       },
       "TicketSeat" : {
         "type" : "object",
@@ -2939,6 +2986,20 @@
             "items" : {
               "$ref" : "#/components/schemas/PublicTier"
             }
+          },
+          "doorsOpenAt" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Giờ mở cửa; trống nếu ban tổ chức chưa nhập"
+          },
+          "ageRestriction" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số tuổi tối thiểu; trống là không giới hạn"
+          },
+          "rules" : {
+            "type" : "string",
+            "description" : "Quy định khi tham dự"
           }
         },
         "required" : [ "cityName", "endsAt", "id", "maxTicketsPerUser", "organizerId", "saleStartsAt", "soldOut", "startsAt", "status", "tiers", "title", "venueName" ]

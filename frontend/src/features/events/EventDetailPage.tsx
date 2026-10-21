@@ -57,7 +57,11 @@ function EventDetail({ event }: { event: PublicEventDetail }) {
             </Badge>
           )}
           <h1 className="text-3xl font-semibold tracking-tight">{event.title}</h1>
-          <p className="text-night-muted text-sm">{formatEventRange(event.startsAt, event.endsAt)}</p>
+          <p className="text-night-muted text-sm">
+            {formatEventRange(event.startsAt, event.endsAt)}
+            {event.doorsOpenAt && ` · ${t('eventDetail.doorsOpen', { time: formatTime(event.doorsOpenAt) })}`}
+            {event.ageRestriction != null && ` · ${t('eventDetail.ageRestriction', { age: event.ageRestriction })}`}
+          </p>
           <p className="text-sm font-medium">{event.venueName}</p>
           <p className="text-night-muted text-sm">{event.cityName}</p>
           <PurchasePanel event={event} minPrice={minPrice} currency={currency} />
@@ -75,6 +79,15 @@ function EventDetail({ event }: { event: PublicEventDetail }) {
                 {t('eventDetail.about')}
               </h2>
               <p className="text-sm leading-relaxed whitespace-pre-line">{event.description}</p>
+            </section>
+          )}
+
+          {event.rules && (
+            <section aria-labelledby="detail-rules" className="flex flex-col gap-2">
+              <h2 id="detail-rules" className="text-lg font-semibold">
+                {t('eventDetail.rules')}
+              </h2>
+              <p className="text-sm leading-relaxed whitespace-pre-line">{event.rules}</p>
             </section>
           )}
 

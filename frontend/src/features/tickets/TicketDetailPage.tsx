@@ -42,6 +42,7 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
       <section className="bg-card flex w-full flex-col items-center gap-3 rounded-xl border p-6 text-center">
         <p className="text-muted-foreground text-sm">
           {formatDateChip(ticket.startsAt)} · {formatTime(ticket.startsAt)}
+          {ticket.doorsOpenAt && ` (${t('tickets.doorsOpen', { time: formatTime(ticket.doorsOpenAt) })})`}
         </p>
         <h1 className="text-xl font-semibold">{ticket.eventTitle}</h1>
         <p className="text-muted-foreground text-sm">{ticket.venueName}</p>
@@ -54,7 +55,18 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
         <p className={cn('text-sm', valid ? 'text-primary font-medium' : 'text-muted-foreground')}>
           {t(`tickets.status.${ticket.status}`)}
         </p>
+        {ticket.ageRestriction != null && (
+          <p className="text-muted-foreground text-sm">{t('tickets.ageRestriction', { age: ticket.ageRestriction })}</p>
+        )}
       </section>
+      {ticket.rules && (
+        <section aria-labelledby="ticket-rules" className="bg-card flex w-full flex-col gap-1 rounded-xl border p-4">
+          <h2 id="ticket-rules" className="text-sm font-semibold">
+            {t('tickets.rules')}
+          </h2>
+          <p className="text-muted-foreground text-sm whitespace-pre-line">{ticket.rules}</p>
+        </section>
+      )}
     </div>
   )
 }

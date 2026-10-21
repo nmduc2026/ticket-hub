@@ -32,7 +32,6 @@ import com.ndz.catalog.entity.EventContent;
 import com.ndz.catalog.entity.TicketTier;
 import com.ndz.catalog.entity.TierSection;
 import com.ndz.catalog.entity.enums.EventStatus;
-import com.ndz.catalog.event.EventUpdated;
 import com.ndz.catalog.mapper.EventMapper;
 import com.ndz.catalog.repository.CatalogReadRepository;
 import com.ndz.catalog.repository.EventRepository;
@@ -80,6 +79,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 			throw new BusinessException(ErrorCode.ORGANIZER_NOT_REGISTERED, "Tài khoản chưa đăng ký ban tổ chức");
 		}
 		validateSalesInfo(content);
+		validateDoorsOpen(content);
 		Event event = events.save(Event.draft(Uuid7.next(clock), organizerId, content, clock.instant()));
 		return detail(event);
 	}
@@ -93,6 +93,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 		if (event.getStatus() == EventStatus.DRAFT) {
 			validateSalesInfo(content);
 		}
+		validateDoorsOpen(content);
 		event.update(content);
 		if (event.getStatus() == EventStatus.DRAFT && !Objects.equals(seatMapBefore, event.getSeatMapId())) {
 			// Khu của sơ đồ cũ không còn thuộc sự kiện: bỏ các gán hạng vé cũ.
@@ -101,8 +102,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 		events.save(event);
 		if (event.getStatus() != EventStatus.DRAFT) {
 			// Sự kiện đã publish: thông tin hiển thị đổi thì các module khác cập nhật bản sao của họ.
-			publisher.publishEvent(new EventUpdated(Uuid7.next(clock), clock.instant(), event.getId(),
-					event.getTitle(), event.getDescription(), event.getCategory(), event.getBannerUrl()));
+			publisher.publishEvent(EventUpdatedFactory.of(event, clock));
 		}
 		return detail(event);
 	}
@@ -227,6 +227,17 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 				: catalog.venueNames(Set.of(event.getVenueId())).get(event.getVenueId());
 		return mapper.toDetail(event, venueName, tiers.findByEventIdOrderById(event.getId()),
 				tierSections.findByEventId(event.getId()));
+	}
+
+	/**
+	 * Giờ mở cửa không được sau giờ diễn. Kiểm cả sau publish vì giờ mở cửa vẫn sửa được; khi đó {@code startsAt}
+	 * trong nội dung phải bằng giờ diễn đã khoá (BR-14), nếu khác thì {@code update} từ chối bằng {@code EVENT_LOCKED}.
+	 */
+	private static void validateDoorsOpen(EventContent content) {
+		if (content.doorsOpenAt() != null && content.startsAt() != null
+				&& content.doorsOpenAt().isAfter(content.startsAt())) {
+			throw new BusinessException(ErrorCode.DOORS_OPEN_AFTER_START, "Giờ mở cửa không được sau giờ diễn");
+		}
 	}
 
 	/** Kiểm thông tin bán vé của nháp: địa điểm và sơ đồ hợp lệ, giờ diễn / mở bán hợp lý. */

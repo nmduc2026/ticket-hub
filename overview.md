@@ -99,7 +99,7 @@ Bán vé concert là bài toán có tải **cực kỳ không đều**: ngày th
 | BR-11 | Thời gian lưu **UTC** (`timestamptz`), hiển thị theo `Asia/Ho_Chi_Minh` |
 | BR-12 | Customer được **tự huỷ** booking đang `PENDING_PAYMENT` để nhả ghế ngay (→ `CANCELLED`). Nếu thanh toán thành công đến sau khi đã huỷ thì xử lý như nhánh "thanh toán thành công nhưng booking đã hết hạn" (§7.3) |
 | BR-13 | Organizer bị `SUSPENDED` hoặc tài khoản Stripe Connect mất `charges_enabled` → mọi sự kiện đã publish và chưa kết thúc của organizer đó **tự động tạm dừng bán** (`SUSPENDED`); vé đã bán giữ nguyên. Admin cũng được **tạm dừng thủ công** một sự kiện, kèm lý do (vd. nghi gian lận, sự cố khi mở bán). Admin quyết định mở bán lại hoặc huỷ sự kiện (BR-08); chỉ mở bán lại được khi organizer `APPROVED` và `charges_enabled`, và `charges_enabled` bật lại không tự mở bán. Admin khôi phục được organizer bị đình chỉ về `APPROVED`; các sự kiện của họ vẫn tạm dừng cho tới khi Admin mở bán lại từng sự kiện |
-| BR-14 | Sau khi publish, organizer chỉ sửa được **thông tin hiển thị**: tiêu đề, mô tả, ảnh banner, danh mục. Giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, hạng vé và giá, `max_tickets_per_user`, `high_demand` (phòng chờ) bị khoá. Sự kiện cần dời lịch thì Admin huỷ (BR-08) và organizer tạo sự kiện mới |
+| BR-14 | Sau khi publish, organizer chỉ sửa được **thông tin hiển thị**: tiêu đề, mô tả, ảnh banner, danh mục, giờ mở cửa, độ tuổi tối thiểu, quy định tại sự kiện. Giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, hạng vé và giá, `max_tickets_per_user`, `high_demand` (phòng chờ) bị khoá. Sự kiện cần dời lịch thì Admin huỷ (BR-08) và organizer tạo sự kiện mới |
 
 **Ghi chú tiền tệ.** Stripe chạy ở test mode với tài khoản platform đăng ký tại quốc gia Stripe hỗ trợ (vd. Singapore), vì Stripe chưa hỗ trợ merchant Việt Nam ở live mode. VND là **zero-decimal currency**: `amount_minor` là số đồng (50.000đ → `50000`, không nhân 100). Phí nền tảng làm tròn xuống về số nguyên. Không viết code giả định tiền có 2 chữ số thập phân.
 
@@ -210,6 +210,7 @@ seat_map_elements (id, seat_map_id, type[STAGE|AISLE|LABEL|AREA], label, shape_j
 seats           (id, section_id, row_label, seat_number, x, y)
 events          (id, organizer_id, venue_id, seat_map_id, title, description, category,
                  banner_url, starts_at, ends_at, sale_starts_at,
+                 doors_open_at NULL, age_restriction SMALLINT NULL, rules TEXT NULL,   -- thông tin hiển thị (BR-14)
                  status[DRAFT|PUBLISHED|ON_SALE|SUSPENDED|ENDED|CANCELLED],   -- xem §7.7
                  high_demand BOOLEAN, max_tickets_per_user SMALLINT DEFAULT 6,
                  platform_fee_bps INT NULL,          -- chốt lúc publish (BR-06), 500 = 5%
@@ -265,7 +266,8 @@ event_publication (Spring Modulith)                         -- outbox giai đo�
 processed_events(consumer, message_id, processed_at, PRIMARY KEY (consumer, message_id))   -- idempotent consumer
 event_snapshots (event_id PK, organizer_id, title, description, category, banner_url, venue_id, venue_name, city_name,
                  seat_map_id, starts_at, ends_at, sale_starts_at, status[PUBLISHED|ON_SALE|SUSPENDED|ENDED|CANCELLED],
-                 high_demand, max_tickets_per_user, platform_fee_bps, currency, last_event_at, version)
+                 high_demand, max_tickets_per_user, platform_fee_bps, doors_open_at, age_restriction, rules, currency,
+                 last_event_at, version)
                  -- bản sao thông tin sự kiện, cập nhật từ catalog.events.v1; last_event_at là mốc của event đã áp dụng
                  -- gần nhất: event cũ hơn mốc này bị bỏ qua
 sales_by_event  (event_id, tier_id, sold_count, revenue_minor, fee_minor,
