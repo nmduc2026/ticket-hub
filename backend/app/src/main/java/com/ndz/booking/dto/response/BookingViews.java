@@ -43,9 +43,16 @@ public final class BookingViews {
 	public record PaymentInfo(long totalMinor, String currency, int platformFeeBps) {
 	}
 
-	/** Một dòng trong "Đơn của tôi": đơn kèm tên sự kiện và giờ diễn từ bản sao sự kiện. */
+	/**
+	 * Một dòng trong "Đơn của tôi": đơn kèm tên sự kiện và giờ diễn từ bản sao sự kiện. {@code refundStatus} là
+	 * {@code REQUESTED}, {@code REFUNDED}, {@code FAILED} khi đơn đã qua bước yêu cầu hoàn, ngược lại null.
+	 */
 	public record BookingSummary(UUID bookingId, String eventTitle, Instant startsAt, String status, long totalMinor,
-			String currency, Instant createdAt) {
+			String currency, Instant createdAt, String refundStatus, Long refundAmountMinor) {
+	}
+
+	/** Kết quả yêu cầu hoàn vé: số tiền khách sẽ nhận lại (BR-07). */
+	public record RefundResult(UUID bookingId, BookingStatus status, long refundAmountMinor) {
 	}
 
 }

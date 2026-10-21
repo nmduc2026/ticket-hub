@@ -98,6 +98,15 @@ public class Ticket {
 		this.issuedAt = issuedAt;
 	}
 
+	/** Thu hồi vé (BR-09). Idempotent: vé đã thu hồi giữ nguyên. Trả true nếu lần gọi này mới đổi trạng thái. */
+	public boolean revoke() {
+		if (status == TicketStatus.REVOKED) {
+			return false;
+		}
+		this.status = TicketStatus.REVOKED;
+		return true;
+	}
+
 	public UUID getId() {
 		return id;
 	}

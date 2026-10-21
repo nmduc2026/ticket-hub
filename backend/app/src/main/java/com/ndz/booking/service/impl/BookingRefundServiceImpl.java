@@ -1,0 +1,106 @@
+package com.ndz.booking.service.impl;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.ndz.booking.config.BookingProperties;
+import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
+import com.ndz.booking.dto.response.BookingViews.LockedBooking;
+import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
+import com.ndz.booking.dto.response.BookingViews.RefundResult;
+import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.event.RefundRequested;
+import com.ndz.booking.event.TicketRevoked;
+import com.ndz.booking.repository.BookingRepository;
+import com.ndz.booking.repository.ProcessedEventRepository;
+import com.ndz.booking.service.BookingRefundService;
+import com.ndz.shared.exception.BusinessException;
+import com.ndz.shared.exception.ErrorCode;
+import com.ndz.shared.util.PlatformFee;
+import com.ndz.shared.util.Uuid7;
+
+@Service
+public class BookingRefundServiceImpl implements BookingRefundService {
+
+	static final String CONSUMER = "booking.ticket-revoked";
+
+	private static final Logger log = LoggerFactory.getLogger(BookingRefundServiceImpl.class);
+
+	private final BookingRepository bookings;
+	private final ProcessedEventRepository processed;
+	private final BookingProperties properties;
+	private final ApplicationEventPublisher publisher;
+	private final Clock clock;
+
+	BookingRefundServiceImpl(BookingRepository bookings, ProcessedEventRepository processed,
+			BookingProperties properties, ApplicationEventPublisher publisher, Clock clock) {
+		this.bookings = bookings;
+		this.processed = processed;
+		this.properties = properties;
+		this.publisher = publisher;
+		this.clock = clock;
+	}
+
+	@Override
+	@Transactional
+	public RefundResult requestRefund(UUID userId, UUID bookingId) {
+		// Khoá dòng booking: yêu cầu hoàn đồng thời, hay hoàn đồng thời với huỷ / hết hạn, chỉ một bên thắng.
+		LockedBooking booking = bookings.lockBooking(bookingId).filter(found -> found.userId().equals(userId))
+				.orElseThrow(() -> new BusinessException(ErrorCode.BOOKING_NOT_FOUND, "Không tìm thấy đơn đặt vé"));
+		if (booking.status() != BookingStatus.CONFIRMED) {
+			throw new BusinessException(ErrorCode.BOOKING_NOT_REFUNDABLE, "Chỉ hoàn được đơn đã thanh toán thành công");
+		}
+		ConfirmationData data = bookings.confirmationData(bookingId);
+		Instant now = clock.instant();
+		// BR-07: còn >= 48 giờ trước giờ diễn (đúng 48 giờ vẫn được).
+		if (now.isAfter(data.startsAt().minus(properties.refundCutoff()))) {
+			throw new BusinessException(ErrorCode.REFUND_WINDOW_CLOSED,
+					"Chỉ hoàn vé khi còn ít nhất " + properties.refundCutoff().toHours() + " giờ trước giờ diễn");
+		}
+		PaymentInfo info = bookings.paymentInfo(bookingId);
+		// BR-07: khách nhận lại số đã trả trừ phí nền tảng (BR-06).
+		long refundAmount = data.totalMinor() - PlatformFee.of(data.totalMinor(), info.platformFeeBps());
+
+		booking.status().requireTransitionTo(BookingStatus.REFUND_REQUESTED);
+		if (!bookings.markRefundRequested(bookingId, RefundRequested.CUSTOMER_REQUEST, refundAmount, now)) {
+			throw new BusinessException(ErrorCode.BOOKING_NOT_REFUNDABLE, "Chỉ hoàn được đơn đã thanh toán thành công");
+		}
+		publisher.publishEvent(new RefundRequested(Uuid7.next(clock), now, bookingId, userId, data.eventId(),
+				data.eventTitle(), data.contactEmail(), RefundRequested.CUSTOMER_REQUEST, refundAmount,
+				data.currency()));
+		log.info("Booking {} yêu cầu hoàn {} {}", bookingId, refundAmount, data.currency());
+		return new RefundResult(bookingId, BookingStatus.REFUND_REQUESTED, refundAmount);
+	}
+
+	@Override
+	public void onTicketRevoked(TicketRevoked event) {
+		if (!processed.markProcessed(CONSUMER, event.messageId())) {
+			log.info("Bỏ qua TicketRevoked đã xử lý {}", event.messageId());
+			return;
+		}
+		// Khoá booking để hai TicketRevoked đồng thời không cùng thấy "chưa đủ" rồi cùng bỏ lỡ lần nhả ghế.
+		if (bookings.lockBooking(event.bookingId()).isEmpty()) {
+			log.error("TicketRevoked {} cho booking không tồn tại {}", event.ticketId(), event.bookingId());
+			return;
+		}
+		bookings.recordRevokedTicket(event.bookingId(), event.ticketId(), clock.instant());
+		int revoked = bookings.revokedTicketCount(event.bookingId());
+		int expected = bookings.itemCount(event.bookingId());
+		if (revoked < expected) {
+			log.info("Booking {}: đã thu hồi {}/{} vé, chưa nhả ghế", event.bookingId(), revoked, expected);
+			return;
+		}
+		// ADR 0026: chỉ nhả ghế khi mọi vé cũ đã thu hồi, để vé của người mua sau không vi phạm UNIQUE.
+		List<UUID> released = bookings.releaseSoldSeats(event.bookingId());
+		log.info("Booking {}: mọi vé đã thu hồi, nhả {} ghế", event.bookingId(), released.size());
+	}
+
+}

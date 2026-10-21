@@ -24,7 +24,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ndz.booking.dto.request.CreateBookingRequest;
 import com.ndz.booking.dto.response.BookingResponses.BookingResponse;
 import com.ndz.booking.dto.response.BookingResponses.HoldResponse;
+import com.ndz.booking.dto.response.BookingResponses.RefundResponse;
 import com.ndz.booking.mapper.BookingMapper;
+import com.ndz.booking.service.BookingRefundService;
 import com.ndz.booking.service.BookingService;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.shared.util.CurrentUser;
@@ -37,10 +39,12 @@ import com.ndz.shared.idempotency.Idempotent;
 class BookingController {
 
 	private final BookingService service;
+	private final BookingRefundService refunds;
 	private final BookingMapper mapper;
 
-	BookingController(BookingService service, BookingMapper mapper) {
+	BookingController(BookingService service, BookingRefundService refunds, BookingMapper mapper) {
 		this.service = service;
+		this.refunds = refunds;
 		this.mapper = mapper;
 	}
 
@@ -68,6 +72,23 @@ class BookingController {
 	@GetMapping("/{bookingId}")
 	BookingResponse get(@PathVariable UUID bookingId) {
 		return mapper.toBooking(service.get(CurrentUser.require().id(), bookingId));
+	}
+
+	@Operation(operationId = "requestBookingRefund", summary = "Yêu cầu hoàn cả đơn đã thanh toán (BR-07)",
+			description = "Bắt buộc header Idempotency-Key. Vé bị thu hồi ngay (BR-09); yêu cầu hoàn không huỷ được.")
+	@ApiResponse(responseCode = "202", description = "Đã nhận yêu cầu hoàn",
+			content = @Content(schema = @Schema(implementation = RefundResponse.class)))
+	@ApiResponse(responseCode = "404", description = "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "409", description = "BOOKING_NOT_REFUNDABLE (đơn chưa thanh toán xong hoặc đã yêu cầu hoàn)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "422", description = "REFUND_WINDOW_CLOSED (còn dưới 48 giờ trước giờ diễn) hoặc IDEMPOTENCY_KEY_REUSED",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@PostMapping("/{bookingId}/refund")
+	@Idempotent(scope = "refund-booking")
+	@ResponseStatus(HttpStatus.ACCEPTED)
+	RefundResponse refund(@PathVariable UUID bookingId) {
+		return mapper.toRefund(refunds.requestRefund(CurrentUser.require().id(), bookingId));
 	}
 
 	@Operation(operationId = "cancelBooking", summary = "Huỷ đơn đang chờ thanh toán và nhả ghế ngay (BR-12)")

@@ -182,14 +182,58 @@ public class BookingRepository {
 	/** Đơn của chính người dùng, mới tạo trước, theo trang (chống IDOR: lọc theo {@code user_id}). */
 	public List<BookingSummary> findByUser(UUID userId, int limit, int offset) {
 		return jdbc.query("""
-				SELECT b.id, e.title, e.starts_at, b.status, b.total_minor, b.currency, b.created_at
+				SELECT b.id, e.title, e.starts_at, b.status, b.total_minor, b.currency, b.created_at,
+				       b.refund_amount_minor,
+				       CASE b.status WHEN 'REFUND_REQUESTED' THEN 'REQUESTED' WHEN 'REFUNDED' THEN 'REFUNDED'
+				                     WHEN 'REFUND_FAILED' THEN 'FAILED' END AS refund_status
 				FROM booking.bookings b JOIN booking.event_snapshots e ON e.event_id = b.event_id
 				WHERE b.user_id = ?
 				ORDER BY b.created_at DESC, b.id
 				LIMIT ? OFFSET ?
 				""", (rs, i) -> new BookingSummary(rs.getObject("id", UUID.class), rs.getString("title"),
 				rs.getTimestamp("starts_at").toInstant(), rs.getString("status"), rs.getLong("total_minor"),
-				rs.getString("currency"), rs.getTimestamp("created_at").toInstant()), userId, limit, offset);
+				rs.getString("currency"), rs.getTimestamp("created_at").toInstant(), rs.getString("refund_status"),
+				rs.getObject("refund_amount_minor", Long.class)), userId, limit, offset);
+	}
+
+	/**
+	 * Ghi yêu cầu hoàn: {@code CONFIRMED → REFUND_REQUESTED} kèm lý do và số tiền hoàn đã chốt. Điều kiện trạng thái cũ
+	 * nằm trong câu lệnh nên hai yêu cầu đồng thời chỉ một cái qua.
+	 */
+	public boolean markRefundRequested(UUID bookingId, String reason, long refundAmountMinor, Instant now) {
+		return jdbc.update("""
+				UPDATE booking.bookings
+				SET status = 'REFUND_REQUESTED', refund_reason = ?, refund_amount_minor = ?, refund_requested_at = ?,
+				    version = version + 1
+				WHERE id = ? AND status = 'CONFIRMED'
+				""", reason, refundAmountMinor, Timestamp.from(now), bookingId) == 1;
+	}
+
+	/** Ghi một vé đã thu hồi; gửi lại cùng vé không đếm thêm. */
+	public void recordRevokedTicket(UUID bookingId, UUID ticketId, Instant now) {
+		jdbc.update("INSERT INTO booking.revoked_tickets (booking_id, ticket_id, revoked_at) VALUES (?, ?, ?) "
+				+ "ON CONFLICT (booking_id, ticket_id) DO NOTHING", bookingId, ticketId, Timestamp.from(now));
+	}
+
+	public int revokedTicketCount(UUID bookingId) {
+		Integer count = jdbc.queryForObject("SELECT count(*) FROM booking.revoked_tickets WHERE booking_id = ?",
+				Integer.class, bookingId);
+		return count == null ? 0 : count;
+	}
+
+	public int itemCount(UUID bookingId) {
+		Integer count = jdbc.queryForObject("SELECT count(*) FROM booking.booking_items WHERE booking_id = ?",
+				Integer.class, bookingId);
+		return count == null ? 0 : count;
+	}
+
+	/** Nhả các ghế đã bán của booking đã hoàn về {@code AVAILABLE}; trả về id các ghế đã nhả. */
+	public List<UUID> releaseSoldSeats(UUID bookingId) {
+		return jdbc.queryForList("""
+				UPDATE booking.seat_inventory SET status = 'AVAILABLE', booking_id = NULL, version = version + 1
+				WHERE booking_id = ? AND status = 'SOLD'
+				RETURNING seat_id
+				""", UUID.class, bookingId);
 	}
 
 	/** Ghi mốc bắt đầu thanh toán một lần (BR-03: từ đó booking được ân hạn thêm); gọi lại không đổi mốc. */

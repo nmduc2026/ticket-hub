@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import com.ndz.booking.dto.response.BookingResponses.BookingResponse;
 import com.ndz.booking.dto.response.BookingResponses.HoldResponse;
 import com.ndz.booking.dto.response.BookingResponses.Item;
+import com.ndz.booking.dto.response.BookingResponses.RefundResponse;
+import com.ndz.booking.dto.response.BookingViews.RefundResult;
 import com.ndz.booking.dto.response.BookingResponses.SummaryResponse;
 import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
@@ -24,7 +26,12 @@ public class BookingMapper {
 
 	public SummaryResponse toSummary(BookingSummary summary) {
 		return new SummaryResponse(summary.bookingId(), summary.eventTitle(), summary.startsAt(), summary.status(),
-				summary.totalMinor(), summary.currency(), summary.createdAt());
+				summary.totalMinor(), summary.currency(), summary.createdAt(), summary.refundStatus(),
+				summary.refundAmountMinor());
+	}
+
+	public RefundResponse toRefund(RefundResult result) {
+		return new RefundResponse(result.bookingId(), result.status().name(), result.refundAmountMinor());
 	}
 
 	private Item toItem(BookingItemView item) {

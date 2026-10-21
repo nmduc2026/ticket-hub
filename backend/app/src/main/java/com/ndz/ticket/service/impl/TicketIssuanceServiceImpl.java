@@ -11,9 +11,11 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import com.ndz.booking.event.BookingConfirmed;
+import com.ndz.booking.event.TicketRevoked;
 import com.ndz.shared.util.Uuid7;
 import com.ndz.ticket.entity.Ticket;
 import com.ndz.ticket.event.TicketIssued;
+import com.ndz.ticket.repository.RevokedBookingRepository;
 import com.ndz.ticket.repository.TicketProcessedEventRepository;
 import com.ndz.ticket.repository.TicketRepository;
 import com.ndz.ticket.service.TicketIssuanceService;
@@ -28,14 +30,16 @@ public class TicketIssuanceServiceImpl implements TicketIssuanceService {
 
 	private final TicketRepository tickets;
 	private final TicketProcessedEventRepository processed;
+	private final RevokedBookingRepository revokedBookings;
 	private final QrTokenSigner signer;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	TicketIssuanceServiceImpl(TicketRepository tickets, TicketProcessedEventRepository processed,
-			QrTokenSigner signer, ApplicationEventPublisher publisher, Clock clock) {
+			RevokedBookingRepository revokedBookings, QrTokenSigner signer, ApplicationEventPublisher publisher, Clock clock) {
 		this.tickets = tickets;
 		this.processed = processed;
+		this.revokedBookings = revokedBookings;
 		this.signer = signer;
 		this.publisher = publisher;
 		this.clock = clock;
@@ -54,6 +58,16 @@ public class TicketIssuanceServiceImpl implements TicketIssuanceService {
 		}
 		Instant now = clock.instant();
 		List<Ticket> issued = event.seats().stream().map(seat -> issue(event, seat, now)).toList();
+		if (revokedBookings.isMarked(event.bookingId())) {
+			// BR-09: khách đã yêu cầu hoàn trước khi vé kịp phát. Vé ra đời đã thu hồi, không gửi vé cho khách.
+			issued.forEach(Ticket::revoke);
+			tickets.saveAll(issued);
+			issued.forEach(ticket -> publisher.publishEvent(new TicketRevoked(Uuid7.next(clock), now, ticket.getId(),
+					ticket.getBookingId(), ticket.getSeatId())));
+			log.warn("Booking {} đã yêu cầu hoàn trước khi phát vé: {} vé phát ra ở trạng thái thu hồi",
+					event.bookingId(), issued.size());
+			return;
+		}
 		// Index duy nhất (event_id, seat_id) chưa thu hồi là chốt chặn cuối: vi phạm thì lỗi ném ra và hoàn tác.
 		tickets.saveAll(issued);
 		publisher.publishEvent(new TicketIssued(Uuid7.next(clock), now, event.bookingId(), event.userId(),

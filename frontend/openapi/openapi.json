@@ -590,6 +590,65 @@
         }
       }
     },
+    "/api/v1/bookings/{bookingId}/refund" : {
+      "post" : {
+        "tags" : [ "booking-controller" ],
+        "summary" : "Yêu cầu hoàn cả đơn đã thanh toán (BR-07)",
+        "description" : "Bắt buộc header Idempotency-Key. Vé bị thu hồi ngay (BR-09); yêu cầu hoàn không huỷ được.",
+        "operationId" : "requestBookingRefund",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "202" : {
+            "description" : "Đã nhận yêu cầu hoàn",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingRefund"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "BOOKING_NOT_REFUNDABLE (đơn chưa thanh toán xong hoặc đã yêu cầu hoàn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "REFUND_WINDOW_CLOSED (còn dưới 48 giờ trước giờ diễn) hoặc IDEMPOTENCY_KEY_REUSED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/venues" : {
       "get" : {
         "tags" : [ "venue-controller" ],
@@ -1341,6 +1400,25 @@
         },
         "required" : [ "bookingId", "currency", "expiresAt", "totalMinor" ]
       },
+      "BookingRefund" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "Luôn là REFUND_REQUESTED"
+          },
+          "refundAmountMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Số tiền khách nhận lại: tổng đã trả trừ phí nền tảng (BR-07)"
+          }
+        },
+        "required" : [ "bookingId", "refundAmountMinor", "status" ]
+      },
       "Venue" : {
         "type" : "object",
         "properties" : {
@@ -1626,6 +1704,15 @@
           "createdAt" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "refundStatus" : {
+            "type" : [ "string", "null" ],
+            "description" : "REQUESTED, REFUNDED hoặc FAILED khi đơn đã yêu cầu hoàn; ngược lại vắng mặt"
+          },
+          "refundAmountMinor" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64",
+            "description" : "Số tiền khách nhận lại khi hoàn vé, đơn vị nhỏ nhất của tiền tệ"
           }
         },
         "required" : [ "bookingId", "createdAt", "currency", "eventTitle", "startsAt", "status", "totalMinor" ]

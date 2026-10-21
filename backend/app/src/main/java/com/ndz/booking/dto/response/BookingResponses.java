@@ -42,7 +42,19 @@ public final class BookingResponses {
 			@Schema(description = "Tổng tiền, đơn vị nhỏ nhất của tiền tệ",
 					requiredMode = Schema.RequiredMode.REQUIRED) long totalMinor,
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String currency,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant createdAt) {
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) Instant createdAt,
+			@Schema(description = "REQUESTED, REFUNDED hoặc FAILED khi đơn đã yêu cầu hoàn; ngược lại vắng mặt",
+					nullable = true) String refundStatus,
+			@Schema(description = "Số tiền khách nhận lại khi hoàn vé, đơn vị nhỏ nhất của tiền tệ",
+					nullable = true) Long refundAmountMinor) {
+	}
+
+	@Schema(name = "BookingRefund")
+	public record RefundResponse(
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID bookingId,
+			@Schema(description = "Luôn là REFUND_REQUESTED", requiredMode = Schema.RequiredMode.REQUIRED) String status,
+			@Schema(description = "Số tiền khách nhận lại: tổng đã trả trừ phí nền tảng (BR-07)",
+					requiredMode = Schema.RequiredMode.REQUIRED) long refundAmountMinor) {
 	}
 
 	@Schema(name = "Booking")
