@@ -262,7 +262,8 @@ class LatePaymentTests {
 
 		assertThat(count("select count(*) from payment.refunds")).isEqualTo(1);
 		assertThat(jdbc.queryForObject("select status from payment.refunds", String.class)).isEqualTo("SUCCEEDED");
-		stripe.verify(2, postRequestedFor(urlEqualTo("/v1/refunds")).withHeader("Idempotency-Key",
+		// Lần đầu Stripe 500: Resilience4j thử đủ 3 lần cùng khoá; lần xử lý lại sau đó là lần thứ 4, vẫn cùng khoá.
+		stripe.verify(4, postRequestedFor(urlEqualTo("/v1/refunds")).withHeader("Idempotency-Key",
 				equalTo("refund-" + refundId)));
 	}
 

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.nimbusds.jose.jwk.ECKey;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -36,10 +37,12 @@ public class CheckInServiceImpl implements CheckInService {
 	private final CheckInRepository checkIns;
 	private final SigningKeyRepository keys;
 	private final CatalogApi catalog;
+	private final MeterRegistry metrics;
 	private final Clock clock;
 
 	CheckInServiceImpl(QrTokenVerifier verifier, TicketRepository tickets, CheckInRepository checkIns,
-			SigningKeyRepository keys, CatalogApi catalog, Clock clock) {
+			SigningKeyRepository keys, CatalogApi catalog, MeterRegistry metrics, Clock clock) {
+		this.metrics = metrics;
 		this.verifier = verifier;
 		this.tickets = tickets;
 		this.checkIns = checkIns;
@@ -51,6 +54,18 @@ public class CheckInServiceImpl implements CheckInService {
 	@Override
 	@Transactional
 	public CheckInResponse checkIn(UUID organizerUserId, String qrToken, String gate) {
+		try {
+			CheckInResponse response = doCheckIn(organizerUserId, qrToken, gate);
+			metrics.counter("tickethub.checkin", "result", "OK").increment();
+			return response;
+		}
+		catch (BusinessException e) {
+			metrics.counter("tickethub.checkin", "result", e.code().name()).increment();
+			throw e;
+		}
+	}
+
+	private CheckInResponse doCheckIn(UUID organizerUserId, String qrToken, String gate) {
 		QrTokenVerifier.Claims claims = verifier.verify(qrToken)
 				.orElseThrow(() -> new BusinessException(ErrorCode.TICKET_NOT_FOUND, "Vé không hợp lệ"));
 		Ticket ticket = tickets.findById(claims.ticketId()).filter(found -> found.getEventId().equals(claims.eventId()))

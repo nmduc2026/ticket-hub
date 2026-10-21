@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
 import com.ndz.payment.client.StripeGateway;
+import com.ndz.payment.client.StripeResilience;
+import io.micrometer.core.instrument.MeterRegistry;
 import com.stripe.StripeClient;
 
 @Configuration(proxyBeanMethods = false)
@@ -30,7 +32,7 @@ public class StripeConfiguration {
 		int timeoutMillis = Math.toIntExact(properties.timeout().toMillis());
 		var builder = StripeClient.builder().setApiKey(configured ? properties.secretKey() : UNCONFIGURED_KEY)
 				.setConnectTimeout(timeoutMillis).setReadTimeout(timeoutMillis)
-				// Retry do Resilience4j quyết định (Sprint 4), không để SDK tự retry ngầm.
+				// Retry do Resilience4j quyết định (StripeResilience), không để SDK tự retry ngầm.
 				.setMaxNetworkRetries(0);
 		if (StringUtils.hasText(properties.apiBase())) {
 			builder.setApiBase(properties.apiBase());
@@ -39,8 +41,14 @@ public class StripeConfiguration {
 	}
 
 	@Bean
-	public StripeGateway stripeGateway(StripeClient client, StripeProperties properties, Clock clock) {
-		return new StripeGateway(client, properties.webhookSecret(), properties.webhookTolerance(), clock);
+	public StripeResilience stripeResilience(StripeProperties properties, MeterRegistry metrics) {
+		return new StripeResilience(properties.resilience(), metrics);
+	}
+
+	@Bean
+	public StripeGateway stripeGateway(StripeClient client, StripeResilience resilience, StripeProperties properties,
+			Clock clock) {
+		return new StripeGateway(client, resilience, properties.webhookSecret(), properties.webhookTolerance(), clock);
 	}
 
 }

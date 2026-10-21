@@ -7,6 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.micrometer.metrics.test.autoconfigure.AutoConfigureMetrics;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
@@ -21,6 +22,8 @@ import org.springframework.test.context.ActiveProfiles;
 // Job gửi lại event treo tắt trong test (interval dài): test tự gọi IncompleteEventPublications khi cần kiểm retry.
 @SpringBootTest(properties = "tickethub.events.republish-interval=24h")
 @AutoConfigureMockMvc
+// Bật xuất metric (mặc định @SpringBootTest tắt): test kiểm /actuator/prometheus.
+@AutoConfigureMetrics
 // `seed`: dữ liệu mẫu của catalog (organizer test, 1 địa điểm, sơ đồ 500 ghế); mọi test dùng chung một context.
 @ActiveProfiles("seed")
 @Import({ TestcontainersConfiguration.class, StripeStubConfiguration.class, EventRecorderConfiguration.class,

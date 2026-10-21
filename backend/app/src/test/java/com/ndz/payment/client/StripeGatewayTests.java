@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
 /**
  * Adapter Stripe trên WireMock giả lập API (không cần Docker). Kiểm hình dạng lời gọi và cách ánh xạ lỗi; việc Stripe
@@ -123,9 +124,11 @@ class StripeGatewayTests {
 
 	private static StripeGateway gatewayWithTimeout(Duration timeout) {
 		var properties = new StripeProperties("dummy-key", "dummy-webhook-secret", stripe.baseUrl(), timeout,
-				Duration.ofMinutes(5));
+				Duration.ofMinutes(5), StripeProperties.Resilience.defaults());
 		var configuration = new StripeConfiguration();
-		return configuration.stripeGateway(configuration.stripeClient(properties), properties, Clock.systemUTC());
+		var resilience = configuration.stripeResilience(properties, new SimpleMeterRegistry());
+		return configuration.stripeGateway(configuration.stripeClient(properties), resilience, properties,
+				Clock.systemUTC());
 	}
 
 }

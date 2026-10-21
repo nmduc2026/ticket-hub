@@ -225,6 +225,12 @@ public class BookingRepository {
 				status.name(), limit, offset);
 	}
 
+	public int countByStatus(BookingStatus status) {
+		Integer count = jdbc.queryForObject("SELECT count(*) FROM booking.bookings WHERE status = ?", Integer.class,
+				status.name());
+		return count == null ? 0 : count;
+	}
+
 	public RefundContext refundContext(UUID bookingId) {
 		return jdbc.queryForObject(
 				"SELECT refund_reason, refund_amount_minor FROM booking.bookings WHERE id = ?",

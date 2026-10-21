@@ -33,7 +33,7 @@ class ResourceServerConfiguration {
 	SecurityFilterChain resourceServerFilterChain(HttpSecurity http, IdempotencyFilter idempotencyFilter) {
 		http
 				.authorizeHttpRequests(requests -> requests
-						.requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
+						.requestMatchers("/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
 						// Hợp đồng API (OpenAPI) là nguồn sinh client cho frontend; không chứa dữ liệu.
 						.requestMatchers("/v3/api-docs/**").permitAll()
 						// API công khai cho khách chưa đăng nhập: xem sự kiện, sơ đồ ghế, danh mục tỉnh / xã.

@@ -57,7 +57,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        # prometheus: Prometheus trong cụm scrape cổng app; Gateway chỉ định tuyến /api/** nên không lộ ra ngoài.
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
