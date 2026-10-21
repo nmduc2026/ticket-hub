@@ -1,16 +1,19 @@
 package com.ndz.booking.repository;
 
-import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
+
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.booking.dto.response.EventViews.EventDetail;
 import com.ndz.booking.dto.response.EventViews.EventListItem;
@@ -20,111 +23,108 @@ import com.ndz.booking.dto.response.EventViews.SeatState;
 import com.ndz.booking.dto.response.EventViews.TierAvailability;
 
 /**
- * Truy vấn đọc cho API công khai về sự kiện (overview.md §11.2). Dùng {@code event_snapshots} và {@code seat_inventory}
+ * Truy vấn đọc cho API công khai về sự kiện (overview.md §11.2). Dùng {@code EventSnapshot} và {@code SeatInventory}
  * của chính Booking, không đọc DB của Catalog. Mọi giá trị người dùng đi qua tham số; chuỗi tìm kiếm được escape.
  */
 @Repository
+@Transactional(readOnly = true)
 public class PublicEventQueries {
 
 	/** Sự kiện hiển thị ở danh sách: đang chờ mở bán, đang bán hoặc tạm dừng. Sự kiện đã kết thúc / huỷ ẩn khỏi danh sách. */
-	private static final String LISTED = "e.status IN ('PUBLISHED', 'ON_SALE', 'SUSPENDED') AND e.ends_at > ?";
+	private static final String LISTED = "e.status in ('PUBLISHED', 'ON_SALE', 'SUSPENDED') and e.endsAt > :now";
 
 	private static final char ESCAPE = '!';
 
-	private final JdbcTemplate jdbc;
-
-	PublicEventQueries(JdbcTemplate jdbc) {
-		this.jdbc = jdbc;
-	}
+	@PersistenceContext
+	private EntityManager em;
 
 	public EventPage search(SearchCriteria criteria, int page, int size, Instant now) {
-		StringBuilder where = new StringBuilder(" WHERE " + LISTED);
-		List<Object> args = new ArrayList<>();
-		args.add(Timestamp.from(now));
+		StringBuilder where = new StringBuilder(" where " + LISTED);
+		Map<String, Object> params = new HashMap<>();
+		params.put("now", now);
 		if (criteria.query() != null && !criteria.query().isBlank()) {
-			where.append(" AND (e.title ILIKE ? ESCAPE '!' OR e.venue_name ILIKE ? ESCAPE '!')");
-			String pattern = "%" + escapeLike(criteria.query().trim()) + "%";
-			args.add(pattern);
-			args.add(pattern);
+			where.append(" and (e.title ilike :pattern escape '!' or e.venueName ilike :pattern escape '!')");
+			params.put("pattern", "%" + escapeLike(criteria.query().trim()) + "%");
 		}
 		if (criteria.cityId() != null) {
-			where.append(" AND e.city_id = ?");
-			args.add(criteria.cityId());
+			where.append(" and e.cityId = :cityId");
+			params.put("cityId", criteria.cityId());
 		}
 		if (criteria.category() != null && !criteria.category().isBlank()) {
-			where.append(" AND e.category = ?");
-			args.add(criteria.category().trim());
+			where.append(" and e.category = :category");
+			params.put("category", criteria.category().trim());
 		}
 		if (criteria.from() != null) {
-			where.append(" AND e.starts_at >= ?");
-			args.add(Timestamp.from(criteria.from()));
+			where.append(" and e.startsAt >= :from");
+			params.put("from", criteria.from());
 		}
 		if (criteria.to() != null) {
-			where.append(" AND e.starts_at < ?");
-			args.add(Timestamp.from(criteria.to()));
+			where.append(" and e.startsAt < :to");
+			params.put("to", criteria.to());
 		}
 
-		Long total = jdbc.queryForObject("SELECT count(*) FROM booking.event_snapshots e" + where, Long.class,
-				args.toArray());
-		List<Object> pageArgs = new ArrayList<>(args);
-		pageArgs.add(size);
-		pageArgs.add((long) page * size);
-		List<EventListItem> items = jdbc.query("""
-				SELECT e.event_id, e.title, e.banner_url, e.starts_at, e.venue_name, e.city_name, e.currency, e.status,
-				       (SELECT min(i.price_minor) FROM booking.seat_inventory i WHERE i.event_id = e.event_id) AS min_price
-				FROM booking.event_snapshots e
-				""" + where + " ORDER BY e.starts_at, e.event_id LIMIT ? OFFSET ?", (rs, i) -> {
-			Long minPrice = rs.getObject("min_price", Long.class);
-			return new EventListItem(rs.getObject("event_id", UUID.class), rs.getString("title"),
-					rs.getString("banner_url"), rs.getTimestamp("starts_at").toInstant(), rs.getString("venue_name"),
-					rs.getString("city_name"), minPrice, rs.getString("currency"),
-					rs.getString("status"));
-		}, pageArgs.toArray());
-		return new EventPage(items, total == null ? 0 : total, page, size);
+		long total = bind(em.createQuery("select count(e) from EventSnapshot e" + where, Long.class), params)
+				.getSingleResult();
+		List<Object[]> rows = bind(em.createQuery("""
+				select e.eventId, e.title, e.bannerUrl, e.startsAt, e.venueName, e.cityName, e.currency, e.status,
+				       (select min(i.priceMinor) from SeatInventory i where i.id.eventId = e.eventId)
+				from EventSnapshot e
+				""" + where + " order by e.startsAt, e.eventId", Object[].class), params)
+				.setFirstResult(page * size).setMaxResults(size).getResultList();
+		List<EventListItem> items = rows.stream()
+				.map(row -> new EventListItem((UUID) row[0], (String) row[1], (String) row[2], (Instant) row[3],
+						(String) row[4], (String) row[5], (Long) row[8], (String) row[6], (String) row[7]))
+				.toList();
+		return new EventPage(items, total, page, size);
 	}
 
 	public Optional<EventDetail> detail(UUID eventId) {
-		return jdbc.query("""
-				SELECT event_id, title, description, category, banner_url, organizer_id, venue_id, venue_name,
-				       city_name, starts_at, ends_at, sale_starts_at, status, high_demand, max_tickets_per_user,
-				       seat_map_id, currency
-				FROM booking.event_snapshots WHERE event_id = ?
-				""", (rs, i) -> new EventDetail(rs.getObject("event_id", UUID.class), rs.getString("title"),
-				rs.getString("description"), rs.getString("category"), rs.getString("banner_url"),
-				rs.getObject("organizer_id", UUID.class), rs.getObject("venue_id", UUID.class),
-				rs.getString("venue_name"), rs.getString("city_name"), rs.getTimestamp("starts_at").toInstant(),
-				rs.getTimestamp("ends_at").toInstant(), rs.getTimestamp("sale_starts_at").toInstant(),
-				rs.getString("status"), rs.getBoolean("high_demand"), rs.getInt("max_tickets_per_user"),
-				rs.getObject("seat_map_id", UUID.class), rs.getString("currency")), eventId).stream().findFirst();
+		List<Object[]> rows = em.createQuery("""
+				select e.eventId, e.title, e.description, e.category, e.bannerUrl, e.organizerId, e.venueId, e.venueName,
+				       e.cityName, e.startsAt, e.endsAt, e.saleStartsAt, e.status, e.highDemand, e.maxTicketsPerUser,
+				       e.seatMapId, e.currency
+				from EventSnapshot e where e.eventId = :eventId
+				""", Object[].class).setParameter("eventId", eventId).getResultList();
+		return rows.stream().findFirst().map(row -> new EventDetail((UUID) row[0], (String) row[1], (String) row[2],
+				(String) row[3], (String) row[4], (UUID) row[5], (UUID) row[6], (String) row[7], (String) row[8],
+				(Instant) row[9], (Instant) row[10], (Instant) row[11], (String) row[12], (Boolean) row[13],
+				((Short) row[14]).intValue(), (UUID) row[15], (String) row[16]));
 	}
 
 	public List<TierAvailability> tiers(UUID eventId) {
-		return jdbc.query("""
-				SELECT tier_id, tier_name, price_minor, currency, count(*) AS total,
-				       count(*) FILTER (WHERE status = 'AVAILABLE') AS available
-				FROM booking.seat_inventory WHERE event_id = ?
-				GROUP BY tier_id, tier_name, price_minor, currency
-				ORDER BY price_minor DESC, tier_name
-				""", (rs, i) -> new TierAvailability(rs.getObject("tier_id", UUID.class), rs.getString("tier_name"),
-				rs.getLong("price_minor"), rs.getString("currency"), rs.getInt("total"), rs.getInt("available")),
-				eventId);
+		List<Object[]> rows = em.createQuery("""
+				select s.tierId, s.tierName, s.priceMinor, s.currency, count(s),
+				       sum(case when s.status = 'AVAILABLE' then 1 else 0 end)
+				from SeatInventory s where s.id.eventId = :eventId
+				group by s.tierId, s.tierName, s.priceMinor, s.currency
+				order by s.priceMinor desc, s.tierName
+				""", Object[].class).setParameter("eventId", eventId).getResultList();
+		return rows.stream().map(row -> new TierAvailability((UUID) row[0], (String) row[1], (Long) row[2],
+				(String) row[3], ((Long) row[4]).intValue(), ((Number) row[5]).intValue())).toList();
 	}
 
 	public Map<UUID, SeatState> seatStates(UUID eventId) {
-		return jdbc.query("SELECT seat_id, tier_id, status FROM booking.seat_inventory WHERE event_id = ?",
-				(rs, i) -> new SeatState(rs.getObject("seat_id", UUID.class), rs.getObject("tier_id", UUID.class),
-						rs.getString("status")),
-				eventId).stream().collect(Collectors.toMap(SeatState::seatId, state -> state));
+		List<Object[]> rows = em
+				.createQuery("select s.id.seatId, s.tierId, s.status from SeatInventory s where s.id.eventId = :eventId",
+						Object[].class)
+				.setParameter("eventId", eventId).getResultList();
+		return rows.stream().map(row -> new SeatState((UUID) row[0], (UUID) row[1], (String) row[2]))
+				.collect(Collectors.toMap(SeatState::seatId, state -> state));
 	}
 
 	/** Hạng vé của từng khu (theo mã khu), suy ra từ tồn kho: khu không có ghế trong tồn kho là khu không bán. */
 	public Map<String, UUID> tierBySectionCode(UUID eventId) {
-		Map<String, UUID> result = new java.util.HashMap<>();
-		jdbc.query("SELECT DISTINCT section_code, tier_id FROM booking.seat_inventory WHERE event_id = ?",
-				rs -> {
-					result.put(rs.getString("section_code"), rs.getObject("tier_id", UUID.class));
-				}, eventId);
+		List<Object[]> rows = em.createQuery(
+				"select distinct s.sectionCode, s.tierId from SeatInventory s where s.id.eventId = :eventId",
+				Object[].class).setParameter("eventId", eventId).getResultList();
+		Map<String, UUID> result = new HashMap<>();
+		rows.forEach(row -> result.put((String) row[0], (UUID) row[1]));
 		return result;
+	}
+
+	private static <T> TypedQuery<T> bind(TypedQuery<T> query, Map<String, Object> params) {
+		params.forEach(query::setParameter);
+		return query;
 	}
 
 	private static String escapeLike(String text) {

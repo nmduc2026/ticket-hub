@@ -12,13 +12,14 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.dao.DuplicateKeyException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 
+import com.ndz.booking.entity.Booking;
 import com.ndz.booking.event.BookingCancelled;
 import com.ndz.booking.event.BookingCreated;
 import com.ndz.booking.entity.enums.BookingStatus;
@@ -95,9 +96,10 @@ public class BookingServiceImpl implements BookingService {
 				}
 				log.info("Deadlock khi giữ ghế sự kiện {}, thử lại", eventId);
 			}
-			catch (DuplicateKeyException e) {
+			catch (DataIntegrityViolationException e) {
 				// Hai request cùng lúc của một người: chỉ bản ghi đầu tiên qua được unique index (BR-02).
-				if (e.getMessage() != null && e.getMessage().contains(ONE_PENDING_INDEX)) {
+				String cause = e.getMostSpecificCause().getMessage();
+				if (cause != null && cause.contains(ONE_PENDING_INDEX)) {
 					throw pendingExists();
 				}
 				throw e;
@@ -183,7 +185,7 @@ public class BookingServiceImpl implements BookingService {
 		long total = seats.stream().mapToLong(LockedSeat::priceMinor).sum();
 		String currency = seats.get(0).currency();
 		UUID bookingId = Uuid7.next(clock);
-		bookings.insertBooking(bookingId, userId, eventId, total, currency, expiresAt, contactEmail, now);
+		bookings.save(new Booking(bookingId, userId, eventId, total, currency, expiresAt, contactEmail, now));
 		bookings.insertItems(bookingId, eventId, seats);
 		if (bookings.markHeld(eventId, seatIds, bookingId) != seatIds.size()) {
 			// Bất biến BR-01: số dòng đổi được phải đúng bằng số ghế yêu cầu, nếu không hoàn tác toàn bộ.

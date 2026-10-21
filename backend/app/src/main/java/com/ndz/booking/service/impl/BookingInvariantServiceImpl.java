@@ -29,7 +29,7 @@ public class BookingInvariantServiceImpl implements BookingInvariantService {
 	@Override
 	@Transactional(readOnly = true)
 	public int checkRefundFailedBookings() {
-		int count = bookings.countByStatus(BookingStatus.REFUND_FAILED);
+		int count = (int) bookings.countByStatus(BookingStatus.REFUND_FAILED);
 		refundFailed.set(count);
 		if (count > 0) {
 			log.error("{} đơn REFUND_FAILED đang chờ Admin hoàn thủ công", count);
