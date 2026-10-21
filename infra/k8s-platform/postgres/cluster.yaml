@@ -90,8 +90,8 @@ spec:
         jobs: 2
 
   monitoring:
-    # Bật khi kube-prometheus-stack đã có CRD PodMonitor (việc 10).
-    enablePodMonitor: false
+    # Cần CRD PodMonitor của kube-prometheus-stack (argocd/apps/kube-prometheus-stack.yaml, wave 1).
+    enablePodMonitor: true
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup

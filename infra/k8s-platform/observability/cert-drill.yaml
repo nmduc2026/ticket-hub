@@ -1,0 +1,16 @@
+# C9: chứng chỉ hạn 1 giờ, gia hạn khi còn 40 phút => cert-manager tự cấp lại sau ~20 phút.
+# Quan sát: kubectl -n tickethub get certificate c9-short-lived -o jsonpath='{.status.notAfter}' đổi sau lần gia hạn.
+# Alert CertificateExpiringSoon: xem docs/runbooks/certificate-expiry.md (tạm scale cert-manager về 0 để chứng chỉ không được gia hạn).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: c9-short-lived
+  namespace: tickethub
+spec:
+  secretName: c9-short-lived-tls
+  duration: 1h
+  renewBefore: 40m
+  commonName: c9.tickethub.localhost
+  dnsNames: [c9.tickethub.localhost]
+  privateKey: { algorithm: ECDSA, size: 256, rotationPolicy: Always }
+  issuerRef: { name: tickethub-ca, kind: ClusterIssuer }

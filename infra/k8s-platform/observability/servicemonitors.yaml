@@ -1,0 +1,15 @@
+# Prometheus scrape app qua cổng http của Service (Actuator /actuator/prometheus). Gateway chỉ lộ health, info nên không scrape.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tickethub-app
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  namespaceSelector: { matchNames: [tickethub] }
+  selector:
+    matchLabels: { app.kubernetes.io/name: app }
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

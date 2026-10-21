@@ -14,6 +14,10 @@ spec:
     helm:
       valuesObject:
         crds: { enabled: true }
+        # Metric certmanager_* cho alert hết hạn (C9); cần CRD ServiceMonitor, ArgoCD thử lại tới khi stack monitoring sẵn sàng.
+        prometheus:
+          enabled: true
+          servicemonitor: { enabled: true, namespace: monitoring }
         config:
           apiVersion: controller.config.cert-manager.io/v1alpha1
           kind: ControllerConfiguration
