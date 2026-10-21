@@ -24,6 +24,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CheckIn,
   CheckInRequest,
   ProblemDetail,
   SigningKeySet
@@ -38,6 +39,11 @@ import { apiFetch } from '../../../../lib/api-client';
  * Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.
  * @summary Check-in một vé (BR-09)
  */
+export type checkInResponse200 = {
+  data: CheckIn
+  status: 200
+}
+
 export type checkInResponse403 = {
   data: ProblemDetail
   status: 403
@@ -53,12 +59,14 @@ export type checkInResponse409 = {
   status: 409
 }
     
-;
+export type checkInResponseSuccess = (checkInResponse200) & {
+  headers: Headers;
+};
 export type checkInResponseError = (checkInResponse403 | checkInResponse404 | checkInResponse409) & {
   headers: Headers;
 };
 
-export type checkInResponse = (checkInResponseError)
+export type checkInResponse = (checkInResponseSuccess | checkInResponseError)
 
 export const getCheckInUrl = () => {
 

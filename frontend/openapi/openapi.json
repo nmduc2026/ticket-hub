@@ -650,6 +650,16 @@
           "required" : true
         },
         "responses" : {
+          "200" : {
+            "description" : "Vé hợp lệ, đã chuyển sang USED",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CheckIn"
+                }
+              }
+            }
+          },
           "403" : {
             "description" : "NOT_EVENT_OWNER (không phải organizer của sự kiện)",
             "content" : {
@@ -1730,6 +1740,25 @@
           }
         },
         "required" : [ "gate", "qrToken" ]
+      },
+      "CheckIn" : {
+        "type" : "object",
+        "properties" : {
+          "ticketId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "seat" : {
+            "type" : "string",
+            "description" : "Nhãn ghế để người soát vé đối chiếu, vd. A-B-12 (khu A, hàng B, ghế 12)"
+          },
+          "status" : {
+            "type" : "string",
+            "description" : "Luôn là USED khi check-in thành công",
+            "enum" : [ "VALID", "USED", "REVOKED" ]
+          }
+        },
+        "required" : [ "seat", "status", "ticketId" ]
       },
       "CreateBookingRequest" : {
         "type" : "object",

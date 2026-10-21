@@ -35,6 +35,8 @@ class CheckInController {
 
 	@Operation(operationId = "checkIn", summary = "Check-in một vé (BR-09)",
 			description = "Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.")
+	@ApiResponse(responseCode = "200", description = "Vé hợp lệ, đã chuyển sang USED",
+			content = @Content(schema = @Schema(implementation = CheckInResponse.class)))
 	@ApiResponse(responseCode = "403", description = "NOT_EVENT_OWNER (không phải organizer của sự kiện)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "404", description = "TICKET_NOT_FOUND (QR sai chữ ký hoặc không có vé)",

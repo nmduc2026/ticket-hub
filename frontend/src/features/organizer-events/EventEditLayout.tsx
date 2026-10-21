@@ -1,8 +1,9 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
-import { AlertCircle, Check, Circle } from 'lucide-react'
+import { AlertCircle, Check, Circle, ScanLine } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { StatusPanel } from '@/components/StatusPanel'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDate, formatTime } from '@/lib/date'
 import { cn } from '@/lib/utils'
@@ -72,7 +73,17 @@ export function EventEditLayout({ eventId }: { eventId: string }) {
               .join(' · ') || t('organizerEvents.edit.noSchedule')}
           </p>
         </div>
-        {isDraft && <PublishButton event={event} checklist={checklist} />}
+        <div className="flex flex-wrap items-center gap-2">
+          {!isDraft && (
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/checkin/$eventId" params={params}>
+                <ScanLine />
+                {t('organizerEvents.edit.openCheckin')}
+              </Link>
+            </Button>
+          )}
+          {isDraft && <PublishButton event={event} checklist={checklist} />}
+        </div>
       </header>
 
       <nav aria-label={t('organizerEvents.edit.tabs')} className="flex gap-1 overflow-x-auto border-b">
