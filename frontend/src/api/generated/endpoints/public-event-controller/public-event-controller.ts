@@ -153,17 +153,24 @@ export function useSearchEvents<TData = Awaited<ReturnType<typeof searchEvents>>
 /**
  * @summary Chi tiết sự kiện, hạng vé và còn vé hay không
  */
+export type getEventResponse200 = {
+  data: PublicEventDetail
+  status: 200
+}
+
 export type getEventResponse404 = {
   data: PublicEventDetail
   status: 404
 }
     
-;
+export type getEventResponseSuccess = (getEventResponse200) & {
+  headers: Headers;
+};
 export type getEventResponseError = (getEventResponse404) & {
   headers: Headers;
 };
 
-export type getEventResponse = (getEventResponseError)
+export type getEventResponse = (getEventResponseSuccess | getEventResponseError)
 
 export const getGetEventUrl = (eventId: string,) => {
 
@@ -265,17 +272,24 @@ export function useGetEvent<TData = Awaited<ReturnType<typeof getEvent>>, TError
  * Ghế của khu không gán hạng vé có trạng thái NOT_FOR_SALE (khu màu xám, không chọn được)
  * @summary Sơ đồ ghế kèm trạng thái
  */
+export type getEventSeatsResponse200 = {
+  data: EventSeats
+  status: 200
+}
+
 export type getEventSeatsResponse404 = {
   data: EventSeats
   status: 404
 }
     
-;
+export type getEventSeatsResponseSuccess = (getEventSeatsResponse200) & {
+  headers: Headers;
+};
 export type getEventSeatsResponseError = (getEventSeatsResponse404) & {
   headers: Headers;
 };
 
-export type getEventSeatsResponse = (getEventSeatsResponseError)
+export type getEventSeatsResponse = (getEventSeatsResponseSuccess | getEventSeatsResponseError)
 
 export const getGetEventSeatsUrl = (eventId: string,) => {
 

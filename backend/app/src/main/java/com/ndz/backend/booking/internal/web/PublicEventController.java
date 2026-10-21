@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +46,8 @@ class PublicEventController {
 	}
 
 	@Operation(operationId = "getEvent", summary = "Chi tiết sự kiện, hạng vé và còn vé hay không")
+	@ApiResponse(responseCode = "200", description = "Chi tiết sự kiện",
+			content = @Content(schema = @Schema(implementation = Detail.class)))
 	@ApiResponse(responseCode = "404", description = "EVENT_NOT_FOUND")
 	@GetMapping("/{eventId}")
 	Detail get(@PathVariable UUID eventId) {
@@ -52,6 +56,8 @@ class PublicEventController {
 
 	@Operation(operationId = "getEventSeats", summary = "Sơ đồ ghế kèm trạng thái",
 			description = "Ghế của khu không gán hạng vé có trạng thái NOT_FOR_SALE (khu màu xám, không chọn được)")
+	@ApiResponse(responseCode = "200", description = "Sơ đồ ghế",
+			content = @Content(schema = @Schema(implementation = Seats.class)))
 	@ApiResponse(responseCode = "404", description = "EVENT_NOT_FOUND")
 	@GetMapping("/{eventId}/seats")
 	Seats seats(@PathVariable UUID eventId) {

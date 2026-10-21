@@ -655,6 +655,16 @@
           }
         } ],
         "responses" : {
+          "200" : {
+            "description" : "Chi tiết sự kiện",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PublicEventDetail"
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "EVENT_NOT_FOUND",
             "content" : {
@@ -684,6 +694,16 @@
           }
         } ],
         "responses" : {
+          "200" : {
+            "description" : "Sơ đồ ghế",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventSeats"
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "EVENT_NOT_FOUND",
             "content" : {
@@ -1083,41 +1103,7 @@
           "float" : {
             "type" : "boolean"
           },
-          "nodeType" : {
-            "type" : "string",
-            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
-          },
-          "bigDecimal" : {
-            "type" : "boolean"
-          },
-          "integralNumber" : {
-            "type" : "boolean"
-          },
-          "missingNode" : {
-            "type" : "boolean"
-          },
-          "valueNode" : {
-            "type" : "boolean"
-          },
-          "bigInteger" : {
-            "type" : "boolean"
-          },
           "container" : {
-            "type" : "boolean"
-          },
-          "number" : {
-            "type" : "boolean"
-          },
-          "floatingPointNumber" : {
-            "type" : "boolean"
-          },
-          "object" : {
-            "type" : "boolean"
-          },
-          "double" : {
-            "type" : "boolean"
-          },
-          "boolean" : {
             "type" : "boolean"
           },
           "pojo" : {
@@ -1126,20 +1112,54 @@
           "int" : {
             "type" : "boolean"
           },
-          "binary" : {
+          "string" : {
             "type" : "boolean"
           },
           "short" : {
+            "type" : "boolean"
+          },
+          "long" : {
+            "type" : "boolean"
+          },
+          "double" : {
+            "type" : "boolean"
+          },
+          "object" : {
             "type" : "boolean"
           },
           "textual" : {
             "type" : "boolean",
             "deprecated" : true
           },
-          "string" : {
+          "boolean" : {
             "type" : "boolean"
           },
-          "long" : {
+          "binary" : {
+            "type" : "boolean"
+          },
+          "floatingPointNumber" : {
+            "type" : "boolean"
+          },
+          "valueNode" : {
+            "type" : "boolean"
+          },
+          "missingNode" : {
+            "type" : "boolean"
+          },
+          "integralNumber" : {
+            "type" : "boolean"
+          },
+          "bigDecimal" : {
+            "type" : "boolean"
+          },
+          "bigInteger" : {
+            "type" : "boolean"
+          },
+          "nodeType" : {
+            "type" : "string",
+            "enum" : [ "ARRAY", "BINARY", "BOOLEAN", "MISSING", "NULL", "NUMBER", "OBJECT", "POJO", "STRING" ]
+          },
+          "number" : {
             "type" : "boolean"
           },
           "embeddedValue" : {
