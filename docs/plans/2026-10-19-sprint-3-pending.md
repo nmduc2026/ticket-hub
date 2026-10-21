@@ -13,7 +13,7 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 
 | Hạng mục | Test | Cần |
 |---|---|---|
-| 1 | Gọi `StripeGateway` trên stripe-mock: PI chỉ tạo 1 lần với cùng idempotency key | stripe-mock (chưa có trong compose) |
+| 1 | Gọi `StripeGateway` trên stripe-mock thật (đã chạy `StripeGatewayTests` trên WireMock, xanh 21/10) | stripe-mock (chưa có trong compose) |
 
 ## Việc kỹ thuật còn lại
 
