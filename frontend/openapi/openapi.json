@@ -208,6 +208,56 @@
         }
       }
     },
+    "/api/v1/me/notification-preferences" : {
+      "get" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Cài đặt nhận thông báo theo loại",
+        "operationId" : "getMyNotificationPreferences",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/NotificationPreference"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Lưu cài đặt nhận thông báo",
+        "description" : "Loại bắt buộc (vé, hoàn tiền, huỷ sự kiện) không tắt được.",
+        "operationId" : "updateMyNotificationPreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateNotificationPreferencesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "422" : {
+            "description" : "NOTIFICATION_MANDATORY hoặc UNKNOWN_NOTIFICATION_TYPE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/payments" : {
       "post" : {
         "tags" : [ "payment-controller" ],
@@ -540,6 +590,49 @@
         }
       }
     },
+    "/api/v1/me/notifications/{notificationId}/read" : {
+      "post" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Đánh dấu một thông báo đã đọc",
+        "operationId" : "markNotificationRead",
+        "parameters" : [ {
+          "name" : "notificationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "NOTIFICATION_NOT_FOUND (không có hoặc không phải của bạn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications/read-all" : {
+      "post" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Đánh dấu mọi thông báo đã đọc",
+        "operationId" : "markAllNotificationsRead",
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/checkins" : {
       "post" : {
         "tags" : [ "check-in-controller" ],
@@ -864,6 +957,70 @@
                   "items" : {
                     "$ref" : "#/components/schemas/Ticket"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications" : {
+      "get" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Hộp thư thông báo, mới nhất trước (theo con trỏ)",
+        "operationId" : "listMyNotifications",
+        "parameters" : [ {
+          "name" : "unread",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : false
+          }
+        }, {
+          "name" : "cursor",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/NotificationPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me/notifications/unread-count" : {
+      "get" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Số thông báo chưa đọc cho chuông",
+        "operationId" : "getMyUnreadNotificationCount",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UnreadCount"
                 }
               }
             }
@@ -1489,6 +1646,36 @@
         },
         "required" : [ "name" ]
       },
+      "NotificationPreferenceChange" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "inApp" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "email", "inApp", "type" ]
+      },
+      "UpdateNotificationPreferencesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "preferences" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/NotificationPreferenceChange"
+            },
+            "maxItems" : 20,
+            "minItems" : 0
+          }
+        },
+        "required" : [ "preferences" ]
+      },
       "CreatePaymentRequest" : {
         "type" : "object",
         "properties" : {
@@ -1859,6 +2046,89 @@
           }
         },
         "required" : [ "number", "row", "sectionCode" ]
+      },
+      "Notification" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "TICKET_ISSUED, REFUND_REQUESTED, REFUND_COMPLETED, REFUND_FAILED, EVENT_CANCELLED, SALE_PAUSED hoặc HOLD_EXPIRING"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "body" : {
+            "type" : "string"
+          },
+          "link" : {
+            "type" : [ "string", "null" ],
+            "description" : "Đường dẫn trong app để mở khi bấm vào thông báo"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "readAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "Thời điểm đã đọc; vắng mặt nếu chưa đọc"
+          }
+        },
+        "required" : [ "body", "createdAt", "id", "title", "type" ]
+      },
+      "NotificationPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Notification"
+            }
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ],
+            "format" : "uuid",
+            "description" : "Con trỏ để lấy trang kế (tham số cursor); vắng mặt nếu hết"
+          }
+        },
+        "required" : [ "items" ]
+      },
+      "UnreadCount" : {
+        "type" : "object",
+        "properties" : {
+          "count" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "count" ]
+      },
+      "NotificationPreference" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string",
+            "description" : "Tên hiển thị của loại"
+          },
+          "mandatory" : {
+            "type" : "boolean",
+            "description" : "Loại bắt buộc (vé, hoàn tiền, huỷ sự kiện) không tắt được"
+          },
+          "email" : {
+            "type" : "boolean"
+          },
+          "inApp" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "email", "inApp", "label", "mandatory", "type" ]
       },
       "BookingSummary" : {
         "type" : "object",

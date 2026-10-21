@@ -1,11 +1,9 @@
 package com.ndz.notification.service.impl;
 
-import java.text.NumberFormat;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -28,6 +26,7 @@ import com.ndz.notification.repository.NotificationLogRepository;
 import com.ndz.notification.repository.NotificationProcessedEventRepository;
 import com.ndz.notification.repository.TemplateRepository;
 import com.ndz.notification.service.NotificationService;
+import com.ndz.notification.util.MoneyFormat;
 import com.ndz.notification.util.TemplateRenderer;
 import com.ndz.shared.util.Uuid7;
 import com.ndz.ticket.event.TicketIssued;
@@ -92,7 +91,7 @@ public class NotificationServiceImpl implements NotificationService {
 		}
 		sendEmail(REFUND_COMPLETED, event.userId(), event.messageId(), event.contactEmail(),
 				Map.of("eventTitle", event.eventTitle() == null ? "" : event.eventTitle(), "amount",
-						formatMoney(event.amountMinor(), event.currency())),
+						MoneyFormat.format(event.amountMinor(), event.currency())),
 				"hoàn tiền " + event.refundId());
 	}
 
@@ -125,12 +124,6 @@ public class NotificationServiceImpl implements NotificationService {
 		return Map.of("eventTitle", event.eventTitle(), "startsAt", DISPLAY_TIME.format(event.startsAt()),
 				"venueName", event.venueName(), "tickets", tickets, "ticketsUrl",
 				properties.webBaseUrl() + "/me/tickets");
-	}
-
-	/** VND không có phần lẻ (BR-10): hiển thị 950.000 ₫; tiền tệ khác ghi kèm mã. */
-	private static String formatMoney(long amountMinor, String currency) {
-		String number = NumberFormat.getIntegerInstance(Locale.of("vi", "VN")).format(amountMinor);
-		return "VND".equals(currency) ? number + " ₫" : number + " " + currency;
 	}
 
 	/** Ghi trong transaction riêng: transaction chính sắp hoàn tác (và event được thử lại) nên dòng lỗi phải còn lại. */
