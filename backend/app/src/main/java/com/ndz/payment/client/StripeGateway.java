@@ -11,10 +11,12 @@ import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.Refund;
 import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.PaymentIntentCreateParams;
+import com.stripe.param.RefundCreateParams;
 
 /**
  * Adapter gọi Stripe (overview.md §15.1). Domain chỉ thấy kiểu của gói này, không thấy SDK. Mỗi lệnh ghi có
@@ -56,6 +58,28 @@ public class StripeGateway {
 	/** Huỷ PaymentIntent; PaymentIntent đã {@code succeeded} thì Stripe từ chối và người gọi phải lấy lại trạng thái. */
 	public GatewayPaymentIntent cancelPaymentIntent(String paymentIntentId) {
 		return call("cancel PaymentIntent", () -> client.v1().paymentIntents().cancel(paymentIntentId));
+	}
+
+	/**
+	 * Hoàn tiền một phần hoặc toàn bộ cho PaymentIntent đã thanh toán.
+	 *
+	 * <p>Khi có Connect (destination charge, ADR 0022) hàm này chừa chỗ cho transfer reversal và
+	 * {@code refund_application_fee}.
+	 *
+	 * @param idempotencyKey {@code refund-{refundId}}: gọi lại cùng khoá trả đúng lần hoàn đã tạo
+	 */
+	public GatewayRefund createRefund(String paymentIntentId, long amountMinor, UUID refundId,
+			String idempotencyKey) {
+		var params = RefundCreateParams.builder().setPaymentIntent(paymentIntentId).setAmount(amountMinor)
+				.putMetadata("refundId", refundId.toString()).build();
+		var options = RequestOptions.builder().setIdempotencyKey(idempotencyKey).build();
+		try {
+			Refund refund = client.v1().refunds().create(params, options);
+			return new GatewayRefund(refund.getId(), refund.getStatus());
+		}
+		catch (StripeException e) {
+			throw new StripeGatewayException("Stripe: create Refund thất bại", e.getCode(), e);
+		}
 	}
 
 	/**

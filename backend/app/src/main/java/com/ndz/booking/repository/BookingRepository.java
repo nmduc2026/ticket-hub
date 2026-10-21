@@ -91,6 +91,23 @@ public class BookingRepository {
 		});
 	}
 
+	/**
+	 * Bán lại đúng các ghế cho booking đã hết hạn / bị huỷ mà thanh toán đến muộn: chỉ ghế còn {@code AVAILABLE} được
+	 * đổi sang {@code SOLD}. Người gọi đã khoá ghế và so số dòng với số ghế (BR-01).
+	 */
+	public int sellAvailableSeats(UUID eventId, List<UUID> seatIds, UUID bookingId) {
+		return jdbc.update(connection -> {
+			var statement = connection.prepareStatement("""
+					UPDATE booking.seat_inventory SET status = 'SOLD', booking_id = ?, version = version + 1
+					WHERE event_id = ? AND seat_id = ANY (?) AND status = 'AVAILABLE'
+					""");
+			statement.setObject(1, bookingId);
+			statement.setObject(2, eventId);
+			statement.setArray(3, connection.createArrayOf("uuid", seatIds.toArray()));
+			return statement;
+		});
+	}
+
 	public boolean hasPendingBooking(UUID userId, UUID eventId) {
 		return Boolean.TRUE.equals(jdbc.queryForObject("""
 				SELECT EXISTS (SELECT 1 FROM booking.bookings
