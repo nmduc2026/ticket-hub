@@ -98,8 +98,8 @@ Bán vé concert là bài toán có tải **cực kỳ không đều**: ngày th
 | BR-10 | Tiền lưu dạng **số nguyên đơn vị nhỏ nhất** (`amount_minor` BIGINT) + mã tiền tệ (mặc định **VND**, zero-decimal — xem ghi chú tiền tệ dưới bảng); không dùng float/double |
 | BR-11 | Thời gian lưu **UTC** (`timestamptz`), hiển thị theo `Asia/Ho_Chi_Minh` |
 | BR-12 | Customer được **tự huỷ** booking đang `PENDING_PAYMENT` để nhả ghế ngay (→ `CANCELLED`). Nếu thanh toán thành công đến sau khi đã huỷ thì xử lý như nhánh "thanh toán thành công nhưng booking đã hết hạn" (§7.3) |
-| BR-13 | Organizer bị `SUSPENDED` hoặc tài khoản Stripe Connect mất `charges_enabled` → mọi sự kiện đã publish và chưa kết thúc của organizer đó **tự động tạm dừng bán** (`SUSPENDED`); vé đã bán giữ nguyên. Admin cũng được **tạm dừng thủ công** một sự kiện, kèm lý do (vd. nghi gian lận, sự cố khi mở bán). Admin quyết định mở bán lại hoặc huỷ sự kiện (BR-08) |
-| BR-14 | Sau khi publish, organizer chỉ sửa được **thông tin hiển thị**: tiêu đề, mô tả, ảnh banner, danh mục. Giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, hạng vé và giá, `max_tickets_per_user` bị khoá. Sự kiện cần dời lịch thì Admin huỷ (BR-08) và organizer tạo sự kiện mới |
+| BR-13 | Organizer bị `SUSPENDED` hoặc tài khoản Stripe Connect mất `charges_enabled` → mọi sự kiện đã publish và chưa kết thúc của organizer đó **tự động tạm dừng bán** (`SUSPENDED`); vé đã bán giữ nguyên. Admin cũng được **tạm dừng thủ công** một sự kiện, kèm lý do (vd. nghi gian lận, sự cố khi mở bán). Admin quyết định mở bán lại hoặc huỷ sự kiện (BR-08); chỉ mở bán lại được khi organizer `APPROVED` và `charges_enabled`, và `charges_enabled` bật lại không tự mở bán. Admin khôi phục được organizer bị đình chỉ về `APPROVED`; các sự kiện của họ vẫn tạm dừng cho tới khi Admin mở bán lại từng sự kiện |
+| BR-14 | Sau khi publish, organizer chỉ sửa được **thông tin hiển thị**: tiêu đề, mô tả, ảnh banner, danh mục. Giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, hạng vé và giá, `max_tickets_per_user`, `high_demand` (phòng chờ) bị khoá. Sự kiện cần dời lịch thì Admin huỷ (BR-08) và organizer tạo sự kiện mới |
 
 **Ghi chú tiền tệ.** Stripe chạy ở test mode với tài khoản platform đăng ký tại quốc gia Stripe hỗ trợ (vd. Singapore), vì Stripe chưa hỗ trợ merchant Việt Nam ở live mode. VND là **zero-decimal currency**: `amount_minor` là số đồng (50.000đ → `50000`, không nhân 100). Phí nền tảng làm tròn xuống về số nguyên. Không viết code giả định tiền có 2 chữ số thập phân.
 
@@ -255,8 +255,9 @@ seat_inventory  (event_id, seat_id, tier_id, tier_name, section_code, row_label,
                  PRIMARY KEY (event_id, seat_id))
 bookings        (id, user_id, event_id,
                  status[PENDING_PAYMENT|CONFIRMED|EXPIRED|CANCELLED|REFUND_REQUESTED|REFUNDED|REFUND_FAILED],
-                 total_minor, currency, expires_at, payment_started_at NULL, contact_email, version)
+                 total_minor, currency, expires_at, payment_started_at NULL, confirmed_at NULL, contact_email, version)
                  -- payment_started_at: ghi khi Payment tạo PaymentIntent, dùng cho ân hạn BR-03
+                 -- confirmed_at: lúc booking CONFIRMED, mốc doanh thu theo ngày (nhóm theo ngày Asia/Ho_Chi_Minh)
                  -- contact_email: email của khách tại thời điểm đặt vé, dùng để gửi vé và hoá đơn
 booking_items   (booking_id, event_id, seat_id, tier_id, price_minor,
                  FOREIGN KEY (event_id, seat_id) → seat_inventory)
@@ -267,9 +268,13 @@ event_snapshots (event_id PK, organizer_id, title, description, category, banner
                  high_demand, max_tickets_per_user, platform_fee_bps, currency, last_event_at, version)
                  -- bản sao thông tin sự kiện, cập nhật từ catalog.events.v1; last_event_at là mốc của event đã áp dụng
                  -- gần nhất: event cũ hơn mốc này bị bỏ qua
-sales_by_event  (event_id, tier_id, sold_count, revenue_minor, refunded_count, refunded_minor, updated_at,
+sales_by_event  (event_id, tier_id, sold_count, revenue_minor, fee_minor,
+                 refunded_count, refunded_minor, refunded_fee_minor, checked_in_count, updated_at,
                  PRIMARY KEY (event_id, tier_id))
-                 -- doanh thu cho dashboard organizer, cập nhật khi booking CONFIRMED / REFUNDED
+                 -- doanh thu cho dashboard organizer, cập nhật khi booking CONFIRMED / REFUNDED và khi vé check-in
+                 -- revenue_minor: tiền gộp; refunded_*: theo giá gốc của booking bị hoàn (không phải số khách nhận lại)
+                 -- ròng của organizer = (revenue_minor − refunded_minor) − (fee_minor − refunded_fee_minor)
+                 -- phí theo hạng = floor(tiền hạng × platform_fee_bps / 10000), có thể lệch Payment ≤ 1đ mỗi hạng
 ```
 
 **Dữ liệu Booking nhận từ module khác:**
@@ -277,6 +282,7 @@ sales_by_event  (event_id, tier_id, sold_count, revenue_minor, refunded_count, r
 - Payload `BookingConfirmed` mang sẵn tên sự kiện, giờ diễn, địa điểm, danh sách ghế và `contact_email`, để Ticket in lên vé và Notification gửi email mà không cần bản sao riêng.
 - Payment không giữ bản sao booking: khi tạo PaymentIntent, Payment gọi đồng bộ Booking (§7.2) vì người dùng đang chờ kết quả. Booking trả kèm `platform_fee_bps` của sự kiện; Payment tính `application_fee_minor = floor(total_minor × platform_fee_bps / 10000)`.
 - `seat_inventory` được tạo khi sự kiện publish (§7.9).
+- `sales_by_event.checked_in_count` cập nhật từ `TicketCheckedIn` (payload có `eventId`, `seatId`; hạng vé tra trong `seat_inventory`).
 
 Ràng buộc chống oversell ở tầng DB:
 
@@ -289,9 +295,11 @@ CREATE UNIQUE INDEX uq_one_pending_per_user
 ### 6.3. Payment
 
 ```
-connected_accounts (organizer_id PK, stripe_account_id, charges_enabled, payouts_enabled)
+connected_accounts (organizer_id PK, stripe_account_id, charges_enabled, payouts_enabled,
+                    details_submitted, requirements_due JSONB, disabled_reason NULL)   -- cập nhật từ account.updated (§7.6)
 payments           (id, booking_id UNIQUE, stripe_payment_intent_id UNIQUE,
                     amount_minor, application_fee_minor, currency,
+                    destination_account_id NULL,          -- connected account nhận tiền; NULL = thu trên platform (§7.8)
                     status[REQUIRES_PAYMENT|PROCESSING|SUCCEEDED|CANCELED])   -- xem máy trạng thái §7.7
 refunds            (id, payment_id, stripe_refund_id UNIQUE, amount_minor, reason,
                     status[PENDING|SUCCEEDED|FAILED])   -- mỗi lần thử hoàn là 1 bản ghi, id sinh trước khi gọi Stripe
@@ -324,6 +332,8 @@ notification_preferences (user_id, type, email BOOLEAN, in_app BOOLEAN, PRIMARY 
 - Khách: vé đã phát, sắp hết giờ giữ ghế, đã nhận yêu cầu hoàn / đã hoàn, sự kiện bị huỷ hoặc tạm dừng bán.
 - Organizer: hồ sơ được duyệt / từ chối, Stripe cần bổ sung hoặc bị hạn chế, khách yêu cầu hoàn, mốc vé bán.
 - Admin: hồ sơ organizer chờ duyệt, hoàn tiền lỗi, đơn lệch khi đối soát, sự kiện tự tạm dừng (BR-13).
+
+Notification **chỉ nghe event**, không hỏi ngược module khác: dữ liệu cần để gửi (người nhận, email, tên sự kiện) đi trong payload. Thông báo cần dữ liệu của module khác thì module sở hữu dữ liệu tự phát event theo từng người nhận: Booking phát `BookingHoldExpiring` cho booking chưa bắt đầu thanh toán và còn ≤ 2 phút giữ ghế, `BookingSalePaused` cho từng booking `PENDING_PAYMENT` / `CONFIRMED` của sự kiện bị tạm dừng. Ngoại lệ duy nhất là danh sách Admin, lấy qua interface công khai của Account (khi tách service: API nội bộ, client `tickethub-internal`).
 
 Thông báo về vé, hoàn tiền, huỷ sự kiện và kết quả duyệt hồ sơ organizer luôn gửi (không tắt được trong `notification_preferences`). Hộp thư giữ 90 ngày; job ShedLock xoá bản cũ hơn.
 
@@ -393,7 +403,10 @@ sequenceDiagram
 - **Điều tiết**: mỗi giây scheduler tính số người đang ở trong = số lượt vào còn hạn (`queue:{eventId}:admitted`) + số booking `PENDING_PAYMENT` của sự kiện (`queue:{eventId}:pending`), sau khi bỏ các phần tử đã quá hạn ở cả hai. Chỉ gọi thêm người khi con số này dưới ngưỡng `max_active` (cấu hình được), tối đa N người/giây. Không dùng semaphore hay "permit" cần trả lại: lượt vào và booking đều tự hết hạn nên hệ thống tự cân bằng khi khách bỏ đi hay pod chết.
 - **Đếm booking đang chờ thanh toán**: Queue không hỏi Booking mà tự giữ ZSET `queue:{eventId}:pending` từ event của Booking. `BookingCreated` (payload có `eventId`, `expiresAt`) → `ZADD` với score = `expires_at` + ân hạn thanh toán (BR-03), tức hạn dài nhất có thể, để đếm dư chứ không đếm thiếu; `BookingConfirmed` / `BookingExpired` / `BookingCancelled` → `ZREM`. Mất event thì phần tử vẫn tự hết hạn, nên số đếm không lệch lâu.
 - **Lượt vào** là key Redis `queue:{eventId}:admit:{userId}` (TTL 15 phút), không phát JWT. Booking kiểm tra key tồn tại trước khi giữ ghế và xoá key khi tạo booking thành công (BR-04: 1 lượt 1 booking).
+- **Gọi người vào** là một Lua script: `ZPOPMIN` khỏi `waiting`, SET key lượt vào, `ZADD admitted` cùng một lần, nên pod chết giữa chừng không làm mất chỗ. User còn lượt vào mà gọi `join` thì nhận `ADMITTED`, không bị thêm lại vào hàng.
 - **Kết nối lại**: SSE đứt đúng lúc được gọi tên không làm mất lượt. Khi client kết nối lại hoặc gọi `GET /queue/{eventId}/status`, server kiểm tra key lượt vào: còn thì trả `ADMITTED` ngay.
+- **Thiếu `queue:{eventId}:meta`** (sự kiện publish trước khi có Queue, Redis mất dữ liệu): Queue lấy lại `high_demand`, `sale_starts_at` qua interface công khai rồi ghi lại, vì user đang chờ kết quả (ADR 0018).
+- **Đóng phòng chờ**: sự kiện `SUSPENDED`, `CANCELLED` hoặc `ENDED` → ngừng gọi người, đẩy SSE `closed {reason}`, xoá các key `queue:{eventId}:*`; `join` trả `409 QUEUE_CLOSED`. Hết vé không đóng phòng chờ: vẫn gọi người như thường vì ghế đang giữ có thể trống lại, trang phòng chờ báo "đã hết vé, ghế có thể trống lại".
 - **Giữ phiên đăng nhập**: kết nối SSE không gia hạn session, nên trang phòng chờ gọi `GET /api/v1/me` mỗi 5 phút để giữ session và để Gateway refresh token; khách được gọi vào không phải đăng nhập lại.
 
 ### 7.2. Đặt vé & thanh toán (Saga)
@@ -499,12 +512,23 @@ Admin từ chối          → REJECTED, lưu rejection_reason, email thông bá
 Admin duyệt            → APPROVED → OrganizerApproved
 Account nhận           → gán role ORGANIZER trong Keycloak, cập nhật user_profiles.roles (§6.6)
 Organizer kết nối Stripe → Payment tạo Stripe Connect (Express) account + onboarding link
-Stripe webhook account.updated (endpoint Connect) → cập nhật connected_accounts.charges_enabled
+Stripe webhook account.updated (endpoint Connect) → cập nhật connected_accounts (charges_enabled, payouts_enabled,
+                         details_submitted, requirements_due, disabled_reason)
                        → charges_enabled đổi giá trị → OrganizerPayoutStatusChanged {payoutReady: true | false}
 Catalog nhận           → organizers.payout_ready; true: cho phép publish (BR-05); false: tạm dừng bán (BR-13)
 ```
 
 Payment kiểm `charges_enabled` của organizer mỗi lần tạo PaymentIntent, không chỉ dựa vào trạng thái lúc publish.
+
+Trạng thái kết nối Stripe hiện cho organizer (`GET /organizer/stripe/account`) suy từ `connected_accounts`, không gọi Stripe khi đọc (trừ số dư); xét theo thứ tự:
+
+| `state` | Điều kiện |
+|---|---|
+| `none` | Chưa có bản ghi `connected_accounts` |
+| `active` | `charges_enabled = true` |
+| `incomplete` | `details_submitted = false`, hoặc `requirements_due` không rỗng |
+| `pending` | Đã gửi hồ sơ, không còn mục thiếu, `disabled_reason` trống hoặc `requirements.pending_verification` |
+| `restricted` | Các trường hợp còn lại: Stripe tắt `charges_enabled` vì lý do khác (vd. `rejected.*`, `under_review`) |
 
 ### 7.7. Máy trạng thái
 
@@ -545,7 +569,7 @@ Chỉ các chuyển trạng thái trong bảng là hợp lệ; mọi lệnh hay 
 | `DRAFT` | `PUBLISHED` | Organizer publish (BR-05); khoá thông tin bán vé (BR-14), chốt mức phí (BR-06) |
 | `PUBLISHED` | `ON_SALE` | Job khi tới `sale_starts_at` và `inventory_ready = true` |
 | `PUBLISHED`, `ON_SALE` | `SUSPENDED` | Organizer bị đình chỉ hoặc mất `charges_enabled`; Admin tạm dừng thủ công (BR-13) |
-| `SUSPENDED` | `ON_SALE` / `PUBLISHED` | Admin mở bán lại (về `ON_SALE` nếu đã qua `sale_starts_at`, ngược lại về `PUBLISHED`) |
+| `SUSPENDED` | `ON_SALE` / `PUBLISHED` | Admin mở bán lại (về `ON_SALE` nếu đã qua `sale_starts_at`, ngược lại về `PUBLISHED`); chỉ khi organizer `APPROVED` và `payout_ready`, ngược lại `409 ORGANIZER_SUSPENDED` / `ORGANIZER_PAYOUT_NOT_READY` |
 | `PUBLISHED`, `ON_SALE`, `SUSPENDED` | `CANCELLED` | Admin huỷ (BR-08) |
 | `PUBLISHED`, `ON_SALE`, `SUSPENDED` | `ENDED` | Job khi qua `ends_at` |
 
@@ -558,6 +582,8 @@ Chỉ các chuyển trạng thái trong bảng là hợp lệ; mọi lệnh hay 
   - **BR-07** (khách hoàn): khách nhận số đã trả trừ phí; platform giữ phí; organizer trả lại toàn bộ phần đã nhận.
   - **BR-08** (sự kiện huỷ): khách nhận 100%; platform hoàn cả phí (`refund_application_fee`); organizer trả lại toàn bộ phần đã nhận.
 - Organizer đã rút tiền (payout) và số dư không đủ để kéo lại: Stripe trừ âm vào số dư connected account; Admin theo dõi qua audit log.
+- Kiểu thu chọn mỗi lần tạo PaymentIntent: organizer có `connected_accounts` → destination charge (`charges_enabled = false` thì `409 ORGANIZER_PAYOUT_NOT_READY`); chưa có → thu trên tài khoản platform, chỉ xảy ra với organizer của dữ liệu seed vì BR-05 chặn organizer khác publish. `payments.destination_account_id` ghi tài khoản nhận; hoàn tiền chỉ đặt `reverse_transfer` khi cột này có giá trị.
+- Booking đã hoàn hoặc đang hoàn theo yêu cầu của khách (BR-07) trước khi sự kiện bị huỷ giữ nguyên số tiền đã hoàn, không hoàn thêm phí.
 - Chi tiết lệnh gọi Stripe API cho từng trường hợp ghi trong ADR về Stripe charge model.
 
 ### 7.9. Publish sự kiện và tạo tồn kho ghế
@@ -587,7 +613,7 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 | Topic | Key | Events | Producer | Consumers |
 |---|---|---|---|---|
 | `catalog.events.v1` | eventId | EventPublished, EventUpdated, EventOnSale, EventEnded, EventSuspended, EventResumed, EventCancelled, OrganizerApplied, OrganizerApproved, OrganizerRejected | Catalog | Booking, Queue, Account, Search projection, Notification |
-| `booking.events.v1` | bookingId (SeatInventoryReady: eventId) | BookingCreated, BookingConfirmed, BookingExpired, BookingCancelled, BookingConfirmationFailed, RefundRequested, SeatInventoryReady | Booking | Payment, Ticket, Notification, Catalog, Queue |
+| `booking.events.v1` | bookingId (SeatInventoryReady: eventId) | BookingCreated, BookingConfirmed, BookingExpired, BookingCancelled, BookingConfirmationFailed, BookingHoldExpiring, BookingSalePaused, RefundRequested, SeatInventoryReady | Booking | Payment, Ticket, Notification, Catalog, Queue |
 | `payment.events.v1` | bookingId (OrganizerPayoutStatusChanged: organizerId) | PaymentSucceeded, PaymentFailed, RefundCompleted, RefundFailed, OrganizerPayoutStatusChanged | Payment | Booking, Ticket, Notification, Catalog |
 | `ticket.events.v1` | ticketId | TicketIssued, TicketIssuanceFailed, TicketCheckedIn, TicketRevoked | Ticket | Booking, Payment, Notification |
 
@@ -615,10 +641,12 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 
 | Vấn đề | Giải pháp |
 |---|---|
-| Lưu DB xong nhưng gửi event thất bại | **Transactional Outbox**. Giai đoạn modular monolith: Spring Modulith ghi event vào bảng `event_publication` trong cùng transaction với dữ liệu nghiệp vụ, listener trong process xử lý và đánh dấu hoàn tất, event chưa xong được gửi lại khi khởi động; khi có Kafka thì dùng event externalization của Modulith. Khi tách service: mỗi service có bảng `outbox (id, aggregate_type, aggregate_id, event_type, payload, created_at)`, Debezium đọc WAL của Postgres và đẩy sang Kafka |
+| Lưu DB xong nhưng gửi event thất bại | **Transactional Outbox**. Giai đoạn modular monolith: Spring Modulith ghi event vào bảng `event_publication` trong cùng transaction với dữ liệu nghiệp vụ, listener trong process xử lý và đánh dấu hoàn tất, event chưa xong được gửi lại khi khởi động; khi có Kafka thì dùng event externalization của Modulith. Khi tách service: mỗi service có bảng `outbox (id, aggregate_type, aggregate_id, event_type, payload, created_at)`, Debezium đọc WAL của Postgres (`wal_level = logical`) và đẩy sang Kafka; replication slot giới hạn bằng `max_slot_wal_keep_size`, có alert khi slot giữ WAL quá ngưỡng |
+| Listener in-process lỗi liên tục | Gửi lại tối đa N lần mỗi publication; quá N thì đánh dấu lỗi, có metric + alert, gửi lại tay bằng script |
 | Event bị giao nhiều lần (at-least-once) | **Idempotent consumer**: bảng `processed_events`, insert eventId trong cùng transaction với xử lý nghiệp vụ |
 | Mất message khi broker chết | `acks=all`, `replication.factor=3`, `min.insync.replicas=2` (trên K8s) |
-| Consumer lỗi liên tục với 1 message (poison pill) | Retry có backoff → DLT → alert → xử lý tay, replay lại |
+| Consumer Kafka lỗi liên tục với 1 message (poison pill) | Retry có backoff → DLT → alert → xử lý tay, replay lại bằng script |
+| Chuyển consumer sang service mới | Consumer group mới đọc từ `earliest`, bỏ qua event đã xử lý theo `eventId` (chép kèm `processed_events` của consumer cũ); topic giữ message ≥ 7 ngày |
 
 ---
 
@@ -779,6 +807,7 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | POST | `/api/v1/admin/bookings/{id}/refund` | admin | Hoàn tiền thủ công cho booking `REFUND_FAILED` |
 | GET/POST | `/api/v1/admin/platform-fees` | admin | Xem lịch sử / đặt mức phí nền tảng mới (BR-06) |
 | POST | `/api/v1/admin/organizers/{id}/suspend` | admin | Đình chỉ organizer, tạm dừng bán các sự kiện của họ (BR-13) |
+| POST | `/api/v1/admin/organizers/{id}/reinstate` | admin | Khôi phục organizer bị đình chỉ về `APPROVED`; sự kiện vẫn tạm dừng cho tới khi Admin mở bán lại (BR-13) |
 | POST | `/api/v1/admin/events/{id}/suspend` | admin | Tạm dừng bán một sự kiện, kèm lý do (BR-13) |
 | POST | `/api/v1/admin/events/{id}/resume` | admin | Mở bán lại sự kiện đang tạm dừng (BR-13) |
 | POST | `/api/v1/admin/events/{id}/cancel` | admin | Huỷ sự kiện, hoàn tiền toàn bộ (BR-08) |
@@ -809,6 +838,7 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 - Chạy trên **virtual threads** → giữ hàng nghìn kết nối SSE không tốn platform thread.
 - **Fan-out đa pod**: thay đổi trạng thái ghế ở pod bất kỳ → publish lên Redis channel `seat-updates:{eventId}` → mọi pod nhận và đẩy xuống các client đang kết nối với pod đó → không cần sticky session.
 - Heartbeat 15s để giữ kết nối qua proxy / load balancer.
+- Proxy phía trước (Envoy Gateway) chạy HTTP/2, vì HTTP/1.1 giới hạn 6 kết nối mỗi domain và mỗi tab có thể mở tới 3 stream. Màn phòng chờ và sơ đồ ghế không mở stream thông báo.
 - Redis Pub/Sub không lưu message nên không phát lại được theo `Last-Event-ID`. Khi kết nối lại, client tải lại snapshot `GET /events/{id}/seats` rồi nghe tiếp.
 - **Thông báo trong app**: Notification ghi `notifications` rồi publish lên `user-notify:{userId}`; `GET /me/notifications/stream` đẩy thông báo mới và số chưa đọc. Kết nối lại thì gọi `unread-count`. Trước khi có SSE (và khi SSE lỗi), chuông gọi `unread-count` mỗi 60 giây.
 
@@ -882,7 +912,7 @@ Yêu cầu cấu hình bắt buộc:
 |---|---|
 | Vé giả | QR là JWT ký ES256, private key trong Vault, xoay vòng theo `kid` |
 | Webhook giả mạo | Verify `Stripe-Signature` bằng endpoint secret (mỗi endpoint webhook một secret), từ chối nếu lệch thời gian > 5 phút |
-| Bot / spam | Rate limit theo user và IP ở Gateway; lượt vào bắt buộc khi bật phòng chờ |
+| Bot / spam | Rate limit ở Gateway: theo tài khoản với user đã đăng nhập, theo IP (lấy từ `X-Forwarded-For` của proxy tin cậy) với request chưa đăng nhập, để nhiều khách đi chung IP (CGNAT, văn phòng) không ăn chung giới hạn; lượt vào bắt buộc khi bật phòng chờ |
 | Secrets | Vault (Spring Cloud Vault) / External Secrets trên K8s; không có secret trong Git (gitleaks pre-commit) |
 | Input | Bean Validation ở mọi DTO, query tham số hoá (JPA/jOOQ), không nối chuỗi SQL |
 | Audit | Ghi lại mọi thao tác quản trị (duyệt organizer, khoá tài khoản, tạm dừng / huỷ sự kiện, hoàn tiền, đổi phí) — ai, lúc nào, thay đổi gì (Hibernate Envers + bảng audit) |
@@ -974,7 +1004,7 @@ frontend/src/
 
 ### 15.3. Các cơ chế khác
 
-- **Load shedding**: Gateway trả `503 + Retry-After` khi vượt ngưỡng, thay vì để quá tải lan xuống DB.
+- **Load shedding**: Gateway trả `503 + Retry-After` khi số request đang xử lý vượt ngưỡng, thay vì để quá tải lan xuống DB. Kết nối SSE đếm riêng, không tính vào ngưỡng; không shed webhook Stripe, health probe và `POST /payments` (khách đang giữ ghế); API đọc bị shed trước.
 - **Feature flag (Unleash)**: kill switch cho hoàn vé, phòng chờ, tìm kiếm Elasticsearch; rollout dần tính năng mới.
 - **Graceful shutdown**: khi pod bị tắt → ngừng nhận request mới, xử lý xong request đang chạy, commit Kafka offset, đóng SSE (client tự reconnect sang pod khác).
 
@@ -1123,7 +1153,7 @@ Push / PR ─▶ GitHub Actions
 | Kiến trúc | ArchUnit, Spring Modulith `verify()` | Module không vi phạm ranh giới |
 | Integration | Testcontainers (Postgres, Redis, Kafka, Keycloak), Awaitility | Repository, Lua script, consumer, outbox; mọi nhánh bù trừ ở §7.3, gồm kịch bản mất webhook và webhook đi qua Gateway |
 | API ngoài | WireMock, stripe-mock | Stripe, webhook |
-| Contract | Pact | Hợp đồng event / API giữa các service |
+| Contract | Pact, Schema Registry | Pact cho API HTTP nội bộ giữa các service (file pact trong monorepo); hợp đồng event do kiểm `BACKWARD` của Avro giữ |
 | FE | Vitest, React Testing Library, MSW | Component, hook |
 | E2E | Playwright | Luồng đầy đủ: chọn ghế → thanh toán (thẻ test Stripe) → nhận vé |
 

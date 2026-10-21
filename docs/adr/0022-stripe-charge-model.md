@@ -16,7 +16,7 @@ Marketplace: khách trả tiền, organizer nhận phần của mình, nền t�
 **Destination charge**, organizer dùng Connect Express.
 - Hoàn tiền kéo lại phần đã chuyển (transfer reversal). BR-07: không hoàn phí nền tảng. BR-08: `refund_application_fee = true`.
 - Organizer đã rút tiền mà số dư không đủ để kéo lại: Stripe trừ âm vào số dư connected account; Admin theo dõi qua audit log.
-- **Giai đoạn đầu thu trên tài khoản platform**, chưa có Connect, để luồng mua vé chạy sớm (Sprint 3) mà không chờ spike. Từ đầu vẫn lưu `application_fee_minor`, và phần hoàn tiền chừa chỗ cho transfer reversal.
+- **Giai đoạn đầu thu trên tài khoản platform**, chưa có Connect, để luồng mua vé chạy sớm (Sprint 3) mà không chờ spike. Từ đầu vẫn lưu `application_fee_minor`, và phần hoàn tiền chừa chỗ cho transfer reversal. Khi có Connect, organizer chưa có connected account (chỉ dữ liệu seed) vẫn thu trên platform; `payments.destination_account_id` ghi tài khoản nhận (NULL = platform), hoàn tiền chỉ đặt `reverse_transfer` khi cột này có giá trị.
 - Tài khoản platform đăng ký ở quốc gia Stripe hỗ trợ (vd. Singapore), chỉ test mode, vì Stripe chưa hỗ trợ merchant Việt Nam ở live mode.
 
 **Giả định cần kiểm ở spike:**

@@ -11,7 +11,8 @@ Giai đoạn đầu là modular monolith (ADR 0012). Kafka, Avro, Schema Registr
 
 ## Quyết định
 - Lên Kafka (KRaft) + Avro + Schema Registry qua event externalization của Modulith; retry topic / DLT + alert.
-- **Tách Notification** thành service đầu tiên với database riêng; trace xuyên Kafka.
+- **Tách Notification** thành service đầu tiên với database riêng (database + user riêng trong cụm CNPG hiện có, không dựng cụm mới vì máy staging 32 GB); trace xuyên Kafka.
+- Notification chỉ nghe event; dữ liệu cần để gửi đi trong payload, module sở hữu dữ liệu tự phát event theo từng người nhận (`overview.md` §6.5). Lời gọi đồng bộ duy nhất là danh sách Admin qua API nội bộ (client `tickethub-internal`), có Pact HTTP; hợp đồng event do Schema Registry kiểm `BACKWARD`.
 - Service đã tách dùng bảng `outbox` + **Debezium** (ADR 0004). Bảng `event_publication` của Modulith và bảng `outbox` theo định dạng Debezium Outbox Event Router khác nhau, nên không dùng chung; service tách ra chuyển hẳn sang cơ chế mới.
 
 ## Hệ quả
