@@ -2,6 +2,7 @@ import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { AlertCircle, Check, Circle, ScanLine } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { useBreadcrumbTrail } from '@/components/shell/breadcrumb-store'
 import { StatusPanel } from '@/components/StatusPanel'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -21,6 +22,13 @@ export function EventEditLayout({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
   const { event, isLoading, notFound, refetch } = useOrganizerEvent(eventId)
   const location = useRouterState({ select: (state) => state.location })
+  const activeTab: EditTab = location.pathname.endsWith('/tiers')
+    ? 'tiers'
+    : (location.search as { tab?: string }).tab === 'sales'
+      ? 'sales'
+      : 'info'
+  // Breadcrumb 4 cấp: Trang chủ › Sự kiện › <tên> › <tab> (docs/design/README.md §3).
+  useBreadcrumbTrail(event ? [{ label: event.title }, { label: t(`organizerEvents.edit.${activeTab}`) }] : [])
 
   if (isLoading) return <Skeleton className="h-40" aria-busy="true" />
   if (!event) {
@@ -41,11 +49,6 @@ export function EventEditLayout({ eventId }: { eventId: string }) {
     )
   }
 
-  const activeTab: EditTab = location.pathname.endsWith('/tiers')
-    ? 'tiers'
-    : (location.search as { tab?: string }).tab === 'sales'
-      ? 'sales'
-      : 'info'
   const isDraft = event.status === 'DRAFT'
   const checklist = publishChecklist(event)
   const params = { eventId }

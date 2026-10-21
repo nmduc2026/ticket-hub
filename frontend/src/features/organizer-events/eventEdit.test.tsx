@@ -91,6 +91,20 @@ describe('khung sửa sự kiện', () => {
     expect(screen.queryByRole('button', { name: 'Publish' })).not.toBeInTheDocument()
   })
 
+  it('breadcrumb 4 cấp: Trang chủ › Sự kiện › <tên> › <tab>; rời trang thì về breadcrumb thường', async () => {
+    mockOrganizerApi(eventDetail())
+    const router = renderAt(`/organizer/events/${EVENT_ID}/tiers`)
+    const crumbs = await screen.findByRole('navigation', { name: 'Đường dẫn' }, T)
+
+    await waitFor(() => expect(within(crumbs).getByText('Đêm nhạc Rock Sài Gòn')).toBeInTheDocument())
+    expect(within(crumbs).getByRole('link', { name: 'Trang chủ' })).toBeInTheDocument()
+    expect(within(crumbs).getByRole('link', { name: 'Sự kiện' })).toHaveAttribute('href', '/organizer/events')
+    expect(within(crumbs).getByText('Hạng vé & giá')).toHaveAttribute('aria-current', 'page')
+
+    await router.navigate({ to: '/organizer/events' })
+    await waitFor(() => expect(within(crumbs).queryByText('Đêm nhạc Rock Sài Gòn')).not.toBeInTheDocument())
+  })
+
   it('đường dẫn gốc của sự kiện chuyển sang tab Thông tin chung', async () => {
     mockOrganizerApi(eventDetail())
     const router = renderAt(`/organizer/events/${EVENT_ID}`)

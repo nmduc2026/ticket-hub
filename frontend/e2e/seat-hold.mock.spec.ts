@@ -189,6 +189,30 @@ test.describe('giữ ghế trên trình duyệt', () => {
     await expect(page.getByText('6 ghế', { exact: true })).toBeVisible()
   })
 
+  test('390px: chạm vào khu thì sơ đồ phóng to khu đó, chạm tiếp vào ghế thì chọn được', async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.startsWith('mobile'), 'Chỉ màn hẹp mới phóng to theo khu')
+    await page.goto(`/events/${EVENT_ID}/seats`)
+    const map = page.getByRole('application', { name: 'Sơ đồ ghế' })
+    await expect(map.locator('canvas').first()).toBeVisible()
+
+    const before = await seatPoint(page, 'A-4-10')
+    await page.touchscreen.tap(before.x, before.y)
+    await expect(page.getByText('Chưa chọn ghế')).toBeVisible()
+    await expect(page.getByRole('status').filter({ hasText: 'Đã phóng to Khu A' })).toHaveCount(1)
+
+    // Khung nhìn mới: khu A vừa khít khung chứa (như viewForRect).
+    const frame = await map.boundingBox()
+    if (!frame) throw new Error('Không thấy sơ đồ ghế')
+    const pad = 18 / 2 + 14
+    const rect = { x: 60 - pad, y: 160 - pad, width: 19 * 24 + 2 * pad, height: 7 * 26 + 2 * pad }
+    const scale = Math.min(4, frame.width / rect.width, frame.height / rect.height)
+    const seat = SEATS.find((candidate) => candidate.id === 'A-4-10') as MockSeat
+    const x = frame.x + frame.width / 2 + (seat.x - (rect.x + rect.width / 2)) * scale
+    const y = frame.y + frame.height / 2 + (seat.y - (rect.y + rect.height / 2)) * scale
+    await page.touchscreen.tap(x, y)
+    await expect(page.getByText('1 ghế', { exact: true })).toBeVisible()
+  })
+
   test('~500 ghế: phóng to liên tục vẫn mượt (dưới 50ms mỗi bước)', async ({ page }) => {
     await page.goto(`/events/${EVENT_ID}/seats`)
     await expect(page.getByRole('application', { name: 'Sơ đồ ghế' }).locator('canvas').first()).toBeVisible()

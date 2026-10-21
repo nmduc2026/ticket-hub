@@ -37,6 +37,7 @@ export const vi = {
     toolbar: 'Công cụ danh sách',
   },
   seatMap: {
+    zoomedToSection: 'Đã phóng to {{section}}. Chạm vào ghế để chọn.',
     label: 'Sơ đồ ghế',
     seat: 'Hàng {{row}}, ghế {{number}}',
     zoomIn: 'Phóng to',
@@ -173,6 +174,7 @@ export const vi = {
     qr: 'Mã QR của vé',
     seat: 'Hàng {{row}} · Ghế {{number}}',
     doorsOpen: 'mở cửa {{time}}',
+    addToCalendar: 'Thêm vào lịch',
     ageRestriction: 'Từ {{age}} tuổi',
     rules: 'Quy định tại sự kiện',
     paging: 'Phân trang',
@@ -354,6 +356,11 @@ export const vi = {
     footerCopyright: '© 2026 Ticket Hub',
     searchPlaceholder: 'Tìm kiếm sự kiện',
     categoryNav: 'Danh mục sự kiện',
+    searchHint: 'Tìm sự kiện, nghệ sĩ, địa điểm',
+    headerNav: 'Liên kết nhanh',
+    sellWithUs: 'Bán vé cùng Ticket Hub',
+    myTickets: 'Vé của tôi',
+    allCategories: 'Tất cả',
   },
   home: {
     discover: 'Khám phá sự kiện',

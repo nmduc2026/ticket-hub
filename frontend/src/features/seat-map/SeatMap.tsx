@@ -10,7 +10,7 @@ import { useThemeStore } from '@/features/theme/theme-store'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
 
-import { elementRect, fitView, SEAT_SIZE, sectionRect, type View, zoomAt } from './seatGeometry'
+import { elementRect, fitView, type Rect as Bounds, SEAT_SIZE, seatsRect, sectionRect, type View, viewForRect, zoomAt } from './seatGeometry'
 import { firstSeat, NAV_KEYS, type NavKey, nextSeat } from './seatNavigation'
 import { readSeatPalette, TIER_COLOR_COUNT } from './seatPalette'
 
@@ -32,6 +32,8 @@ const MIN_HEIGHT = 320
 const MAX_HEIGHT = 640
 const ZOOM_STEP = 1.25
 const WHEEL_STEP = 1.1
+/** Ghế vẽ nhỏ hơn cỡ này trên màn hình (vd. cả sơ đồ ở 390px) thì chạm vào khu sẽ phóng to khu đó trước khi chọn ghế. */
+const MIN_TAPPABLE_SEAT_PX = 12
 
 type Appearance = 'available' | 'selected' | 'sold' | 'unavailable'
 
@@ -81,6 +83,16 @@ export function SeatMap({ snapshot, selectedIds, maxSelect, onSelectionChange, o
   )
   const seatById = useMemo(() => new Map(snapshot.seats.map((seat) => [seat.id, seat])), [snapshot.seats])
   const sectionOrder = useMemo(() => snapshot.sections.map((section) => section.code), [snapshot.sections])
+  const sectionBounds = useMemo(
+    () =>
+      snapshot.sections.flatMap((section) => {
+        const rect =
+          sectionRect(section.shape) ?? seatsRect(snapshot.seats.filter((seat) => seat.sectionCode === section.code))
+        return rect ? [{ code: section.code, name: section.name, rect }] : []
+      }),
+    [snapshot.sections, snapshot.seats],
+  )
+  const seatsTooSmallToTap = view !== null && SEAT_SIZE * view.scale < MIN_TAPPABLE_SEAT_PX
 
   const appearanceOf = useCallback(
     (seat: SeatState): Appearance => {
@@ -141,6 +153,10 @@ export function SeatMap({ snapshot, selectedIds, maxSelect, onSelectionChange, o
   }
   const zoomFromCentre = (factor: number) => {
     if (view) changeView(zoomAt(view, factor, { x: width / 2, y: height / 2 }))
+  }
+  const zoomToSection = (name: string, rect: Bounds) => {
+    changeView(viewForRect({ width, height }, rect))
+    setAnnouncement(t('seatMap.zoomedToSection', { section: name }))
   }
   const resetView = () => {
     userMovedView.current = false
@@ -302,6 +318,20 @@ export function SeatMap({ snapshot, selectedIds, maxSelect, onSelectionChange, o
                   )
                 })}
               </Layer>
+
+              {seatsTooSmallToTap && (
+                <Layer>
+                  {sectionBounds.map((section) => (
+                    <Rect
+                      key={section.code}
+                      {...section.rect}
+                      fill="rgba(0,0,0,0)"
+                      onClick={() => zoomToSection(section.name, section.rect)}
+                      onTap={() => zoomToSection(section.name, section.rect)}
+                    />
+                  ))}
+                </Layer>
+              )}
 
               <Layer listening={false}>
                 {focusSeat && (

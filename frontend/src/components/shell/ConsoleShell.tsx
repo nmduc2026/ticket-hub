@@ -1,6 +1,6 @@
 import { Link, Outlet, useRouterState } from '@tanstack/react-router'
 import { ChevronRight, Menu } from 'lucide-react'
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
@@ -9,6 +9,7 @@ import { useCurrentUser } from '@/features/auth/useCurrentUser'
 import { cn } from '@/lib/utils'
 
 import { BrandMark } from './BrandMark'
+import { useBreadcrumbStore } from './breadcrumb-store'
 import { CommandPalette } from './CommandPalette'
 import { type ShellConfig, type ShellVariant, SHELL_CONFIG } from './nav'
 import { NotificationBell } from './NotificationBell'
@@ -26,6 +27,7 @@ export function ConsoleShell({ variant }: { variant: ShellVariant }) {
   const { user } = useCurrentUser()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const trail = useBreadcrumbStore((state) => state.trail)
 
   const activeItem = config.groups
     .flatMap((group) => group.items)
@@ -82,9 +84,36 @@ export function ConsoleShell({ variant }: { variant: ShellVariant }) {
               <li aria-hidden="true" className="flex">
                 <ChevronRight className="size-3.5" />
               </li>
-              <li className="text-foreground truncate" aria-current="page">
-                {t(activeItem?.labelKey ?? 'shell.overview')}
-              </li>
+              {trail.length === 0 ? (
+                <li className="text-foreground truncate" aria-current="page">
+                  {t(activeItem?.labelKey ?? 'shell.overview')}
+                </li>
+              ) : (
+                <>
+                  <li className="shrink-0">
+                    {activeItem ? (
+                      <Link to={activeItem.to} className="hover:text-foreground hover:underline">
+                        {t(activeItem.labelKey)}
+                      </Link>
+                    ) : (
+                      t('shell.overview')
+                    )}
+                  </li>
+                  {trail.map((crumb, index) => (
+                    <Fragment key={`${index}-${crumb.label}`}>
+                      <li aria-hidden="true" className="flex">
+                        <ChevronRight className="size-3.5" />
+                      </li>
+                      <li
+                        className={cn('truncate', index === trail.length - 1 && 'text-foreground')}
+                        aria-current={index === trail.length - 1 ? 'page' : undefined}
+                      >
+                        {crumb.label}
+                      </li>
+                    </Fragment>
+                  ))}
+                </>
+              )}
             </ol>
           </nav>
 

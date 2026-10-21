@@ -1,4 +1,4 @@
-import { elementRect, fitView, MAX_SCALE, MIN_SCALE, SEAT_SIZE, sectionRect, zoomAt } from './seatGeometry'
+import { elementRect, fitView, MAX_SCALE, MIN_SCALE, SEAT_SIZE, sectionRect, seatsRect, viewForRect, zoomAt } from './seatGeometry'
 
 describe('sectionRect', () => {
   it('khung khu GRID bao quanh mọi ghế của lưới với phần đệm', () => {
@@ -47,5 +47,23 @@ describe('khung nhìn', () => {
   it('zoomAt chặn trong khoảng cho phép', () => {
     expect(zoomAt({ scale: 1, x: 0, y: 0 }, 100, { x: 0, y: 0 }).scale).toBe(MAX_SCALE)
     expect(zoomAt({ scale: 1, x: 0, y: 0 }, 0.001, { x: 0, y: 0 }).scale).toBe(MIN_SCALE)
+  })
+
+  it('viewForRect đưa khu vào giữa và vừa khít khung chứa, không quá MAX_SCALE', () => {
+    const rect = { x: 100, y: 200, width: 400, height: 200 }
+    const view = viewForRect({ width: 400, height: 400 }, rect)
+    expect(view.scale).toBe(1)
+    // Tâm khu nằm giữa khung chứa.
+    expect((rect.x + rect.width / 2) * view.scale + view.x).toBe(200)
+    expect((rect.y + rect.height / 2) * view.scale + view.y).toBe(200)
+    expect(viewForRect({ width: 400, height: 400 }, { x: 0, y: 0, width: 10, height: 10 }).scale).toBe(MAX_SCALE)
+  })
+
+  it('seatsRect bao mọi ghế kèm đệm (khu IMPORTED); không có ghế thì null', () => {
+    const rect = seatsRect([{ x: 10, y: 20 }, { x: 110, y: 70 }])
+    expect(rect).not.toBeNull()
+    expect(rect?.x).toBeLessThan(10)
+    expect((rect?.x ?? 0) + (rect?.width ?? 0)).toBeGreaterThan(110)
+    expect(seatsRect([])).toBeNull()
   })
 })

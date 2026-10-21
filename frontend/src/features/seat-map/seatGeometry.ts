@@ -47,6 +47,16 @@ export function sectionRect(shape: unknown): Rect | null {
   }
 }
 
+/** Khung bao quanh một nhóm ghế (khu `IMPORTED` không có tham số lưới); `null` khi không có ghế. */
+export function seatsRect(seats: ReadonlyArray<{ x: number; y: number }>): Rect | null {
+  if (seats.length === 0) return null
+  const xs = seats.map((seat) => seat.x)
+  const ys = seats.map((seat) => seat.y)
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+  const pad = SEAT_SIZE / 2 + SECTION_PADDING
+  return { x: minX - pad, y: minY - pad, width: maxX - minX + 2 * pad, height: maxY - minY + 2 * pad }
+}
+
 /** Khung của sân khấu / lối đi / nhãn; `null` khi `shape` thiếu kích thước. */
 export function elementRect(shape: unknown): (Rect & { rotation: number }) | null {
   const parsed = elementShapeSchema.safeParse(shape)
@@ -71,6 +81,16 @@ export function fitView(container: { width: number; height: number }, map: { wid
     scale,
     x: (container.width - map.width * scale) / 2,
     y: (container.height - map.height * scale) / 2,
+  }
+}
+
+/** Khung nhìn đưa `rect` vào giữa và vừa khít khung chứa (giới hạn {@link MAX_SCALE}): chạm vào khu ở màn hẹp. */
+export function viewForRect(container: { width: number; height: number }, rect: Rect): View {
+  const scale = Math.min(MAX_SCALE, container.width / rect.width, container.height / rect.height)
+  return {
+    scale,
+    x: container.width / 2 - (rect.x + rect.width / 2) * scale,
+    y: container.height / 2 - (rect.y + rect.height / 2) * scale,
   }
 }
 

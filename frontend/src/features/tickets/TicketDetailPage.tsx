@@ -1,14 +1,17 @@
 import { Link } from '@tanstack/react-router'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, CalendarPlus } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useTranslation } from 'react-i18next'
 
+import { useGetEvent } from '@/api/generated/endpoints/public-event-controller/public-event-controller'
+import type { Ticket } from '@/api/generated/model'
 import { StatusPanel } from '@/components/StatusPanel'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDateChip, formatTime } from '@/lib/date'
 import { cn } from '@/lib/utils'
 
+import { buildIcs, downloadIcs } from './calendar'
 import { useMyTickets } from './useMyTickets'
 
 /** Chi tiết vé (#9): mã QR từ `qrToken`, vé không còn hợp lệ thì QR mờ kèm nhãn trạng thái (docs/design/checkout.md §4). */
@@ -55,6 +58,7 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
         <p className={cn('text-sm', valid ? 'text-primary font-medium' : 'text-muted-foreground')}>
           {t(`tickets.status.${ticket.status}`)}
         </p>
+        {valid && <AddToCalendar ticket={ticket} />}
         {ticket.ageRestriction != null && (
           <p className="text-muted-foreground text-sm">{t('tickets.ageRestriction', { age: ticket.ageRestriction })}</p>
         )}
@@ -68,5 +72,30 @@ export function TicketDetailPage({ ticketId }: { ticketId: string }) {
         </section>
       )}
     </div>
+  )
+}
+
+/** "Thêm vào lịch": file `.ics` sinh ở trình duyệt; giờ kết thúc lấy từ trang sự kiện (có cache) nếu có. */
+function AddToCalendar({ ticket }: { ticket: Ticket }) {
+  const { t } = useTranslation()
+  const event = useGetEvent(ticket.eventId, { query: { staleTime: 5 * 60_000, retry: false } })
+  const endsAt = event.data?.status === 200 ? event.data.data.endsAt : undefined
+  const add = () =>
+    downloadIcs(
+      `ticket-hub-${ticket.ticketId.slice(-8)}.ics`,
+      buildIcs({
+        uid: ticket.ticketId,
+        title: ticket.eventTitle,
+        location: ticket.venueName,
+        startsAt: ticket.startsAt,
+        endsAt,
+        description: `${ticket.tierName} · ${t('tickets.seat', { row: ticket.seat.row, number: ticket.seat.number })}`,
+      }),
+    )
+  return (
+    <Button variant="outline" size="sm" onClick={add}>
+      <CalendarPlus aria-hidden="true" />
+      {t('tickets.addToCalendar')}
+    </Button>
   )
 }

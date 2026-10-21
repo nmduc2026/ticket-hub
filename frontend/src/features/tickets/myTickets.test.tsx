@@ -13,6 +13,7 @@ const past = new Date(Date.now() - 30 * 86_400_000).toISOString()
 
 const ticket = (id: string, overrides: Record<string, unknown> = {}) => ({
   ticketId: id,
+  eventId: 'e1',
   eventTitle: 'Đêm nhạc Rock Sài Gòn',
   startsAt: future,
   venueName: 'Nhà hát Hòa Bình',
@@ -36,7 +37,10 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   mockMe(meResponse(['CUSTOMER']))
-  server.use(http.get('/api/v1/administrative-units', () => HttpResponse.json([])))
+  server.use(
+    http.get('/api/v1/administrative-units', () => HttpResponse.json([])),
+    http.get('/api/v1/events/e1', () => HttpResponse.json({ id: 'e1', endsAt: '2026-11-15T15:30:00Z' })),
+  )
 })
 
 describe('Vé của tôi (AC-9)', () => {
@@ -64,6 +68,7 @@ describe('Vé của tôi (AC-9)', () => {
     await user.click(screen.getByRole('link', { name: /Đêm nhạc Rock Sài Gòn/ }))
     expect(await screen.findByRole('img', { name: 'Mã QR của vé' })).toBeInTheDocument()
     expect(screen.getByText('Hợp lệ')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Thêm vào lịch' })).toBeInTheDocument()
   })
 
   it('chưa có vé: hiện trạng thái trống', async () => {
