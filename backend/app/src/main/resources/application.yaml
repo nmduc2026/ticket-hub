@@ -73,3 +73,11 @@ tickethub:
     access-key: ${STORAGE_ACCESS_KEY:dev-access-key}
     secret-key: ${STORAGE_SECRET_KEY:dev-secret-key}
     max-banner-size: 2MB
+
+  stripe:
+    # Khoá test mode, chỉ từ biến môi trường / K8s Secret (không commit). Test API: stripe-mock đặt api-base.
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    api-base: ${STRIPE_API_BASE:}
+    timeout: 3s
+    webhook-tolerance: 5m

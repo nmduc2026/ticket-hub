@@ -35,6 +35,14 @@ class MigrationTests {
 	}
 
 	@Test
+	void paymentSchemaHasItsTables() {
+		List<String> tables = jdbc.queryForList(
+				"select table_name from information_schema.tables where table_schema = 'payment'", String.class);
+
+		assertThat(tables).contains("payments", "refunds", "stripe_events", "processed_events");
+	}
+
+	@Test
 	void eventPublicationTableExistsInSharedSchema() {
 		Integer tables = jdbc.queryForObject("""
 				select count(*) from information_schema.tables
