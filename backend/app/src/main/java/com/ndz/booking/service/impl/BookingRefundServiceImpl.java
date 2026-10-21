@@ -17,6 +17,8 @@ import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.dto.response.BookingViews.RefundResult;
 import com.ndz.booking.entity.enums.BookingStatus;
+import com.ndz.booking.event.RefundCompleted;
+import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
 import com.ndz.booking.event.TicketRevoked;
 import com.ndz.booking.repository.BookingRepository;
@@ -31,6 +33,8 @@ import com.ndz.shared.util.Uuid7;
 public class BookingRefundServiceImpl implements BookingRefundService {
 
 	static final String CONSUMER = "booking.ticket-revoked";
+	static final String COMPLETED_CONSUMER = "booking.refund-completed";
+	static final String FAILED_CONSUMER = "booking.refund-failed";
 
 	private static final Logger log = LoggerFactory.getLogger(BookingRefundServiceImpl.class);
 
@@ -78,6 +82,52 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 				data.currency()));
 		log.info("Booking {} yêu cầu hoàn {} {}", bookingId, refundAmount, data.currency());
 		return new RefundResult(bookingId, BookingStatus.REFUND_REQUESTED, refundAmount);
+	}
+
+	@Override
+	public void onRefundCompleted(RefundCompleted event) {
+		if (!processed.markProcessed(COMPLETED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua RefundCompleted đã xử lý {}", event.messageId());
+			return;
+		}
+		moveAfterRefund(event.bookingId(), BookingStatus.REFUNDED, "RefundCompleted " + event.refundId(), event.occurredAt());
+	}
+
+	@Override
+	public void onRefundFailed(RefundFailed event) {
+		if (!processed.markProcessed(FAILED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua RefundFailed đã xử lý {}", event.messageId());
+			return;
+		}
+		moveAfterRefund(event.bookingId(), BookingStatus.REFUND_FAILED,
+				"RefundFailed " + event.refundId() + " (" + event.failureCode() + ")", event.occurredAt());
+	}
+
+	/**
+	 * Chỉ booking đang {@code REFUND_REQUESTED} mới đổi. Hoàn tự động vì thanh toán đến muộn (booking {@code EXPIRED} /
+	 * {@code CANCELLED}) cũng phát các event này nhưng không liên quan tới vòng đời hoàn vé nên bị bỏ qua.
+	 */
+	private void moveAfterRefund(UUID bookingId, BookingStatus next, String source, Instant occurredAt) {
+		LockedBooking booking = bookings.lockBooking(bookingId).orElse(null);
+		if (booking == null) {
+			log.error("{} cho booking không tồn tại {}", source, bookingId);
+			return;
+		}
+		if (booking.status() != BookingStatus.REFUND_REQUESTED) {
+			log.info("{}: booking {} đang {}, không đổi", source, bookingId, booking.status());
+			return;
+		}
+		booking.status().requireTransitionTo(next);
+		if (!bookings.transition(bookingId, BookingStatus.REFUND_REQUESTED, next)) {
+			throw new IllegalStateException("Booking " + bookingId + " đã bị chuyển trạng thái khi đang khoá");
+		}
+		if (next == BookingStatus.REFUND_FAILED) {
+			bookings.markRefundFailedAt(bookingId, occurredAt);
+			// Alert mức cao (overview.md §16.3): cần Admin hoàn thủ công.
+			log.error("Booking {} chuyển REFUND_FAILED ({})", bookingId, source);
+			return;
+		}
+		log.info("Booking {} chuyển {} ({})", bookingId, next, source);
 	}
 
 	@Override

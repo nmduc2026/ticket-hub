@@ -209,6 +209,10 @@ public class BookingRepository {
 				""", reason, refundAmountMinor, Timestamp.from(now), bookingId) == 1;
 	}
 
+	public void markRefundFailedAt(UUID bookingId, Instant at) {
+		jdbc.update("UPDATE booking.bookings SET refund_failed_at = ? WHERE id = ?", Timestamp.from(at), bookingId);
+	}
+
 	/** Ghi một vé đã thu hồi; gửi lại cùng vé không đếm thêm. */
 	public void recordRevokedTicket(UUID bookingId, UUID ticketId, Instant now) {
 		jdbc.update("INSERT INTO booking.revoked_tickets (booking_id, ticket_id, revoked_at) VALUES (?, ?, ?) "

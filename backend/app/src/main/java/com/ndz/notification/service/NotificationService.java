@@ -1,5 +1,6 @@
 package com.ndz.notification.service;
 
+import com.ndz.booking.event.RefundCompleted;
 import com.ndz.ticket.event.TicketIssued;
 
 /** Gửi thông báo từ event nghiệp vụ (overview.md §6.5, §11.2). */
@@ -11,5 +12,11 @@ public interface NotificationService {
 	 * (listener) mở transaction.
 	 */
 	void onTicketIssued(TicketIssued event);
+
+	/**
+	 * Gửi email xác nhận đã hoàn tiền. Hoàn không có người nhận (hoàn tự động vì thanh toán đến muộn) thì bỏ qua.
+	 * Idempotent theo {@code messageId}; gửi lỗi xử lý như {@link #onTicketIssued}.
+	 */
+	void onRefundCompleted(RefundCompleted event);
 
 }

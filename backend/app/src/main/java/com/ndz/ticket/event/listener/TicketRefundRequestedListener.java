@@ -8,11 +8,11 @@ import com.ndz.ticket.service.TicketRevocationService;
 
 /** Nghe {@code RefundRequested} do Booking phát để thu hồi vé; xử lý nằm ở {@link TicketRevocationService}. */
 @Component
-class RefundRequestedListener {
+class TicketRefundRequestedListener {
 
 	private final TicketRevocationService revocation;
 
-	RefundRequestedListener(TicketRevocationService revocation) {
+	TicketRefundRequestedListener(TicketRevocationService revocation) {
 		this.revocation = revocation;
 	}
 

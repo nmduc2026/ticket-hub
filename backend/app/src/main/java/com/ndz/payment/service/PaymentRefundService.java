@@ -2,7 +2,9 @@ package com.ndz.payment.service;
 
 import java.util.UUID;
 
-/** Hoàn tiền tự động (overview.md §7.3, §7.4, ADR 0026). Hoàn theo yêu cầu khách (BR-07) làm ở Sprint 4. */
+import com.ndz.booking.event.RefundRequested;
+
+/** Hoàn tiền (overview.md §7.3, §7.4, BR-07, BR-10, ADR 0026). */
 public interface PaymentRefundService {
 
 	/**
@@ -11,5 +13,22 @@ public interface PaymentRefundService {
 	 * dùng lại bản ghi cũ nên không hoàn hai lần. Idempotent theo {@code messageId}. Người gọi (listener) mở transaction.
 	 */
 	void refundFully(UUID messageId, UUID paymentId, String reason);
+
+	/**
+	 * Hoàn theo {@code RefundRequested} của booking. Số tiền do Payment tính từ payment đã thu: lý do khách yêu cầu hoàn
+	 * thì trừ {@code application_fee_minor}, các lý do còn lại hoàn 100% (BR-07, BR-08). Mỗi event là một lần thử mới
+	 * (key {@code refund-{refundId}} mới) trừ khi lần trước còn chờ Stripe. Kết quả đi ra bằng {@code RefundCompleted}
+	 * hoặc {@code RefundFailed}. Idempotent theo {@code messageId}. Người gọi (listener) mở transaction.
+	 */
+	void refundForBooking(RefundRequested event);
+
+	/**
+	 * Webhook {@code charge.refunded}: lần hoàn đang chờ của payment đã xong → {@code RefundCompleted}. Không có lần nào
+	 * đang chờ (đã xong hoặc đã thất bại) thì bỏ qua và ghi log.
+	 */
+	void onRefundSucceeded(UUID paymentId);
+
+	/** Webhook {@code refund.failed}: lần hoàn đang chờ thất bại → {@code RefundFailed}. Lần đã chốt thì bỏ qua. */
+	void onRefundFailed(UUID paymentId, String stripeRefundId, String failureCode);
 
 }

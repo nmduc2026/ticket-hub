@@ -3,6 +3,8 @@ package com.ndz.booking.service;
 import java.util.UUID;
 
 import com.ndz.booking.dto.response.BookingViews.RefundResult;
+import com.ndz.booking.event.RefundCompleted;
+import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.TicketRevoked;
 
 /** Hoàn vé phía Booking (overview.md §7.4, ADR 0026): nhận yêu cầu của khách và nhả ghế sau khi vé đã thu hồi. */
@@ -19,5 +21,11 @@ public interface BookingRefundService {
 
 	/** Đếm vé đã thu hồi; đủ vé của booking thì nhả ghế về {@code AVAILABLE}. Idempotent. */
 	void onTicketRevoked(TicketRevoked event);
+
+	/** Tiền đã hoàn xong: {@code REFUND_REQUESTED → REFUNDED}. Booking ở trạng thái khác thì bỏ qua và ghi log. Idempotent. */
+	void onRefundCompleted(RefundCompleted event);
+
+	/** Hoàn thất bại: {@code REFUND_REQUESTED → REFUND_FAILED} để Admin hoàn thủ công. Trạng thái khác thì bỏ qua. Idempotent. */
+	void onRefundFailed(RefundFailed event);
 
 }

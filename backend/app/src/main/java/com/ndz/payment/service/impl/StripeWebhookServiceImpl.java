@@ -17,6 +17,7 @@ import com.ndz.payment.entity.enums.PaymentStatus;
 import com.ndz.payment.event.PaymentFailed;
 import com.ndz.payment.repository.PaymentRepository;
 import com.ndz.payment.repository.StripeEventRepository;
+import com.ndz.payment.service.PaymentRefundService;
 import com.ndz.payment.service.PaymentSettlementService;
 import com.ndz.payment.service.StripeWebhookService;
 import com.ndz.shared.exception.BusinessException;
@@ -36,11 +37,14 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 	private final StripeEventRepository stripeEvents;
 	private final PaymentRepository payments;
 	private final PaymentSettlementService settlement;
+	private final PaymentRefundService refunds;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	StripeWebhookServiceImpl(StripeGateway stripe, StripeEventRepository stripeEvents, PaymentRepository payments,
-			PaymentSettlementService settlement, ApplicationEventPublisher publisher, Clock clock) {
+			PaymentSettlementService settlement, PaymentRefundService refunds, ApplicationEventPublisher publisher,
+			Clock clock) {
+		this.refunds = refunds;
 		this.stripe = stripe;
 		this.stripeEvents = stripeEvents;
 		this.payments = payments;
@@ -86,6 +90,9 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 			case GatewayWebhookEvent.PAYMENT_INTENT_PROCESSING -> transition(payment, PaymentStatus.PROCESSING, event, now);
 			case GatewayWebhookEvent.PAYMENT_INTENT_SUCCEEDED -> succeeded(payment, event, now);
 			case GatewayWebhookEvent.PAYMENT_INTENT_PAYMENT_FAILED -> failed(payment, event, now);
+			case GatewayWebhookEvent.CHARGE_REFUNDED -> refunds.onRefundSucceeded(payment.getId());
+			case GatewayWebhookEvent.REFUND_FAILED -> refunds.onRefundFailed(payment.getId(), event.stripeRefundId(),
+					event.failureCode());
 			default -> log.debug("Bỏ qua loại webhook chưa xử lý: {}", event.type());
 		}
 	}

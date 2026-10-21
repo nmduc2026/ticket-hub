@@ -1,9 +1,11 @@
 package com.ndz.notification.service.impl;
 
+import java.text.NumberFormat;
 import java.time.Clock;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,6 +16,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.ndz.booking.event.RefundCompleted;
 import com.ndz.notification.client.EmailSendException;
 import com.ndz.notification.client.EmailSender;
 import com.ndz.notification.config.NotificationProperties;
@@ -34,6 +37,8 @@ public class NotificationServiceImpl implements NotificationService {
 
 	static final String CONSUMER = "notification.ticket-issued";
 	static final String TICKET_ISSUED = "TICKET_ISSUED";
+	static final String REFUND_COMPLETED_CONSUMER = "notification.refund-completed";
+	static final String REFUND_COMPLETED = "REFUND_COMPLETED";
 
 	/** BR-11: lưu UTC, chỉ đổi sang giờ Việt Nam ở lớp hiển thị. */
 	private static final DateTimeFormatter DISPLAY_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
@@ -70,20 +75,45 @@ public class NotificationServiceImpl implements NotificationService {
 			log.info("Bỏ qua TicketIssued đã xử lý {}", event.messageId());
 			return;
 		}
+		sendEmail(TICKET_ISSUED, event.userId(), event.messageId(), event.contactEmail(), variables(event),
+				"vé của booking " + event.bookingId());
+	}
+
+	@Override
+	public void onRefundCompleted(RefundCompleted event) {
+		if (!processed.markProcessed(REFUND_COMPLETED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua RefundCompleted đã xử lý {}", event.messageId());
+			return;
+		}
+		if (event.userId() == null || event.contactEmail() == null) {
+			// Hoàn tự động vì thanh toán đến muộn: không có người nhận để gửi thư.
+			log.info("Hoàn tiền {} không có người nhận email, bỏ qua", event.refundId());
+			return;
+		}
+		sendEmail(REFUND_COMPLETED, event.userId(), event.messageId(), event.contactEmail(),
+				Map.of("eventTitle", event.eventTitle() == null ? "" : event.eventTitle(), "amount",
+						formatMoney(event.amountMinor(), event.currency())),
+				"hoàn tiền " + event.refundId());
+	}
+
+	/**
+	 * Dựng thư từ mẫu rồi gửi; ghi {@code notification_log} SENT, hoặc FAILED rồi ném lỗi để event được thử lại.
+	 */
+	private void sendEmail(String templateCode, UUID userId, UUID messageId, String to, Map<String, Object> variables,
+			String description) {
 		try {
-			Template template = templates.findById(new TemplateId(TICKET_ISSUED, Channel.EMAIL.name()))
-					.orElseThrow(() -> new IllegalStateException("Thiếu mẫu " + TICKET_ISSUED + " kênh EMAIL"));
-			Map<String, Object> variables = variables(event);
-			emailSender.send(event.contactEmail(), renderer.renderSubject(template.getSubject(), variables),
+			Template template = templates.findById(new TemplateId(templateCode, Channel.EMAIL.name()))
+					.orElseThrow(() -> new IllegalStateException("Thiếu mẫu " + templateCode + " kênh EMAIL"));
+			emailSender.send(to, renderer.renderSubject(template.getSubject(), variables),
 					renderer.renderBody(template.getBodyTemplate(), variables));
 		}
 		catch (RuntimeException e) {
-			recordFailure(event, e);
+			recordFailure(templateCode, userId, messageId, description, e);
 			throw e;
 		}
-		logs.save(NotificationLog.sent(Uuid7.next(clock), event.userId(), Channel.EMAIL, TICKET_ISSUED,
-				event.messageId(), clock.instant()));
-		log.info("Đã gửi email vé của booking {}", event.bookingId());
+		logs.save(NotificationLog.sent(Uuid7.next(clock), userId, Channel.EMAIL, templateCode, messageId,
+				clock.instant()));
+		log.info("Đã gửi email {}", description);
 	}
 
 	private Map<String, Object> variables(TicketIssued event) {
@@ -97,14 +127,21 @@ public class NotificationServiceImpl implements NotificationService {
 				properties.webBaseUrl() + "/me/tickets");
 	}
 
+	/** VND không có phần lẻ (BR-10): hiển thị 950.000 ₫; tiền tệ khác ghi kèm mã. */
+	private static String formatMoney(long amountMinor, String currency) {
+		String number = NumberFormat.getIntegerInstance(Locale.of("vi", "VN")).format(amountMinor);
+		return "VND".equals(currency) ? number + " ₫" : number + " " + currency;
+	}
+
 	/** Ghi trong transaction riêng: transaction chính sắp hoàn tác (và event được thử lại) nên dòng lỗi phải còn lại. */
-	private void recordFailure(TicketIssued event, RuntimeException cause) {
+	private void recordFailure(String templateCode, UUID userId, UUID messageId, String description,
+			RuntimeException cause) {
 		String reason = cause instanceof EmailSendException ? cause.getMessage()
 				: cause.getClass().getSimpleName() + ": " + cause.getMessage();
 		UUID logId = Uuid7.next(clock);
-		newTransaction.executeWithoutResult(status -> logs.save(NotificationLog.failed(logId, event.userId(),
-				Channel.EMAIL, TICKET_ISSUED, event.messageId(), reason, clock.instant())));
-		log.error("Gửi email vé của booking {} thất bại: {}", event.bookingId(), reason);
+		newTransaction.executeWithoutResult(status -> logs.save(NotificationLog.failed(logId, userId, Channel.EMAIL,
+				templateCode, messageId, reason, clock.instant())));
+		log.error("Gửi email {} thất bại: {}", description, reason);
 	}
 
 }

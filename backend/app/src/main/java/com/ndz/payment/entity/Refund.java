@@ -33,6 +33,21 @@ public class Refund {
 	@Column(name = "stripe_refund_id")
 	private String stripeRefundId;
 
+	@Column(name = "booking_id", updatable = false)
+	private UUID bookingId;
+
+	@Column(name = "user_id", updatable = false)
+	private UUID userId;
+
+	@Column(name = "contact_email", updatable = false)
+	private String contactEmail;
+
+	@Column(name = "event_title", updatable = false)
+	private String eventTitle;
+
+	@Column(name = "failure_reason")
+	private String failureReason;
+
 	@Column(name = "amount_minor", nullable = false, updatable = false)
 	private long amountMinor;
 
@@ -64,6 +79,37 @@ public class Refund {
 		this.updatedAt = now;
 	}
 
+	/** Lần hoàn theo yêu cầu hoàn vé của một booking: mang theo người nhận và tên sự kiện cho event kết quả. */
+	public Refund(UUID id, UUID paymentId, long amountMinor, String reason, UUID bookingId, UUID userId,
+			String contactEmail, String eventTitle, Instant now) {
+		this(id, paymentId, amountMinor, reason, now);
+		this.bookingId = bookingId;
+		this.userId = userId;
+		this.contactEmail = contactEmail;
+		this.eventTitle = eventTitle;
+	}
+
+	/** Stripe xác nhận đã hoàn xong. Trả false (không đổi gì) nếu lần hoàn này không còn {@code PENDING}. */
+	public boolean markSucceeded(Instant now) {
+		if (status != RefundStatus.PENDING) {
+			return false;
+		}
+		this.status = RefundStatus.SUCCEEDED;
+		this.updatedAt = now;
+		return true;
+	}
+
+	/** Stripe báo hoàn thất bại. Trả false (không đổi gì) nếu lần hoàn này không còn {@code PENDING}. */
+	public boolean markFailed(String failureReason, Instant now) {
+		if (status != RefundStatus.PENDING) {
+			return false;
+		}
+		this.status = RefundStatus.FAILED;
+		this.failureReason = failureReason;
+		this.updatedAt = now;
+		return true;
+	}
+
 	/** Ghi kết quả Stripe trả về: {@code succeeded} là xong, còn lại ({@code pending}...) chờ webhook. */
 	public void recordStripeResult(String stripeRefundId, boolean succeeded, Instant now) {
 		this.stripeRefundId = stripeRefundId;
@@ -87,6 +133,26 @@ public class Refund {
 
 	public long getAmountMinor() {
 		return amountMinor;
+	}
+
+	public UUID getBookingId() {
+		return bookingId;
+	}
+
+	public UUID getUserId() {
+		return userId;
+	}
+
+	public String getContactEmail() {
+		return contactEmail;
+	}
+
+	public String getEventTitle() {
+		return eventTitle;
+	}
+
+	public String getFailureReason() {
+		return failureReason;
 	}
 
 	public String getReason() {

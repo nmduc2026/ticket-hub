@@ -201,7 +201,7 @@ class LatePaymentTests {
 	}
 
 	@Test
-	@DisplayName("Stripe trả pending: bản ghi hoàn giữ PENDING kèm stripe_refund_id (webhook hoàn tất ở Sprint 4)")
+	@DisplayName("Stripe trả pending: bản ghi hoàn giữ PENDING kèm stripe_refund_id (webhook charge.refunded hoàn tất, xem RefundFlowTests)")
 	void aPendingRefundStaysPendingWithItsStripeId() throws Exception {
 		stripe.stubFor(WireMock.post(urlEqualTo("/v1/refunds")).willReturn(refund("pending")));
 		UUID event = onSaleEvent();

@@ -9,6 +9,7 @@ import com.stripe.StripeClient;
 import com.stripe.exception.EventDataObjectDeserializationException;
 import com.stripe.exception.SignatureVerificationException;
 import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
 import com.stripe.model.Event;
 import com.stripe.model.PaymentIntent;
 import com.stripe.model.Refund;
@@ -116,9 +117,16 @@ public class StripeGateway {
 			if (object instanceof PaymentIntent intent) {
 				String failureCode = intent.getLastPaymentError() == null ? null
 						: intent.getLastPaymentError().getCode();
-				return new GatewayWebhookEvent(event.getId(), event.getType(), intent.getId(), failureCode);
+				return new GatewayWebhookEvent(event.getId(), event.getType(), intent.getId(), failureCode, null);
 			}
-			return new GatewayWebhookEvent(event.getId(), event.getType(), null, null);
+			if (object instanceof Charge charge) {
+				return new GatewayWebhookEvent(event.getId(), event.getType(), charge.getPaymentIntent(), null, null);
+			}
+			if (object instanceof Refund refund) {
+				return new GatewayWebhookEvent(event.getId(), event.getType(), refund.getPaymentIntent(),
+						refund.getFailureReason(), refund.getId());
+			}
+			return new GatewayWebhookEvent(event.getId(), event.getType(), null, null, null);
 		}
 		catch (EventDataObjectDeserializationException e) {
 			throw new InvalidWebhookException("Không đọc được nội dung webhook", e);
