@@ -15,6 +15,8 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.booking.event.RefundCompleted;
+import com.ndz.catalog.event.OrganizerApproved;
+import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.notification.client.EmailSendException;
 import com.ndz.notification.client.EmailSender;
 import com.ndz.notification.config.NotificationProperties;
@@ -38,6 +40,10 @@ public class NotificationServiceImpl implements NotificationService {
 	static final String TICKET_ISSUED = "TICKET_ISSUED";
 	static final String REFUND_COMPLETED_CONSUMER = "notification.refund-completed";
 	static final String REFUND_COMPLETED = "REFUND_COMPLETED";
+	static final String ORGANIZER_APPROVED_CONSUMER = "notification.organizer-approved";
+	static final String ORGANIZER_APPROVED = "ORGANIZER_APPROVED";
+	static final String ORGANIZER_REJECTED_CONSUMER = "notification.organizer-rejected";
+	static final String ORGANIZER_REJECTED = "ORGANIZER_REJECTED";
 
 	/** BR-11: lưu UTC, chỉ đổi sang giờ Việt Nam ở lớp hiển thị. */
 	private static final DateTimeFormatter DISPLAY_TIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
@@ -93,6 +99,29 @@ public class NotificationServiceImpl implements NotificationService {
 				Map.of("eventTitle", event.eventTitle() == null ? "" : event.eventTitle(), "amount",
 						MoneyFormat.format(event.amountMinor(), event.currency())),
 				"hoàn tiền " + event.refundId());
+	}
+
+	@Override
+	public void onOrganizerApproved(OrganizerApproved event) {
+		if (!processed.markProcessed(ORGANIZER_APPROVED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua OrganizerApproved đã xử lý {}", event.messageId());
+			return;
+		}
+		sendEmail(ORGANIZER_APPROVED, event.organizerId(), event.messageId(), event.contactEmail(),
+				Map.of("displayName", event.displayName(), "organizerUrl", properties.webBaseUrl() + "/organizer"),
+				"duyệt hồ sơ organizer " + event.organizerId());
+	}
+
+	@Override
+	public void onOrganizerRejected(OrganizerRejected event) {
+		if (!processed.markProcessed(ORGANIZER_REJECTED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua OrganizerRejected đã xử lý {}", event.messageId());
+			return;
+		}
+		sendEmail(ORGANIZER_REJECTED, event.organizerId(), event.messageId(), event.contactEmail(),
+				Map.of("displayName", event.displayName(), "reason", event.reason(), "applyUrl",
+						properties.webBaseUrl() + "/organizer/apply"),
+				"từ chối hồ sơ organizer " + event.organizerId());
 	}
 
 	/**

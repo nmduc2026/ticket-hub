@@ -6,6 +6,9 @@ import java.util.UUID;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
+import com.ndz.catalog.event.OrganizerApplied;
+import com.ndz.catalog.event.OrganizerApproved;
+import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.notification.dto.request.UpdatePreferencesRequest;
 import com.ndz.notification.dto.response.NotificationResponses.NotificationPage;
 import com.ndz.notification.dto.response.NotificationResponses.PreferenceItem;
@@ -34,6 +37,15 @@ public interface InAppNotificationService {
 
 	/** Hoàn tiền lỗi, đang được xử lý thủ công. */
 	void onRefundFailed(RefundFailed event);
+
+	/** Hồ sơ organizer mới → mỗi Admin còn hoạt động nhận một thông báo "chờ duyệt". */
+	void onOrganizerApplied(OrganizerApplied event);
+
+	/** Hồ sơ được duyệt → báo organizer. */
+	void onOrganizerApproved(OrganizerApproved event);
+
+	/** Hồ sơ bị từ chối → báo organizer kèm lý do. */
+	void onOrganizerRejected(OrganizerRejected event);
 
 	/** Hộp thư của chính người dùng, mới nhất trước, theo con trỏ. */
 	NotificationPage list(UUID userId, boolean unreadOnly, UUID cursor, int size);

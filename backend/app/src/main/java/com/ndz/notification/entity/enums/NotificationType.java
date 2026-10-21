@@ -1,8 +1,8 @@
 package com.ndz.notification.entity.enums;
 
 /**
- * Loại thông báo trong app (overview.md §6.5). Loại bắt buộc luôn gửi: thông báo về vé, hoàn tiền và huỷ sự kiện
- * không tắt được trong cài đặt.
+ * Loại thông báo trong app (overview.md §6.5). Loại bắt buộc luôn gửi: thông báo về vé, hoàn tiền, huỷ sự kiện và kết
+ * quả duyệt hồ sơ organizer không tắt được trong cài đặt.
  */
 public enum NotificationType {
 
@@ -12,7 +12,10 @@ public enum NotificationType {
 	REFUND_FAILED("Hoàn tiền cần xử lý", true),
 	EVENT_CANCELLED("Sự kiện bị huỷ", true),
 	SALE_PAUSED("Tạm dừng bán", false),
-	HOLD_EXPIRING("Sắp hết giờ giữ ghế", false);
+	HOLD_EXPIRING("Sắp hết giờ giữ ghế", false),
+	ORGANIZER_APPLICATION_PENDING("Hồ sơ organizer chờ duyệt", false),
+	ORGANIZER_APPROVED("Hồ sơ organizer được duyệt", true),
+	ORGANIZER_REJECTED("Hồ sơ organizer bị từ chối", true);
 
 	private final String label;
 	private final boolean mandatory;

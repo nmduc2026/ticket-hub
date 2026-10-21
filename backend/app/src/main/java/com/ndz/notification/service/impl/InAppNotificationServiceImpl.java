@@ -13,7 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
+import com.ndz.account.api.AccountApi;
 import com.ndz.booking.event.RefundRequested;
+import com.ndz.catalog.event.OrganizerApplied;
+import com.ndz.catalog.event.OrganizerApproved;
+import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.notification.config.NotificationProperties;
 import com.ndz.notification.dto.request.UpdatePreferencesRequest;
 import com.ndz.notification.dto.response.NotificationResponses.NotificationItem;
@@ -41,13 +45,15 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 	private final InAppNotificationRepository inbox;
 	private final NotificationPreferenceRepository preferences;
 	private final NotificationProperties properties;
+	private final AccountApi accounts;
 	private final Clock clock;
 
 	InAppNotificationServiceImpl(InAppNotificationRepository inbox, NotificationPreferenceRepository preferences,
-			NotificationProperties properties, Clock clock) {
+			NotificationProperties properties, AccountApi accounts, Clock clock) {
 		this.inbox = inbox;
 		this.preferences = preferences;
 		this.properties = properties;
+		this.accounts = accounts;
 		this.clock = clock;
 	}
 
@@ -102,6 +108,30 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 				(event.eventTitle() == null ? "Đơn của bạn" : event.eventTitle())
 						+ ": hoàn tiền chưa thành công, chúng tôi đang xử lý thủ công và sẽ báo khi xong.",
 				"/me/bookings", event.messageId());
+	}
+
+	@Override
+	@Transactional
+	public void onOrganizerApplied(OrganizerApplied event) {
+		// Mỗi Admin một thông báo; (user, source_event_id) duy nhất nên gửi lại event không tạo trùng.
+		for (AccountApi.UserContact admin : accounts.usersWithRole("ADMIN")) {
+			notify(admin.userId(), NotificationType.ORGANIZER_APPLICATION_PENDING, "Hồ sơ organizer chờ duyệt",
+					event.displayName() + " vừa nộp hồ sơ làm ban tổ chức.", "/admin/organizers", event.messageId());
+		}
+	}
+
+	@Override
+	@Transactional
+	public void onOrganizerApproved(OrganizerApproved event) {
+		notify(event.organizerId(), NotificationType.ORGANIZER_APPROVED, "Hồ sơ organizer đã được duyệt",
+				"Bạn đã là ban tổ chức. Đăng nhập lại để thấy menu Ban tổ chức.", "/organizer", event.messageId());
+	}
+
+	@Override
+	@Transactional
+	public void onOrganizerRejected(OrganizerRejected event) {
+		notify(event.organizerId(), NotificationType.ORGANIZER_REJECTED, "Hồ sơ organizer chưa được duyệt",
+				event.reason(), "/organizer/apply", event.messageId());
 	}
 
 	@Override

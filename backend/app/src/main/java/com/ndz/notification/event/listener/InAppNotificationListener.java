@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 import com.ndz.booking.event.RefundCompleted;
 import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
+import com.ndz.catalog.event.OrganizerApplied;
+import com.ndz.catalog.event.OrganizerApproved;
+import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.notification.service.InAppNotificationService;
 import com.ndz.ticket.event.TicketIssued;
 
@@ -40,6 +43,21 @@ class InAppNotificationListener {
 	@ApplicationModuleListener
 	void on(RefundFailed event) {
 		notifications.onRefundFailed(event);
+	}
+
+	@ApplicationModuleListener
+	void on(OrganizerApplied event) {
+		notifications.onOrganizerApplied(event);
+	}
+
+	@ApplicationModuleListener
+	void on(OrganizerApproved event) {
+		notifications.onOrganizerApproved(event);
+	}
+
+	@ApplicationModuleListener
+	void on(OrganizerRejected event) {
+		notifications.onOrganizerRejected(event);
 	}
 
 }

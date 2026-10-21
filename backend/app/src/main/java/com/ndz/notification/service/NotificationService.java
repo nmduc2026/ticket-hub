@@ -1,6 +1,8 @@
 package com.ndz.notification.service;
 
 import com.ndz.booking.event.RefundCompleted;
+import com.ndz.catalog.event.OrganizerApproved;
+import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.ticket.event.TicketIssued;
 
 /** Gửi thông báo từ event nghiệp vụ (overview.md §6.5, §11.2). */
@@ -18,5 +20,14 @@ public interface NotificationService {
 	 * Idempotent theo {@code messageId}; gửi lỗi xử lý như {@link #onTicketIssued}.
 	 */
 	void onRefundCompleted(RefundCompleted event);
+
+	/**
+	 * Gửi email kết quả duyệt hồ sơ organizer tới email liên hệ trong hồ sơ. Idempotent theo {@code messageId}; gửi lỗi
+	 * xử lý như {@link #onTicketIssued}.
+	 */
+	void onOrganizerApproved(OrganizerApproved event);
+
+	/** Như {@link #onOrganizerApproved}, kèm lý do từ chối. */
+	void onOrganizerRejected(OrganizerRejected event);
 
 }

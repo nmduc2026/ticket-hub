@@ -325,7 +325,7 @@ notification_preferences (user_id, type, email BOOLEAN, in_app BOOLEAN, PRIMARY 
 - Organizer: hồ sơ được duyệt / từ chối, Stripe cần bổ sung hoặc bị hạn chế, khách yêu cầu hoàn, mốc vé bán.
 - Admin: hồ sơ organizer chờ duyệt, hoàn tiền lỗi, đơn lệch khi đối soát, sự kiện tự tạm dừng (BR-13).
 
-Thông báo về vé, hoàn tiền và huỷ sự kiện luôn gửi (không tắt được trong `notification_preferences`). Hộp thư giữ 90 ngày; job ShedLock xoá bản cũ hơn.
+Thông báo về vé, hoàn tiền, huỷ sự kiện và kết quả duyệt hồ sơ organizer luôn gửi (không tắt được trong `notification_preferences`). Hộp thư giữ 90 ngày; job ShedLock xoá bản cũ hơn.
 
 ### 6.6. Account
 
