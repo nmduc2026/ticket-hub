@@ -1,6 +1,6 @@
 # Báo cáo verify Sprint 4
 
-Nhánh `feature/sprint-4`. Chạy ngày 21/10/2026 trên máy dev (Windows 11), Docker bật, không có cụm k3d, không có Stripe/Telegram/Sentry thật. Plan: `docs/plans/2026-10-19-sprint-4-plan.md`. Việc treo: `docs/plans/2026-10-21-pending-sprint-1-4.md` (mục Sprint 4).
+Nhánh `feature/sprint-4`. Chạy ngày 21/10/2026 trên máy dev (Windows 11), Docker bật, không có cụm k3d, không có Stripe/Telegram/Sentry thật. Plan: `docs/plans/2026-10-19-sprint-4-plan.md`. Việc treo: `docs/plans/2026-10-21-sprint-cleanup-plan.md`.
 
 ## Lệnh đã chạy
 
