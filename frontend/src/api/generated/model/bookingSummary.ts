@@ -4,6 +4,10 @@
  * Ticket Hub API
  * OpenAPI spec version: v1
  */
+import type { BookingSummaryRefundStatus } from './bookingSummaryRefundStatus';
+import type { BookingSummaryRefundAmountMinor } from './bookingSummaryRefundAmountMinor';
+import type { BookingSummaryRefundableAmountMinor } from './bookingSummaryRefundableAmountMinor';
+import type { BookingSummaryRefundDeadline } from './bookingSummaryRefundDeadline';
 
 export interface BookingSummary {
   bookingId: string;
@@ -15,4 +19,16 @@ export interface BookingSummary {
   totalMinor: number;
   currency: string;
   createdAt: string;
+  /** REQUESTED, REFUNDED hoặc FAILED khi đơn đã yêu cầu hoàn; ngược lại vắng mặt */
+  refundStatus?: BookingSummaryRefundStatus;
+  /** Số tiền khách nhận lại đã chốt khi yêu cầu hoàn, đơn vị nhỏ nhất của tiền tệ */
+  refundAmountMinor?: BookingSummaryRefundAmountMinor;
+  /** Số vé của đơn */
+  ticketCount: number;
+  /** Phí nền tảng trong tổng tiền, không hoàn lại (BR-07) */
+  platformFeeMinor: number;
+  /** Số tiền nhận lại nếu hoàn ngay; chỉ có với đơn CONFIRMED */
+  refundableAmountMinor?: BookingSummaryRefundableAmountMinor;
+  /** Hạn cuối yêu cầu hoàn; chỉ có với đơn CONFIRMED */
+  refundDeadline?: BookingSummaryRefundDeadline;
 }

@@ -26,6 +26,7 @@ import type {
 import type {
   Booking,
   BookingHold,
+  BookingRefund,
   CreateBookingRequest,
   ProblemDetail
 } from '../../model';
@@ -128,6 +129,106 @@ export const useCreateBooking = <TError = ProblemDetail | ProblemDetail,
       > => {
 
       const mutationOptions = getCreateBookingMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * Bắt buộc header Idempotency-Key. Vé bị thu hồi ngay (BR-09); yêu cầu hoàn không huỷ được.
+ * @summary Yêu cầu hoàn cả đơn đã thanh toán (BR-07)
+ */
+export type requestBookingRefundResponse202 = {
+  data: BookingRefund
+  status: 202
+}
+
+export type requestBookingRefundResponse404 = {
+  data: ProblemDetail
+  status: 404
+}
+
+export type requestBookingRefundResponse409 = {
+  data: ProblemDetail
+  status: 409
+}
+
+export type requestBookingRefundResponse422 = {
+  data: ProblemDetail
+  status: 422
+}
+    
+export type requestBookingRefundResponseSuccess = (requestBookingRefundResponse202) & {
+  headers: Headers;
+};
+export type requestBookingRefundResponseError = (requestBookingRefundResponse404 | requestBookingRefundResponse409 | requestBookingRefundResponse422) & {
+  headers: Headers;
+};
+
+export type requestBookingRefundResponse = (requestBookingRefundResponseSuccess | requestBookingRefundResponseError)
+
+export const getRequestBookingRefundUrl = (bookingId: string,) => {
+
+
+  
+
+  return `/api/v1/bookings/${bookingId}/refund`
+}
+
+export const requestBookingRefund = async (bookingId: string, options?: RequestInit): Promise<requestBookingRefundResponse> => {
+  
+  return apiFetch<requestBookingRefundResponse>(getRequestBookingRefundUrl(bookingId),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+
+export const getRequestBookingRefundMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string}, TContext> => {
+
+const mutationKey = ['requestBookingRefund'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestBookingRefund>>, {bookingId: string}> = (props) => {
+          const {bookingId} = props ?? {};
+
+          return  requestBookingRefund(bookingId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RequestBookingRefundMutationResult = NonNullable<Awaited<ReturnType<typeof requestBookingRefund>>>
+    
+    export type RequestBookingRefundMutationError = ProblemDetail | ProblemDetail | ProblemDetail
+
+    /**
+ * @summary Yêu cầu hoàn cả đơn đã thanh toán (BR-07)
+ */
+export const useRequestBookingRefund = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof requestBookingRefund>>,
+        TError,
+        {bookingId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getRequestBookingRefundMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

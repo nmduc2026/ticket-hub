@@ -15,6 +15,7 @@ import { Route as OrganizerRouteRouteImport } from './routes/organizer/route'
 import { Route as GuestIndexRouteImport } from './routes/_guest/index'
 import { Route as GuestForbiddenRouteImport } from './routes/_guest/forbidden'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer/index'
 import { Route as GuestEventsIndexRouteImport } from './routes/_guest/events/index'
 import { Route as GuestMeBookingsRouteImport } from './routes/_guest/me/bookings'
@@ -58,6 +59,11 @@ const GuestForbiddenRoute = GuestForbiddenRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminOrdersRoute = AdminOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const OrganizerIndexRoute = OrganizerIndexRouteImport.update({
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/organizer': typeof OrganizerRouteRouteWithChildren
   '/': typeof GuestIndexRoute
   '/forbidden': typeof GuestForbiddenRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/organizer/events/$eventId': typeof OrganizerEventsEventIdRouteRouteWithChildren
@@ -166,6 +173,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/forbidden': typeof GuestForbiddenRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/': typeof GuestIndexRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/organizer': typeof OrganizerRouteRouteWithChildren
   '/_guest': typeof GuestRouteWithChildren
   '/_guest/forbidden': typeof GuestForbiddenRoute
+  '/admin/orders': typeof AdminOrdersRoute
   '/_guest/': typeof GuestIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/'
     | '/forbidden'
+    | '/admin/orders'
     | '/admin/'
     | '/organizer/'
     | '/organizer/events/$eventId'
@@ -233,6 +243,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forbidden'
+    | '/admin/orders'
     | '/'
     | '/admin'
     | '/organizer'
@@ -255,6 +266,7 @@ export interface FileRouteTypes {
     | '/organizer'
     | '/_guest'
     | '/_guest/forbidden'
+    | '/admin/orders'
     | '/_guest/'
     | '/admin/'
     | '/organizer/'
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/orders': {
+      id: '/admin/orders'
+      path: '/orders'
+      fullPath: '/admin/orders'
+      preLoaderRoute: typeof AdminOrdersRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/organizer/': {
@@ -433,10 +452,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteRouteChildren {
+  AdminOrdersRoute: typeof AdminOrdersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminOrdersRoute: AdminOrdersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

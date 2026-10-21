@@ -2167,10 +2167,30 @@
           "refundAmountMinor" : {
             "type" : [ "integer", "null" ],
             "format" : "int64",
-            "description" : "Số tiền khách nhận lại khi hoàn vé, đơn vị nhỏ nhất của tiền tệ"
+            "description" : "Số tiền khách nhận lại đã chốt khi yêu cầu hoàn, đơn vị nhỏ nhất của tiền tệ"
+          },
+          "ticketCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số vé của đơn"
+          },
+          "platformFeeMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Phí nền tảng trong tổng tiền, không hoàn lại (BR-07)"
+          },
+          "refundableAmountMinor" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64",
+            "description" : "Số tiền nhận lại nếu hoàn ngay; chỉ có với đơn CONFIRMED"
+          },
+          "refundDeadline" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "Hạn cuối yêu cầu hoàn; chỉ có với đơn CONFIRMED"
           }
         },
-        "required" : [ "bookingId", "createdAt", "currency", "eventTitle", "startsAt", "status", "totalMinor" ]
+        "required" : [ "bookingId", "createdAt", "currency", "eventTitle", "platformFeeMinor", "startsAt", "status", "ticketCount", "totalMinor" ]
       },
       "PublicEventPage" : {
         "type" : "object",

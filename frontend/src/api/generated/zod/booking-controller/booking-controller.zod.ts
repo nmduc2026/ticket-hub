@@ -17,6 +17,14 @@ export const createBookingBody = zod.object({
 })
 
 /**
+ * Bắt buộc header Idempotency-Key. Vé bị thu hồi ngay (BR-09); yêu cầu hoàn không huỷ được.
+ * @summary Yêu cầu hoàn cả đơn đã thanh toán (BR-07)
+ */
+export const requestBookingRefundParams = zod.object({
+  "bookingId": zod.uuid()
+})
+
+/**
  * @summary Trạng thái đơn của tôi
  */
 export const getBookingParams = zod.object({

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { getListMyBookingsQueryKey, listMyBookings } from '@/api/generated/endpoints/my-booking-controller/my-booking-controller'
+import type { BookingSummary } from '@/api/generated/model'
 import { StatusPanel } from '@/components/StatusPanel'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatDate, formatDateChip, formatTime } from '@/lib/date'
 import { formatMoney } from '@/lib/money'
+
+import { canRefund, RefundDialog } from './RefundDialog'
 
 const PAGE_SIZE = 10
 const ALL = 'ALL'
@@ -24,6 +27,7 @@ export function MyBookingsPage() {
   const [page, setPage] = useState(0)
   const [needle, setNeedle] = useState('')
   const [status, setStatus] = useState('')
+  const [refunding, setRefunding] = useState<BookingSummary | null>(null)
   const params = { page, size: PAGE_SIZE }
   const query = useQuery({
     queryKey: getListMyBookingsQueryKey(params),
@@ -103,7 +107,14 @@ export function MyBookingsPage() {
                       {formatDateChip(booking.startsAt)} · {formatTime(booking.startsAt)}
                     </div>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap">{t(`myBookings.status.${booking.status}`, booking.status)}</TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <div>{t(`myBookings.status.${booking.status}`, booking.status)}</div>
+                    {booking.refundAmountMinor != null && (
+                      <div className="text-muted-foreground text-xs">
+                        {t('myBookings.refundAmount', { amount: formatMoney(booking.refundAmountMinor, booking.currency) })}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="whitespace-nowrap">{formatDate(booking.createdAt)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">{formatMoney(booking.totalMinor, booking.currency)}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">
@@ -115,9 +126,16 @@ export function MyBookingsPage() {
                       </Button>
                     )}
                     {booking.status === 'CONFIRMED' && (
-                      <Button size="sm" variant="outline" asChild>
-                        <Link to="/me/tickets">{t('myBookings.viewTickets')}</Link>
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" asChild>
+                          <Link to="/me/tickets">{t('myBookings.viewTickets')}</Link>
+                        </Button>
+                        {canRefund(booking) && (
+                          <Button size="sm" variant="outline" onClick={() => setRefunding(booking)}>
+                            {t('myBookings.requestRefund')}
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>
@@ -125,6 +143,10 @@ export function MyBookingsPage() {
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {refunding && (
+        <RefundDialog booking={refunding} open onOpenChange={(open) => !open && setRefunding(null)} />
       )}
 
       <nav className="flex items-center justify-between text-sm" aria-label={t('myBookings.paging')}>
