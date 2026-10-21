@@ -4,7 +4,7 @@
 
 **Đầu vào:** Sprint 1–5 đã xong (gồm duyệt organizer, audit log, kết quả spike Stripe Connect trong ADR 0022). Mỗi hạng mục chỉ đọc đúng các § `overview.md` và ADR ở cột "Đọc".
 
-**Cổng vào sprint:** Flash sale 500 user / 100 ghế → đúng 100 vé, 0 trùng; mọi luồng Sprint 1–5 xanh trên k3d.
+**Cổng vào sprint:** Flash sale 500 user / 100 ghế → đúng 100 vé, 0 trùng; mọi luồng Sprint 1–5 xanh trên k3d. Trong lúc cổng chưa đạt (chờ k3d staging), được mở sớm hạng mục 3, 4 (phần Admin tạm dừng / đình chỉ), 6, 7 (trừ tiến độ hoàn tiền), FE 11, 12 với dữ liệu MSW; hạng mục 1, 2, 5 chờ spike Stripe Connect, hạng mục 8 chờ thăm dò Free plan (xem plan sprint dọn dẹp, "Quyết định Sprint 5 đã chốt").
 
 **Ngoài sprint này:** thành viên của organizer (#27 phần thành viên, ngoài phạm vi dự án); realtime ở bảng điều khiển sự kiện (#25, Sprint 7); feature flag (#32, Sprint 8).
 

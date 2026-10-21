@@ -19,10 +19,10 @@ Những thứ trong app có thể vướng chế độ `transaction`:
 | **C. Không dùng Pooler** | Ít thành phần nhất | Số kết nối thật tăng tuyến tính theo số pod; `max_connections` 200 là trần cứng |
 
 ## Đề xuất
-**A**, kèm hai quy tắc: (1) Flyway nối thẳng `tickethub-pg-rw` (`SPRING_FLYWAY_URL`); (2) app không dùng `SET`/`LISTEN` theo phiên (hiện không có). Pool HikariCP của app giảm còn 10. Quay về **B** nếu khi chạy Load xuất hiện lỗi `prepared statement ... does not exist` hoặc hành vi lệch giữa kết nối.
+**A**, kèm hai quy tắc: (1) Flyway nối thẳng `tickethub-pg-rw` (`SPRING_FLYWAY_URL`); (2) app không dùng `SET`/`LISTEN` theo phiên (hiện không có). Pool HikariCP của app giảm còn 10. Nếu khi chạy Load xuất hiện lỗi `prepared statement ... does not exist`: trước hết kiểm `max_prepared_statements` > 0 trong cấu hình Pooler, rồi thử `prepareThreshold=0` của pgJDBC (không dùng server-side prepare); vẫn lỗi hoặc hành vi lệch giữa kết nối thì quay về **B**.
 
 ## Cần kiểm trên staging
-- Phiên bản PgBouncer thật trong image Pooler (cần >= 1.21 để `max_prepared_statements` có tác dụng).
+- Phiên bản PgBouncer thật trong image Pooler (cần >= 1.21 để `max_prepared_statements` có tác dụng) và `max_prepared_statements` > 0 trong `pooler.yaml`.
 - Chạy Load: số dòng `pg_stat_activity` của database `tickethub` giảm so với nối thẳng, không có lỗi prepared statement, p95 không xấu đi.
 
 ## Hệ quả

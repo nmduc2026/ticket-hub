@@ -163,25 +163,24 @@ Phần viết và kiểm được mà không cần cụm, tài khoản bên ngo�
 
 | # | Việc | Bị chặn bởi | Làm gì khi được gỡ | Xong khi |
 |---|---|---|---|---|
-| S5-1 | Chạy Flash sale, Load, Soak, Stress (hạng mục 1, 2, 5, 15) | B3; cài JMeter 5.6 (JDK 21) trên máy 16 GB, xác nhận hai máy cùng LAN; stripe-mock trên staging (hạng mục 3 dọn dẹp, Sprint 5 hạng mục 1); giới hạn CPU / RAM của `app`, `gateway` | Tạo 500 user + 1 sự kiện 100 ghế theo `load-tests/jmeter/README.md`; chạy lần 1 với `TICKETHUB_BOOKING_SEATHOLD_ENABLED=false` (baseline), lần 2 với `true`; ghi p95, số vé, truy vấn ghế trùng, deadlock; thêm phần thanh toán (webhook giả ký đúng) vào kịch bản | `docs/test/load/sprint-5-load.md` đủ bảng trước / sau; AC-1, AC-2, AC-14 |
-| S5-2 | Chạy thật Sentinel, Pooler, ELK (hạng mục 12, 13) | B3, hạng mục 13 dọn dẹp (k3d + ArgoCD) | Đặt Secret `tickethub-redis`; xác nhận version chart `eck-operator` 3.1.0, Elastic Stack 9.1.4, PgBouncer >= 1.21 trong image Pooler; kill master Redis và kiểm giữ ghế + session; đo `pg_stat_activity` khi chạy Load; tìm log theo `traceId` trong Kibana; kiểm ILM bằng `_ilm/explain`; chốt ADR 0034 (đổi sang `session` nếu có lỗi prepared statement) | AC-6, AC-11 |
+| S5-1 | Chạy Flash sale, Load, Soak, Stress (hạng mục 1, 2, 5, 15) | B3; cài JMeter 5.6 (JDK 21) trên máy 16 GB, xác nhận hai máy cùng LAN; stripe-mock trên staging (hạng mục 3 dọn dẹp, Sprint 5 hạng mục 1); giới hạn CPU / RAM của `app`, `gateway` | Tạo 500 user + 1 sự kiện 100 ghế theo `load-tests/jmeter/README.md`; chạy lần 1 với `TICKETHUB_BOOKING_SEATHOLD_ENABLED=false` (baseline), lần 2 với `true`; ghi p95, số vé, truy vấn ghế trùng, deadlock; thêm phần thanh toán (webhook giả ký đúng) vào kịch bản; đo xong thì đổi mặc định của cờ sang `true` (để Sprint 7 load test chạy có lớp 1) | `docs/test/load/sprint-5-load.md` đủ bảng trước / sau; AC-1, AC-2, AC-14 |
+| S5-2 | Chạy thật Sentinel, Pooler, ELK (hạng mục 12, 13) | B3, hạng mục 13 dọn dẹp (k3d + ArgoCD) | Đặt Secret `tickethub-redis`; xác nhận version chart `eck-operator` 3.1.0, Elastic Stack 9.1.4, PgBouncer >= 1.21 trong image Pooler; kill master Redis và kiểm giữ ghế + session; đo `pg_stat_activity` khi chạy Load; tìm log theo `traceId` trong Kibana; kiểm ILM bằng `_ilm/explain`; chốt ADR 0034: giữ `transaction` với `max_prepared_statements` > 0; còn lỗi prepared statement thì thử `prepareThreshold=0` của pgJDBC trước, vẫn lỗi mới đổi sang `session` | AC-6, AC-11 |
 | S5-3 | Diễn tập C2, C4, C8 (hạng mục 14) | S5-2; hạng mục 14 dọn dẹp (Telegram, B4); stripe-mock trên staging | Áp từng file ở `infra/chaos/`, đo thời gian tới alert, viết runbook ở `docs/runbooks/` và postmortem ở `docs/postmortems/`; C4 chạy kèm Flash sale → 0 ghế trùng; C8 lấy heap dump và phân tích | AC-5, AC-12, AC-13 |
 | S5-4 | Spike Stripe Connect (hạng mục 16) | B2 (tài khoản Stripe Singapore, bật Connect, webhook secret Connect) | Kiểm từng giả định ADR 0022: Express account, onboarding link, `account.updated`, destination charge VND, `reverse_transfer`, `refund_application_fee` | AC-15 |
 | S5-5 | Playwright trên stack thật cho đăng ký / duyệt organizer và khoá user (hạng mục 10, 11) | Hạng mục 11 dọn dẹp (E2E trên stack thật) | Hai luồng: đăng ký → Admin duyệt → vào `/organizer`; khoá user → bị đăng xuất ở lần refresh kế tiếp | Hai luồng chạy được trong CI |
-| S5-6 | Verify và review cuối Sprint 5 (hạng mục 17, 18) | S5-1 đến S5-5 | `docs/test/sprint-5-verify.md`; review độc lập bằng subagent cho lớp Redis giữ ghế và khoá tài khoản | APPROVED |
+| S5-7 | Đối chiếu chữ trên giao diện #15, #22, #28 với prototype | Không bị chặn | Claude so chữ trong `frontend/src/features` với `docs/design/prototype/AdminOrganizers`, `OrganizerApply`, `AdminUsers`, liệt kê chỗ lệch; bạn duyệt rồi sửa | Danh sách chỗ lệch đã được bạn duyệt và sửa |
+| S5-6 | Verify và review cuối Sprint 5 (hạng mục 17, 18) | S5-1 đến S5-5, S5-7 | `docs/test/sprint-5-verify.md`; review độc lập bằng subagent cho lớp Redis giữ ghế và khoá tài khoản | APPROVED |
 
 Việc cần làm khi triển khai lên staging (thao tác báo trước, chưa làm): tạo Secret `tickethub-redis`; `app` cần `KEYCLOAK_ACCOUNT_ADMIN_CLIENT_SECRET` (đã khai trong `helm/app/values.yaml`, lấy từ Secret `tickethub-keycloak`); realm đã import trước đó phải có client `tickethub-account-admin` với `view-users`, `manage-users`.
 
-### Quyết định và giả định chờ bạn duyệt
+### Quyết định Sprint 5 đã chốt (người dùng, 21/10/2026)
 
-- Hồ sơ organizer bị từ chối được nộp lại và về `PENDING` (giả định đã ghi ở plan Sprint 5). Thêm event `OrganizerRejected` (ngoài `OrganizerApplied` của plan) để báo organizer kèm lý do.
+- Hồ sơ organizer bị từ chối được nộp lại và về `PENDING`; event `OrganizerRejected` báo organizer kèm lý do (đã có trong §8.1).
 - Form hồ sơ theo prototype #22: loại hình (cá nhân / doanh nghiệp), tên hiển thị, tên pháp lý, mã số thuế (10 hoặc 13 số) hoặc CCCD (12 số), email, số điện thoại (`0…` hoặc `+84…`), website, giới thiệu, quy mô. Thêm cột vào `catalog.organizers`.
-- Lớp Redis giữ ghế mặc định **tắt**, bật bằng cờ; Redis chết thì giữ ghế trả 503 và health là `DEGRADED` (HTTP 200) chứ không `DOWN`, để pod không rời vòng phục vụ.
-- PgBouncer chạy `transaction` (ADR 0034, Proposed); Flyway nối thẳng Postgres.
-- Test tích hợp của backend giờ dựng thêm Keycloak (~1 GB RAM) và Redis trong context dùng chung: suite chậm thêm ~1 phút cho lần khởi động đầu.
+- **Không upload ảnh giấy phép / CCCD** ở form #22: ảnh CCCD là dữ liệu cá nhân nhạy cảm, giá trị học thêm ít. Admin duyệt dựa trên mã số thuế / CCCD đã nhập. Ghi chú ở `docs/design/README.md` (#22).
+- Lớp Redis giữ ghế mặc định **tắt** để đo baseline, đổi mặc định sang bật sau khi đo xong (S5-1). Redis chết thì giữ ghế trả 503 và health là `DEGRADED` (HTTP 200) chứ không `DOWN`, để pod không rời vòng phục vụ.
+- PgBouncer chạy `transaction` (ADR 0034, Proposed tới khi kiểm trên staging ở S5-2); Flyway nối thẳng Postgres.
+- Test tích hợp của backend dựng thêm Keycloak (~1 GB RAM) và Redis trong context dùng chung, suite chậm thêm ~1 phút ở lần khởi động đầu: chấp nhận. Máy dev bật `testcontainers.reuse.enable=true` (trong `~/.testcontainers.properties`) để lần chạy sau không dựng lại.
 - Khai báo schema 200 cho các endpoint mới trong OpenAPI (không khai thì Orval không sinh kiểu).
-
-### Câu hỏi cho bạn
-
-1. Form #22 có upload ảnh giấy phép kinh doanh / CCCD (prototype). Làm ở đợt nào: ngay (dùng cách upload banner, lưu S3, Admin xem trong side sheet) hay để Sprint 6 cùng việc upload lên S3 thật?
-2. Tên nút / chữ trên giao diện mới (đăng ký organizer, Admin organizer, Admin người dùng) tôi tự đặt theo văn phong màn có sẵn; bạn đối chiếu với prototype #15, #22, #28 và báo chỗ cần đổi.
+- Chữ trên giao diện #15, #22, #28: Claude đối chiếu với prototype rồi bạn duyệt (S5-7).
+- **Mở sớm một phần Sprint 6** trong lúc chờ B3 (cổng vào Sprint 6 chưa đạt): hạng mục 3, 4 (phần Admin tạm dừng / đình chỉ; nhánh mất `charges_enabled` chờ hạng mục 1), 6, 7 (trừ tiến độ hoàn tiền, chờ hạng mục 5), FE 11, 12 với dữ liệu MSW. Hạng mục 1, 2, 5 chờ spike Stripe Connect (S5-4); hạng mục 8 chờ thăm dò Free plan (hạng mục 16 ở trên).

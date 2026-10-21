@@ -149,7 +149,7 @@ Mã QR trên vé **luôn đen trên nền trắng** (kể cả chế độ tối
 | 19 | Hồ sơ cá nhân · Bảo mật · Cài đặt thông báo | [Profile](prototype/Profile.dc.html) | `/me/profile` | 1 (cài đặt thông báo: 4) |
 | 20 | Thông báo (+ popover chuông ở header) | [Notifications](prototype/Notifications.dc.html) | `/me/notifications` | 4 (realtime: 7) |
 | 21 | Đơn hàng của tôi | [MyBookings](prototype/MyBookings.dc.html) | `/me/bookings` | 3 (hoàn vé: 4) |
-| 22 | Đăng ký làm ban tổ chức (form · chờ duyệt · bị từ chối · đã duyệt) | [OrganizerApply](prototype/OrganizerApply.dc.html) | `/organizer/apply` | 5 |
+| 22 | Đăng ký làm ban tổ chức (form · chờ duyệt · bị từ chối · đã duyệt) | [OrganizerApply](prototype/OrganizerApply.dc.html) | `/organizer/apply` | 5 (upload ảnh giấy phép / CCCD: ngoài phạm vi) |
 | 23 | Trạng thái lỗi & ngoại lệ (404, 403, hết giờ giữ ghế, thanh toán lỗi…) | [SystemStates](prototype/SystemStates.dc.html) | — (dùng chung) | 2 → 7 (theo từng lỗi) |
 | 24 | Organizer — Sửa sự kiện: thông tin · mở bán · phòng chờ | [OrgEventInfo](prototype/OrgEventInfo.dc.html) | `/organizer/events/:id/edit` | 2 (phòng chờ: 7) |
 | 25 | Organizer — Bảng điều khiển sự kiện | [OrgEventSales](prototype/OrgEventSales.dc.html) | `/organizer/events/:id/dashboard` | 6 (realtime: 7) |
