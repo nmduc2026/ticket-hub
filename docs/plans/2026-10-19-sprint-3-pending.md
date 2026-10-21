@@ -47,3 +47,11 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 | 13 | Secret `NVD_API_KEY` cho OWASP Dependency-Check (chưa có thì job bỏ qua) | Người dùng | nvd.nist.gov/developers/request-an-api-key |
 | 13 | Version chart Envoy Gateway v1.5.1, cert-manager v1.18.2, ArgoCD v3.1.5 chưa xác nhận trên mạng | Verify | Kiểm khi cài |
 | 13 | YAML mới chỉ kiểm cú pháp (PyYAML), chưa `kubectl --dry-run=server` | Verify | Cần cụm |
+
+## Hạng mục 14 (E2E mua vé)
+
+| # | Việc | Loại | Ghi chú |
+|---|---|---|---|
+| 14 | `frontend/e2e/purchase.spec.ts` đã viết, chưa chạy: bỏ qua trừ khi `E2E_STRIPE=1`. Cần Stripe test key, `stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe`, `app` chạy với `STRIPE_*` và profile `seed`, `VITE_STRIPE_PUBLISHABLE_KEY` | Người dùng | Selector iframe Stripe (`[name="number"]`…) chưa kiểm trên Payment Element thật |
+| 14 | Đường webhook trong lệnh `stripe listen` lấy theo route Gateway `/api/v1/webhooks/**`; xác nhận lại đúng đường của controller | Verify | |
+| 14 | Truy vấn ghế trùng chạy bằng `docker compose exec postgres psql`, cần compose `core` đang chạy | Verify | |
