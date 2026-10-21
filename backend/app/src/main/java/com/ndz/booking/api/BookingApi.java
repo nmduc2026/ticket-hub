@@ -1,6 +1,8 @@
 package com.ndz.booking.api;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -25,6 +27,17 @@ public interface BookingApi {
 	 * "đã thu tiền mà booking chưa xác nhận" cho cảnh báo (overview.md §16.3), không đọc bảng của Booking.
 	 */
 	Set<UUID> notConfirmed(Collection<UUID> bookingIds);
+
+	/** Đơn của một người dùng, mới tạo trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). */
+	List<UserBooking> bookingsOf(UUID userId, int limit);
+
+	/**
+	 * Một đơn trong danh sách của người dùng; {@code refundStatus} là {@code REQUESTED}, {@code REFUNDED},
+	 * {@code FAILED} khi đơn đã qua bước yêu cầu hoàn, ngược lại null.
+	 */
+	record UserBooking(UUID bookingId, String eventTitle, Instant startsAt, String status, long totalMinor,
+			String currency, Instant createdAt, String refundStatus, Long refundAmountMinor, int ticketCount) {
+	}
 
 	/** Số tiền cần thu và mức phí nền tảng đã chốt khi publish (BR-06). Tiền là số nguyên đơn vị nhỏ nhất (BR-10). */
 	record PaymentStart(UUID bookingId, long amountMinor, String currency, int platformFeeBps) {

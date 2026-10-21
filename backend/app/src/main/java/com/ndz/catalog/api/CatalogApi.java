@@ -1,5 +1,6 @@
 package com.ndz.catalog.api;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -23,6 +24,12 @@ public interface CatalogApi {
 
 	/** Người dùng này có phải organizer sở hữu sự kiện không (check-in chỉ dành cho organizer của sự kiện). */
 	boolean isEventOrganizer(UUID eventId, UUID userId);
+
+	/** Sự kiện của một organizer, mới diễn trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). */
+	List<OrganizerEvent> eventsOf(UUID organizerId, int limit);
+
+	record OrganizerEvent(UUID eventId, String title, String status, Instant startsAt) {
+	}
 
 	/** Sơ đồ ghế; {@code shapeJson} là JSON nguyên văn của hình học khu / phần tử. */
 	record SeatMapLayout(int width, int height, List<LayoutSection> sections, List<LayoutElement> elements,

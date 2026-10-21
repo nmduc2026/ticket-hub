@@ -110,3 +110,9 @@ tickethub:
   notification:
     from: ${MAIL_FROM:Ticket Hub <no-reply@tickethub.local>}
     web-base-url: ${WEB_BASE_URL:http://localhost:5173}
+
+  account:
+    keycloak:
+      # Keycloak Admin API cho khoá tài khoản và gán role ORGANIZER (client tickethub-account-admin, overview.md §13.2).
+      base-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8180}
+      client-secret: ${KEYCLOAK_ACCOUNT_ADMIN_CLIENT_SECRET:}

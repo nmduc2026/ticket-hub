@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -16,6 +17,8 @@ public interface EventRepository extends JpaRepository<Event, UUID>, JpaSpecific
 
 	/** Chống IDOR: chỉ tìm trong sự kiện của chính organizer. */
 	Optional<Event> findByIdAndOrganizerId(UUID id, UUID organizerId);
+
+	List<Event> findByOrganizerId(UUID organizerId, Pageable pageable);
 
 	/** Sự kiện đã publish, tới giờ mở bán và có tồn kho: ứng viên chuyển sang ON_SALE (theo lô). */
 	List<Event> findTop100ByStatusAndInventoryReadyTrueAndSaleStartsAtLessThanEqualOrderBySaleStartsAt(

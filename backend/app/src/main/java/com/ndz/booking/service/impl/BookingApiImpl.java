@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -57,6 +58,16 @@ public class BookingApiImpl implements BookingApi {
 		}
 		PaymentInfo info = bookings.paymentInfo(bookingId);
 		return new PaymentStart(bookingId, info.totalMinor(), info.currency(), info.platformFeeBps());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<UserBooking> bookingsOf(UUID userId, int limit) {
+		return bookings.findByUser(userId, limit, 0, properties.refundCutoff()).stream()
+				.map(summary -> new UserBooking(summary.bookingId(), summary.eventTitle(), summary.startsAt(),
+						summary.status(), summary.totalMinor(), summary.currency(), summary.createdAt(),
+						summary.refundStatus(), summary.refundAmountMinor(), summary.ticketCount()))
+				.toList();
 	}
 
 	@Override

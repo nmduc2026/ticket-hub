@@ -3,6 +3,8 @@ package com.ndz.catalog.service.impl;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,16 @@ class CatalogApiImpl implements CatalogApi {
 	@Transactional(readOnly = true)
 	public boolean isEventOrganizer(UUID eventId, UUID userId) {
 		return events.findByIdAndOrganizerId(eventId, userId).isPresent();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<OrganizerEvent> eventsOf(UUID organizerId, int limit) {
+		return events.findByOrganizerId(organizerId, PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "startsAt")))
+				.stream()
+				.map(event -> new OrganizerEvent(event.getId(), event.getTitle(), event.getStatus().name(),
+						event.getStartsAt()))
+				.toList();
 	}
 
 	@Override

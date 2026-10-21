@@ -196,7 +196,10 @@ Giai đoạn 1 — Modular monolith          Giai đoạn 2 — Microservices
 
 ```
 organizers      (id = keycloak user id, display_name, status[PENDING|APPROVED|REJECTED|SUSPENDED], approved_at, rejection_reason,
-                 payout_ready BOOLEAN DEFAULT false)   -- bản sao charges_enabled từ Payment (BR-05, BR-13)
+                 payout_ready BOOLEAN DEFAULT false,   -- bản sao charges_enabled từ Payment (BR-05, BR-13)
+                 organizer_type[INDIVIDUAL|BUSINESS], legal_name, legal_id,   -- hồ sơ đăng ký (prototype #22): tên doanh nghiệp / họ tên,
+                 contact_email, contact_phone, website, introduction, event_scale,   -- mã số thuế (10/13 số) / CCCD (12 số)
+                 submitted_at, version)
 administrative_units (id, code UNIQUE, name, type[TINH|THANH_PHO|PHUONG|XA|DAC_KHU],
                  level SMALLINT[1|2], parent_id NULL → administrative_units, is_active,
                  effective_from, version)               -- 1 bảng cho cả 2 cấp
@@ -489,7 +492,7 @@ Admin theo dõi        → tiến độ hoàn tiền của sự kiện: đã ho�
 
 ```
 User đăng ký organizer → Catalog: organizers PENDING
-Admin từ chối          → REJECTED, lưu rejection_reason, email thông báo kèm lý do
+Admin từ chối          → REJECTED, lưu rejection_reason, email thông báo kèm lý do; user nộp lại → PENDING
 Admin duyệt            → APPROVED → OrganizerApproved
 Account nhận           → gán role ORGANIZER trong Keycloak, cập nhật user_profiles.roles (§6.6)
 Organizer kết nối Stripe → Payment tạo Stripe Connect (Express) account + onboarding link
@@ -580,7 +583,7 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 
 | Topic | Key | Events | Producer | Consumers |
 |---|---|---|---|---|
-| `catalog.events.v1` | eventId | EventPublished, EventUpdated, EventOnSale, EventEnded, EventSuspended, EventResumed, EventCancelled, OrganizerApproved | Catalog | Booking, Queue, Account, Search projection, Notification |
+| `catalog.events.v1` | eventId | EventPublished, EventUpdated, EventOnSale, EventEnded, EventSuspended, EventResumed, EventCancelled, OrganizerApplied, OrganizerApproved, OrganizerRejected | Catalog | Booking, Queue, Account, Search projection, Notification |
 | `booking.events.v1` | bookingId (SeatInventoryReady: eventId) | BookingCreated, BookingConfirmed, BookingExpired, BookingCancelled, BookingConfirmationFailed, RefundRequested, SeatInventoryReady | Booking | Payment, Ticket, Notification, Catalog, Queue |
 | `payment.events.v1` | bookingId (OrganizerPayoutStatusChanged: organizerId) | PaymentSucceeded, PaymentFailed, RefundCompleted, RefundFailed, OrganizerPayoutStatusChanged | Payment | Booking, Ticket, Notification, Catalog |
 | `ticket.events.v1` | ticketId | TicketIssued, TicketIssuanceFailed, TicketCheckedIn, TicketRevoked | Ticket | Booking, Payment, Notification |
@@ -744,6 +747,7 @@ WHERE status <> 'REVOKED' GROUP BY event_id, seat_id HAVING COUNT(*) > 1;
 | POST | `/api/v1/me/notifications/{id}/read`, `/api/v1/me/notifications/read-all` | đã đăng nhập | Đánh dấu đã đọc |
 | GET/PUT | `/api/v1/me/notification-preferences` | đã đăng nhập | Cài đặt nhận thông báo theo loại (email / trong app) |
 | POST | `/api/v1/organizer/apply` | customer | Đăng ký làm organizer |
+| GET | `/api/v1/organizer/application` | customer | Trạng thái hồ sơ organizer của tôi (kèm lý do từ chối); chưa nộp: 404 |
 | POST | `/api/v1/organizer/stripe/onboarding-link` | organizer | Link kết nối Stripe |
 | GET | `/api/v1/venues`, `/api/v1/venues/{id}/seat-maps` | organizer | Chọn địa điểm và sơ đồ ghế khi tạo sự kiện |
 | GET | `/api/v1/organizer/events`, `/api/v1/organizer/events/{id}` | organizer (owner) | Danh sách / chi tiết sự kiện của mình |
