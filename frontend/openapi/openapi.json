@@ -1055,6 +1055,113 @@
         }
       }
     },
+    "/api/v1/admin/platform-fees" : {
+      "get" : {
+        "tags" : [ "admin-platform-fee-controller" ],
+        "summary" : "Lịch sử mức phí nền tảng, mới nhất trước",
+        "operationId" : "listPlatformFees",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PlatformFee"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "admin-platform-fee-controller" ],
+        "summary" : "Đặt mức phí mới, áp cho sự kiện publish từ effectiveFrom",
+        "operationId" : "schedulePlatformFee",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PlatformFeeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "description" : "Mức phí đã lưu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PlatformFee"
+                }
+              }
+            }
+          },
+          "422" : {
+            "description" : "FEE_OUT_OF_RANGE (ngoài 0–2000 bps) hoặc EFFECTIVE_FROM_IN_PAST",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizers/{id}/suspend" : {
+      "post" : {
+        "tags" : [ "admin-organizer-controller" ],
+        "summary" : "Đình chỉ organizer, tạm dừng mọi sự kiện đang bán của họ (BR-13)",
+        "operationId" : "suspendOrganizer",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SuspendRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Đã đình chỉ",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerSuspension"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "ORGANIZER_STATE_INVALID (không ở APPROVED)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/organizers/{id}/reject" : {
       "post" : {
         "tags" : [ "admin-organizer-controller" ],
@@ -1092,6 +1199,54 @@
           },
           "409" : {
             "description" : "Hồ sơ không còn chờ duyệt (ORGANIZER_NOT_PENDING)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/organizers/{id}/reinstate" : {
+      "post" : {
+        "tags" : [ "admin-organizer-controller" ],
+        "summary" : "Khôi phục organizer bị đình chỉ; sự kiện vẫn tạm dừng tới khi mở lại từng cái (BR-13)",
+        "operationId" : "reinstateOrganizer",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SuspendRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Đã khôi phục",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerSuspension"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "ORGANIZER_STATE_INVALID (không bị đình chỉ)",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1163,6 +1318,121 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BulkApproveOrganizersResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/suspend" : {
+      "post" : {
+        "tags" : [ "admin-event-controller" ],
+        "summary" : "Tạm dừng bán một sự kiện, kèm lý do (BR-13)",
+        "operationId" : "suspendEvent",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SuspendRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Đã tạm dừng",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventStatusResult"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "INVALID_EVENT_TRANSITION (không ở PUBLISHED / ON_SALE)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{id}/resume" : {
+      "post" : {
+        "tags" : [ "admin-event-controller" ],
+        "summary" : "Mở bán lại: ON_SALE nếu đã qua giờ mở bán, ngược lại PUBLISHED (BR-13)",
+        "operationId" : "resumeEvent",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Đã mở lại",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventStatusResult"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "INVALID_EVENT_TRANSITION, ORGANIZER_SUSPENDED hoặc ORGANIZER_PAYOUT_NOT_READY",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/bulk-suspend" : {
+      "post" : {
+        "tags" : [ "admin-event-controller" ],
+        "summary" : "Tạm dừng nhiều sự kiện; kết quả theo từng id",
+        "operationId" : "bulkSuspendEvents",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkSuspendRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResult"
                 }
               }
             }
@@ -1265,6 +1535,152 @@
                   "items" : {
                     "$ref" : "#/components/schemas/SeatMap"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/events/{eventId}/sales" : {
+      "get" : {
+        "tags" : [ "organizer-sales-controller" ],
+        "summary" : "Số liệu bán vé của một sự kiện: theo hạng vé, theo ngày",
+        "operationId" : "getEventSales",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Số liệu",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventSales"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "EVENT_NOT_FOUND (không có hoặc không phải sự kiện của bạn)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/dashboard" : {
+      "get" : {
+        "tags" : [ "organizer-sales-controller" ],
+        "summary" : "Tổng quan doanh thu 7 / 30 / 90 ngày gần nhất",
+        "operationId" : "getOrganizerDashboard",
+        "parameters" : [ {
+          "name" : "days",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 30
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/bookings" : {
+      "get" : {
+        "tags" : [ "organizer-sales-controller" ],
+        "summary" : "Đơn hàng của các sự kiện của tôi",
+        "operationId" : "listOrganizerBookings",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "422" : {
+            "description" : "EXPORT_TOO_LARGE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -2626,6 +3042,77 @@
         },
         "required" : [ "enabled" ]
       },
+      "PlatformFeeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "feeBps" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Phí theo phần vạn: 500 = 5%"
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date-time",
+            "description" : "Áp cho sự kiện publish từ thời điểm này"
+          }
+        },
+        "required" : [ "effectiveFrom", "feeBps" ]
+      },
+      "PlatformFee" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "feeBps" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Phần vạn: 500 = 5%"
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createdBy" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "current" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "createdBy", "current", "effectiveFrom", "feeBps", "id" ]
+      },
+      "SuspendRequest" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "reason" ]
+      },
+      "OrganizerSuspension" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "suspendedEvents" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số sự kiện vừa bị tạm dừng theo"
+          }
+        },
+        "required" : [ "id", "status", "suspendedEvents" ]
+      },
       "RejectOrganizerRequest" : {
         "type" : "object",
         "properties" : {
@@ -2693,6 +3180,68 @@
           }
         },
         "required" : [ "code", "id" ]
+      },
+      "EventStatusResult" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "status" ]
+      },
+      "BulkSuspendRequest" : {
+        "type" : "object",
+        "properties" : {
+          "ids" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            },
+            "maxItems" : 100,
+            "minItems" : 0
+          },
+          "reason" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "ids", "reason" ]
+      },
+      "BulkItem" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ok" : {
+            "type" : "boolean"
+          },
+          "code" : {
+            "type" : "string",
+            "description" : "Mã lỗi nghiệp vụ khi ok = false"
+          }
+        },
+        "required" : [ "id", "ok" ]
+      },
+      "BulkResult" : {
+        "type" : "object",
+        "properties" : {
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BulkItem"
+            }
+          }
+        },
+        "required" : [ "results" ]
       },
       "Venue" : {
         "type" : "object",
@@ -2871,6 +3420,211 @@
           }
         },
         "required" : [ "id", "status", "title" ]
+      },
+      "DaySales" : {
+        "type" : "object",
+        "description" : "Theo ngày xác nhận đơn, giờ Việt Nam",
+        "properties" : {
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "grossMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "tickets" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "date", "grossMinor", "tickets" ]
+      },
+      "EventSales" : {
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "grossMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "feeMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "refundedMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "netMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ticketsSold" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Vé đã bán trừ vé đã hoàn"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "checkedIn" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "byTier" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TierSales"
+            }
+          },
+          "byDay" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DaySales"
+            }
+          }
+        },
+        "required" : [ "byDay", "byTier", "capacity", "checkedIn", "currency", "eventId", "feeMinor", "grossMinor", "netMinor", "refundedMinor", "ticketsSold" ]
+      },
+      "TierSales" : {
+        "type" : "object",
+        "properties" : {
+          "tierId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "tierName" : {
+            "type" : "string"
+          },
+          "sold" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "refunded" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "grossMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "feeMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "refundedMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "checkedIn" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "capacity", "checkedIn", "feeMinor", "grossMinor", "refunded", "refundedMinor", "sold", "tierId", "tierName" ]
+      },
+      "OrganizerBooking" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "ticketCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "contactEmail" : {
+            "type" : "string"
+          },
+          "confirmedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "bookingId", "contactEmail", "createdAt", "currency", "eventId", "eventTitle", "status", "ticketCount", "totalMinor" ]
+      },
+      "OrganizerDashboard" : {
+        "type" : "object",
+        "properties" : {
+          "from" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "to" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "grossMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "feeMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "refundedMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "netMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ticketsSold" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "byDay" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DaySales"
+            }
+          },
+          "recentBookings" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/OrganizerBooking"
+            }
+          }
+        },
+        "required" : [ "byDay", "currency", "feeMinor", "from", "grossMinor", "netMinor", "recentBookings", "refundedMinor", "ticketsSold", "to" ]
       },
       "OrganizerApplication" : {
         "type" : "object",

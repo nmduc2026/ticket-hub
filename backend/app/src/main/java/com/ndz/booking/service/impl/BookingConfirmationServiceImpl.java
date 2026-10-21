@@ -21,6 +21,7 @@ import com.ndz.booking.event.PaymentSucceeded;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
+import com.ndz.booking.repository.SalesRepository;
 import com.ndz.booking.service.SeatHoldService;
 import com.ndz.booking.service.BookingConfirmationService;
 import com.ndz.shared.util.Uuid7;
@@ -37,16 +38,18 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 	private final ProcessedEventRepository processed;
 	private final SeatHoldService seatHolds;
 	private final ApplicationEventPublisher publisher;
+	private final SalesRepository sales;
 	private final Clock clock;
 
 	BookingConfirmationServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots,
 			ProcessedEventRepository processed, SeatHoldService seatHolds, ApplicationEventPublisher publisher,
-			Clock clock) {
+			SalesRepository sales, Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.processed = processed;
 		this.seatHolds = seatHolds;
 		this.publisher = publisher;
+		this.sales = sales;
 		this.clock = clock;
 	}
 
@@ -87,6 +90,7 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 		// Ghế đã SOLD trong Postgres: nhả key Redis để key không chặn ghế khi vé được hoàn và ghế về AVAILABLE.
 		seatHolds.releaseAfterCommit(data.eventId(), data.items().stream().map(BookingItemView::seatId).toList(),
 				booking.id());
+		sales.recordConfirmed(booking.id(), clock.instant());
 		publishConfirmed(data);
 		log.info("Booking {} đã xác nhận, {} ghế đã bán", booking.id(), sold);
 	}
@@ -114,6 +118,7 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 			// Đã khoá ghế và booking nên không thể xảy ra; nếu xảy ra thì hoàn tác để người xem.
 			throw new IllegalStateException("Không giữ lại được ghế của booking " + booking.id() + " dù đã khoá");
 		}
+		sales.recordConfirmed(booking.id(), clock.instant());
 		publishConfirmed(data);
 		log.info("Thanh toán đến muộn: booking {} ({}) đã xác nhận lại {} ghế", booking.id(), booking.status(),
 				seatIds.size());

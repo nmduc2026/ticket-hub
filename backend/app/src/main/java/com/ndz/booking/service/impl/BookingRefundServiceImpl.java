@@ -25,6 +25,7 @@ import com.ndz.booking.event.TicketIssuanceFailed;
 import com.ndz.booking.event.TicketRevoked;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
+import com.ndz.booking.repository.SalesRepository;
 import com.ndz.booking.service.BookingRefundService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
@@ -45,14 +46,16 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 	private final ProcessedEventRepository processed;
 	private final BookingProperties properties;
 	private final ApplicationEventPublisher publisher;
+	private final SalesRepository sales;
 	private final Clock clock;
 
 	BookingRefundServiceImpl(BookingRepository bookings, ProcessedEventRepository processed,
-			BookingProperties properties, ApplicationEventPublisher publisher, Clock clock) {
+			BookingProperties properties, ApplicationEventPublisher publisher, SalesRepository sales, Clock clock) {
 		this.bookings = bookings;
 		this.processed = processed;
 		this.properties = properties;
 		this.publisher = publisher;
+		this.sales = sales;
 		this.clock = clock;
 	}
 
@@ -167,6 +170,10 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 		booking.status().requireTransitionTo(next);
 		if (!bookings.transition(bookingId, BookingStatus.REFUND_REQUESTED, next)) {
 			throw new IllegalStateException("Booking " + bookingId + " đã bị chuyển trạng thái khi đang khoá");
+		}
+		if (next == BookingStatus.REFUNDED) {
+			// Doanh thu của organizer trừ phần đã hoàn (overview.md §6.2), cùng transaction với chuyển trạng thái.
+			sales.recordRefunded(bookingId, clock.instant());
 		}
 		if (next == BookingStatus.REFUND_FAILED) {
 			bookings.markRefundFailedAt(bookingId, occurredAt);
