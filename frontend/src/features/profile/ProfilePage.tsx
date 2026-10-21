@@ -6,11 +6,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { NotificationPreferences } from '@/features/notifications/NotificationPreferences'
 import { KEYCLOAK_ACCOUNT_URL } from '@/lib/config'
 import { initials } from '@/lib/initials'
 
 /**
- * Hồ sơ cá nhân (màn #19, chưa có cài đặt thông báo). Hồ sơ lấy từ `GET /me`; email, mật khẩu và phiên đăng nhập
+ * Hồ sơ cá nhân (màn #19). Hồ sơ lấy từ `GET /me`; email, mật khẩu và phiên đăng nhập
  * do Keycloak quản lý nên các nút đổi dẫn tới trang tài khoản của Keycloak.
  */
 export function ProfilePage({ user }: { user: MeResponse }) {
@@ -27,6 +28,7 @@ export function ProfilePage({ user }: { user: MeResponse }) {
       <Tabs defaultValue="info">
         <TabsList>
           <TabsTrigger value="info">{t('profile.tabs.info')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('profile.tabs.notifications')}</TabsTrigger>
           <TabsTrigger value="security">{t('profile.tabs.security')}</TabsTrigger>
         </TabsList>
 
@@ -62,6 +64,10 @@ export function ProfilePage({ user }: { user: MeResponse }) {
               </a>
             </Button>
           </div>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="bg-card mt-4 rounded-xl border p-6">
+          <NotificationPreferences />
         </TabsContent>
 
         <TabsContent value="security" className="bg-card mt-4 flex flex-col gap-5 rounded-xl border p-6">

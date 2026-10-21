@@ -20,6 +20,7 @@ import { Route as CheckinEventIdRouteImport } from './routes/checkin/$eventId'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer/index'
 import { Route as GuestEventsIndexRouteImport } from './routes/_guest/events/index'
 import { Route as GuestMeBookingsRouteImport } from './routes/_guest/me/bookings'
+import { Route as GuestMeNotificationsRouteImport } from './routes/_guest/me/notifications'
 import { Route as GuestMeProfileRouteImport } from './routes/_guest/me/profile'
 import { Route as OrganizerEventsIndexRouteImport } from './routes/organizer/events/index'
 import { Route as OrganizerEventsEventIdRouteRouteImport } from './routes/organizer/events/$eventId/route'
@@ -85,6 +86,11 @@ const GuestEventsIndexRoute = GuestEventsIndexRouteImport.update({
 const GuestMeBookingsRoute = GuestMeBookingsRouteImport.update({
   id: '/me/bookings',
   path: '/me/bookings',
+  getParentRoute: () => GuestRoute,
+} as any)
+const GuestMeNotificationsRoute = GuestMeNotificationsRouteImport.update({
+  id: '/me/notifications',
+  path: '/me/notifications',
   getParentRoute: () => GuestRoute,
 } as any)
 const GuestMeProfileRoute = GuestMeProfileRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/organizer/': typeof OrganizerIndexRoute
   '/organizer/events/$eventId': typeof OrganizerEventsEventIdRouteRouteWithChildren
   '/me/bookings': typeof GuestMeBookingsRoute
+  '/me/notifications': typeof GuestMeNotificationsRoute
   '/me/profile': typeof GuestMeProfileRoute
   '/events/': typeof GuestEventsIndexRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
   '/me/bookings': typeof GuestMeBookingsRoute
+  '/me/notifications': typeof GuestMeNotificationsRoute
   '/me/profile': typeof GuestMeProfileRoute
   '/events': typeof GuestEventsIndexRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/organizer/': typeof OrganizerIndexRoute
   '/organizer/events/$eventId': typeof OrganizerEventsEventIdRouteRouteWithChildren
   '/_guest/me/bookings': typeof GuestMeBookingsRoute
+  '/_guest/me/notifications': typeof GuestMeNotificationsRoute
   '/_guest/me/profile': typeof GuestMeProfileRoute
   '/_guest/events/': typeof GuestEventsIndexRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/organizer/'
     | '/organizer/events/$eventId'
     | '/me/bookings'
+    | '/me/notifications'
     | '/me/profile'
     | '/events/'
     | '/organizer/events/'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/organizer'
     | '/me/bookings'
+    | '/me/notifications'
     | '/me/profile'
     | '/events'
     | '/organizer/events'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/organizer/'
     | '/organizer/events/$eventId'
     | '/_guest/me/bookings'
+    | '/_guest/me/notifications'
     | '/_guest/me/profile'
     | '/_guest/events/'
     | '/organizer/events/'
@@ -382,6 +394,13 @@ declare module '@tanstack/react-router' {
       path: '/me/bookings'
       fullPath: '/me/bookings'
       preLoaderRoute: typeof GuestMeBookingsRouteImport
+      parentRoute: typeof GuestRoute
+    }
+    '/_guest/me/notifications': {
+      id: '/_guest/me/notifications'
+      path: '/me/notifications'
+      fullPath: '/me/notifications'
+      preLoaderRoute: typeof GuestMeNotificationsRouteImport
       parentRoute: typeof GuestRoute
     }
     '/_guest/me/profile': {
@@ -524,6 +543,7 @@ interface GuestRouteChildren {
   GuestForbiddenRoute: typeof GuestForbiddenRoute
   GuestIndexRoute: typeof GuestIndexRoute
   GuestMeBookingsRoute: typeof GuestMeBookingsRoute
+  GuestMeNotificationsRoute: typeof GuestMeNotificationsRoute
   GuestMeProfileRoute: typeof GuestMeProfileRoute
   GuestEventsIndexRoute: typeof GuestEventsIndexRoute
   GuestCheckoutBookingIdSuccessRoute: typeof GuestCheckoutBookingIdSuccessRoute
@@ -538,6 +558,7 @@ const GuestRouteChildren: GuestRouteChildren = {
   GuestForbiddenRoute: GuestForbiddenRoute,
   GuestIndexRoute: GuestIndexRoute,
   GuestMeBookingsRoute: GuestMeBookingsRoute,
+  GuestMeNotificationsRoute: GuestMeNotificationsRoute,
   GuestMeProfileRoute: GuestMeProfileRoute,
   GuestEventsIndexRoute: GuestEventsIndexRoute,
   GuestCheckoutBookingIdSuccessRoute: GuestCheckoutBookingIdSuccessRoute,
