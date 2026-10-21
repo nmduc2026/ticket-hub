@@ -1,0 +1,38 @@
+# Chart gateway (BFF, Spring Cloud Gateway). Secret chỉ tham chiếu.
+image:
+  repository: ghcr.io/nmduc2026/ticket-hub-gateway
+  tag: main
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+containerPort: 8080
+runAsUser: 65532
+service:
+  port: 8080
+pdb:
+  maxUnavailable: 1
+
+probes:
+  startup: /actuator/health/liveness
+  startupFailureThreshold: 36
+  readiness: /actuator/health/readiness
+  liveness: /actuator/health/liveness
+
+resources:
+  requests: { cpu: 250m, memory: 384Mi }
+  limits: { memory: 512Mi }
+
+env:
+  APP_URI: http://app:8081
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  KEYCLOAK_ISSUER_URI: https://auth.tickethub.localhost/realms/tickethub
+  GATEWAY_COOKIE_SECURE: "true"
+
+secretEnv:
+  - { name: REDIS_PASSWORD, secret: tickethub-redis, key: password }
+  - { name: KEYCLOAK_BFF_CLIENT_SECRET, secret: tickethub-keycloak, key: bff-client-secret }
+
+# Chỉ Envoy Gateway (namespace envoy-gateway-system) được gọi vào đây; NetworkPolicy ở việc 13.
+podLabels:
+  tickethub/role: gateway

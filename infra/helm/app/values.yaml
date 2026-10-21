@@ -1,0 +1,48 @@
+# Chart app (modular monolith). Không đặt secret ở đây: secretEnv chỉ tham chiếu Secret có sẵn trong namespace.
+# Tag image do CI cập nhật (docs/ops/k8s-staging.md); không dùng latest.
+image:
+  repository: ghcr.io/nmduc2026/ticket-hub-app
+  tag: main
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+containerPort: 8081
+runAsUser: 65532 # distroless nonroot
+service:
+  port: 8081
+pdb:
+  maxUnavailable: 1
+
+probes:
+  startup: /actuator/health/liveness
+  startupFailureThreshold: 36
+  readiness: /actuator/health/readiness
+  liveness: /actuator/health/liveness
+
+resources:
+  requests: { cpu: 250m, memory: 512Mi }
+  limits: { memory: 768Mi }
+
+env:
+  DB_URL: jdbc:postgresql://postgres:5432/tickethub
+  DB_USER: tickethub
+  MAIL_HOST: mailpit
+  MAIL_PORT: "1025"
+  KEYCLOAK_ISSUER_URI: https://auth.tickethub.localhost/realms/tickethub
+  KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tickethub/protocol/openid-connect/certs
+  STORAGE_ENDPOINT: http://s3mock:9090
+  STORAGE_BUCKET: tickethub-media
+  STORAGE_PUBLIC_BASE_URL: https://tickethub.localhost/media
+  WEB_BASE_URL: https://tickethub.localhost
+
+# Secret tạo tay một lần bằng kubectl (xem docs/ops/k8s-staging.md); chart không tạo secret.
+secretEnv:
+  - { name: DB_PASSWORD, secret: tickethub-db, key: password }
+  - { name: STRIPE_SECRET_KEY, secret: tickethub-stripe, key: secret-key, optional: true }
+  - { name: STRIPE_WEBHOOK_SECRET, secret: tickethub-stripe, key: webhook-secret, optional: true }
+  - { name: TICKET_SIGNING_JWK, secret: tickethub-ticket-signing, key: jwk, optional: true }
+  - { name: STORAGE_ACCESS_KEY, secret: tickethub-storage, key: access-key, optional: true }
+  - { name: STORAGE_SECRET_KEY, secret: tickethub-storage, key: secret-key, optional: true }
+
+podLabels:
+  tickethub/role: app
