@@ -50,6 +50,8 @@ class OrganizerApplicationController {
 	}
 
 	@Operation(operationId = "getOrganizerApplication", summary = "Trạng thái hồ sơ organizer của tôi")
+	@ApiResponse(responseCode = "200", description = "Hồ sơ của tôi",
+			content = @Content(schema = @Schema(implementation = Application.class)))
 	@ApiResponse(responseCode = "404", description = "Chưa nộp hồ sơ (APPLICATION_NOT_FOUND)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@GetMapping("/application")

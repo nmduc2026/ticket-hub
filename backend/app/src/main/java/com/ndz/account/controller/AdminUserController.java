@@ -43,6 +43,8 @@ class AdminUserController {
 	}
 
 	@Operation(operationId = "getAdminUser", summary = "Chi tiết người dùng: hồ sơ, đơn hàng, vé, hoàn tiền, sự kiện")
+	@ApiResponse(responseCode = "200", description = "Chi tiết người dùng",
+			content = @Content(schema = @Schema(implementation = UserDetail.class)))
 	@ApiResponse(responseCode = "404", description = "Không có người dùng này (USER_NOT_FOUND)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@GetMapping("/{id}")
@@ -51,6 +53,8 @@ class AdminUserController {
 	}
 
 	@Operation(operationId = "lockUser", summary = "Khoá tài khoản (không áp dụng cho chính mình)")
+	@ApiResponse(responseCode = "200", description = "Đã khoá",
+			content = @Content(schema = @Schema(implementation = LockResult.class)))
 	@ApiResponse(responseCode = "422", description = "Khoá chính mình (CANNOT_LOCK_SELF)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping("/{id}/lock")

@@ -894,6 +894,16 @@
           }
         } ],
         "responses" : {
+          "200" : {
+            "description" : "Đã khoá",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminUserLockResult"
+                }
+              }
+            }
+          },
           "422" : {
             "description" : "Khoá chính mình (CANNOT_LOCK_SELF)",
             "content" : {
@@ -932,6 +942,16 @@
           "required" : true
         },
         "responses" : {
+          "200" : {
+            "description" : "Đã từ chối",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerReviewResult"
+                }
+              }
+            }
+          },
           "409" : {
             "description" : "Hồ sơ không còn chờ duyệt (ORGANIZER_NOT_PENDING)",
             "content" : {
@@ -960,6 +980,16 @@
           }
         } ],
         "responses" : {
+          "200" : {
+            "description" : "Đã duyệt",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerReviewResult"
+                }
+              }
+            }
+          },
           "409" : {
             "description" : "Hồ sơ không còn chờ duyệt (ORGANIZER_NOT_PENDING)",
             "content" : {
@@ -1110,6 +1140,16 @@
         "summary" : "Trạng thái hồ sơ organizer của tôi",
         "operationId" : "getOrganizerApplication",
         "responses" : {
+          "200" : {
+            "description" : "Hồ sơ của tôi",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerApplication"
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "Chưa nộp hồ sơ (APPLICATION_NOT_FOUND)",
             "content" : {
@@ -1661,6 +1701,16 @@
           }
         } ],
         "responses" : {
+          "200" : {
+            "description" : "Chi tiết người dùng",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminUserDetail"
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "Không có người dùng này (USER_NOT_FOUND)",
             "content" : {
@@ -2246,6 +2296,16 @@
         },
         "required" : [ "reason" ]
       },
+      "OrganizerReviewResult" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "APPROVED", "REJECTED", "SUSPENDED" ]
+          }
+        },
+        "required" : [ "status" ]
+      },
       "BulkApproveOrganizersRequest" : {
         "type" : "object",
         "properties" : {
@@ -2470,6 +2530,51 @@
           }
         },
         "required" : [ "id", "status", "title" ]
+      },
+      "OrganizerApplication" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "APPROVED", "REJECTED", "SUSPENDED" ]
+          },
+          "submittedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "rejectionReason" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "INDIVIDUAL", "BUSINESS" ]
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "legalName" : {
+            "type" : "string"
+          },
+          "legalId" : {
+            "type" : "string"
+          },
+          "contactEmail" : {
+            "type" : "string"
+          },
+          "contactPhone" : {
+            "type" : "string"
+          },
+          "website" : {
+            "type" : "string"
+          },
+          "introduction" : {
+            "type" : "string"
+          },
+          "eventScale" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "status", "submittedAt" ]
       },
       "MeResponse" : {
         "type" : "object",
@@ -3140,6 +3245,146 @@
           }
         },
         "required" : [ "items", "page", "size", "total" ]
+      },
+      "AdminUserBooking" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "totalMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "ticketCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "bookingId", "createdAt", "currency", "eventTitle", "startsAt", "status", "ticketCount", "totalMinor" ]
+      },
+      "AdminUserDetail" : {
+        "type" : "object",
+        "properties" : {
+          "profile" : {
+            "$ref" : "#/components/schemas/AdminUser"
+          },
+          "bookings" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserBooking"
+            }
+          },
+          "tickets" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserTicket"
+            }
+          },
+          "refunds" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserRefund"
+            }
+          },
+          "events" : {
+            "type" : [ "array", "null" ],
+            "items" : {
+              "$ref" : "#/components/schemas/AdminUserEvent"
+            }
+          }
+        },
+        "required" : [ "bookings", "profile", "refunds", "tickets" ]
+      },
+      "AdminUserEvent" : {
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "eventId", "status", "title" ]
+      },
+      "AdminUserRefund" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "amountMinor" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
+          "currency" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "bookingId", "currency", "eventTitle", "status" ]
+      },
+      "AdminUserTicket" : {
+        "type" : "object",
+        "properties" : {
+          "ticketId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "venueName" : {
+            "type" : "string"
+          },
+          "seat" : {
+            "type" : "string"
+          },
+          "tierName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "eventTitle", "seat", "startsAt", "status", "ticketId", "tierName", "venueName" ]
       },
       "AdminOrganizer" : {
         "type" : "object",

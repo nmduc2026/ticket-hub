@@ -78,6 +78,11 @@ export function UserMenu({ user, placement }: UserMenuProps) {
             <Link to="/organizer">{t('shell.organizer.roleName')}</Link>
           </DropdownMenuItem>
         )}
+        {!isSidebar && !hasRole(user.roles, 'ORGANIZER') && !hasRole(user.roles, 'ADMIN') && (
+          <DropdownMenuItem asChild>
+            <Link to="/organizer/apply">{t('shell.organizer.apply')}</Link>
+          </DropdownMenuItem>
+        )}
         {!isSidebar && hasRole(user.roles, 'ADMIN') && (
           <DropdownMenuItem asChild>
             <Link to="/admin">{t('shell.admin.roleName')}</Link>

@@ -48,6 +48,8 @@ class AdminOrganizerController {
 	}
 
 	@Operation(operationId = "approveOrganizer", summary = "Duyệt hồ sơ organizer")
+	@ApiResponse(responseCode = "200", description = "Đã duyệt",
+			content = @Content(schema = @Schema(implementation = ReviewResult.class)))
 	@ApiResponse(responseCode = "409", description = "Hồ sơ không còn chờ duyệt (ORGANIZER_NOT_PENDING)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping("/{id}/approve")
@@ -56,6 +58,8 @@ class AdminOrganizerController {
 	}
 
 	@Operation(operationId = "rejectOrganizer", summary = "Từ chối hồ sơ organizer, kèm lý do")
+	@ApiResponse(responseCode = "200", description = "Đã từ chối",
+			content = @Content(schema = @Schema(implementation = ReviewResult.class)))
 	@ApiResponse(responseCode = "409", description = "Hồ sơ không còn chờ duyệt (ORGANIZER_NOT_PENDING)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping("/{id}/reject")
