@@ -4,7 +4,7 @@
 
 ## 1. Thanh toán (#6)
 
-Prototype vẽ form thẻ tự dựng. Bản thật dùng Stripe Payment Element đặt vào đúng khung "2 Thanh toán"; các tab Thẻ / Google Pay / Apple Pay do Payment Element tự hiển thị theo thiết bị. Khối "1 Thông tin nhận vé" giữ như prototype, email điền sẵn từ `GET /me` và gửi làm `contact_email` của đơn.
+Prototype vẽ form thẻ tự dựng. Bản thật dùng Stripe Payment Element đặt vào đúng khung "2 Thanh toán"; các tab Thẻ / Google Pay / Apple Pay do Payment Element tự hiển thị theo thiết bị. Khối "1 Thông tin nhận vé" chỉ hiện dòng email của tài khoản (chỉ đọc, từ `GET /me`); họ tên và số điện thoại không thu vì API thanh toán không nhận. Cần duyệt.
 
 | Trạng thái | Hành vi |
 |---|---|

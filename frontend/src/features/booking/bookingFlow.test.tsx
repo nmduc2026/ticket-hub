@@ -214,6 +214,18 @@ describe('giữ ghế (AC-6, AC-7)', () => {
 })
 
 describe('màn giữ ghế (BR-03, BR-12)', () => {
+  beforeEach(() => {
+    // Phần thanh toán có test riêng (checkoutPayment.test.tsx); ở đây chỉ cần POST /payments không làm hỏng màn.
+    server.use(
+      http.post('/api/v1/payments', () =>
+        HttpResponse.json(
+          { paymentId: 'p1', clientSecret: 'cs_test', amountMinor: 5_000_000, platformFeeMinor: 250_000, currency: 'VND' },
+          { status: 201 },
+        ),
+      ),
+    )
+  })
+
   const booking = (overrides: Record<string, unknown> = {}) => ({
     id: BOOKING_ID,
     eventId: EVENT_ID,
