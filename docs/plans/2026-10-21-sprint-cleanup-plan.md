@@ -137,7 +137,7 @@ Phụ thuộc tính năng của sprint đó, đã ghi vào plan tương ứng:
 
 ## Tình trạng đợt code dọn dẹp (nhánh `feature/sprint-cleanup`, 22/10/2026)
 
-Làm các hạng mục code không bị chặn (3 phần local, 5–10), mỗi hạng mục một commit, chưa push. `./mvnw verify`: 391 test, 1 lỗi ArchUnit (`EventUpdatedFactory` nằm trong `service/impl`) đã sửa ở commit cuối; frontend 166 test, Playwright mock (1280px, 390px) cho check-in, thanh toán đến muộn, hồ sơ #19, zoom theo khu đều xanh.
+Làm các hạng mục code không bị chặn (3 phần local, 5–10), mỗi hạng mục một commit, chưa push. `./mvnw verify`: 391 test, 1 lỗi ArchUnit (`EventUpdatedFactory` nằm trong `service/impl`) đã sửa ở commit cuối; frontend 165 test (một lần chạy có 1 test đỏ, 4 lần chạy lại không tái hiện được: theo dõi ở CI), Playwright mock (1280px, 390px) cho check-in, thanh toán đến muộn, hồ sơ #19, zoom theo khu đều xanh.
 
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
