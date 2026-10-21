@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import com.ndz.booking.dto.response.BookingViews.BookingItemView;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
+import com.ndz.booking.dto.response.BookingViews.ConfirmationData;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
@@ -161,6 +162,25 @@ public class BookingRepository {
 				WHERE b.id = ?
 				""", (rs, i) -> new PaymentInfo(rs.getLong("total_minor"), rs.getString("currency"),
 				rs.getInt("platform_fee_bps")), bookingId);
+	}
+
+	/** Ghế đang giữ của booking thành đã bán; trả về số ghế đã đổi (phải bằng số ghế của booking, BR-01). */
+	public int markSold(UUID bookingId) {
+		return jdbc.update("UPDATE booking.seat_inventory SET status = 'SOLD', version = version + 1 "
+				+ "WHERE booking_id = ? AND status = 'HELD'", bookingId);
+	}
+
+	/** Tên sự kiện, giờ diễn, địa điểm, ghế và email liên hệ của booking, đọc từ bản sao sự kiện của Booking. */
+	public ConfirmationData confirmationData(UUID bookingId) {
+		return jdbc.queryForObject("""
+				SELECT b.id, b.user_id, b.event_id, e.title, e.starts_at, e.venue_name, b.contact_email, b.total_minor,
+				       b.currency
+				FROM booking.bookings b JOIN booking.event_snapshots e ON e.event_id = b.event_id
+				WHERE b.id = ?
+				""", (rs, i) -> new ConfirmationData(rs.getObject("id", UUID.class),
+				rs.getObject("user_id", UUID.class), rs.getObject("event_id", UUID.class), rs.getString("title"),
+				rs.getTimestamp("starts_at").toInstant(), rs.getString("venue_name"), rs.getString("contact_email"),
+				rs.getLong("total_minor"), rs.getString("currency"), items(bookingId)), bookingId);
 	}
 
 	/** Nhả các ghế đang giữ của booking về {@code AVAILABLE}; trả về id các ghế đã nhả. */

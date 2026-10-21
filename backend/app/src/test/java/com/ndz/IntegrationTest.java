@@ -22,7 +22,8 @@ import org.springframework.test.context.ActiveProfiles;
 @AutoConfigureMockMvc
 // `seed`: dữ liệu mẫu của catalog (organizer test, 1 địa điểm, sơ đồ 500 ghế); mọi test dùng chung một context.
 @ActiveProfiles("seed")
-@Import({ TestcontainersConfiguration.class, StripeStubConfiguration.class, TestSecurityConfiguration.class,
+@Import({ TestcontainersConfiguration.class, StripeStubConfiguration.class, EventRecorderConfiguration.class,
+		TestSecurityConfiguration.class,
 		TestClockConfiguration.class, ProbeController.class,
 		AdminProbeController.class, IdempotencyProbeController.class })
 public @interface IntegrationTest {

@@ -15,9 +15,9 @@ import com.ndz.payment.client.StripeGateway;
 import com.ndz.payment.entity.Payment;
 import com.ndz.payment.entity.enums.PaymentStatus;
 import com.ndz.payment.event.PaymentFailed;
-import com.ndz.payment.event.PaymentSucceeded;
 import com.ndz.payment.repository.PaymentRepository;
 import com.ndz.payment.repository.StripeEventRepository;
+import com.ndz.payment.service.PaymentSettlementService;
 import com.ndz.payment.service.StripeWebhookService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
@@ -35,14 +35,16 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 	private final StripeGateway stripe;
 	private final StripeEventRepository stripeEvents;
 	private final PaymentRepository payments;
+	private final PaymentSettlementService settlement;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	StripeWebhookServiceImpl(StripeGateway stripe, StripeEventRepository stripeEvents, PaymentRepository payments,
-			ApplicationEventPublisher publisher, Clock clock) {
+			PaymentSettlementService settlement, ApplicationEventPublisher publisher, Clock clock) {
 		this.stripe = stripe;
 		this.stripeEvents = stripeEvents;
 		this.payments = payments;
+		this.settlement = settlement;
 		this.publisher = publisher;
 		this.clock = clock;
 	}
@@ -89,10 +91,8 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 	}
 
 	private void succeeded(Payment payment, GatewayWebhookEvent event, Instant now) {
-		if (transition(payment, PaymentStatus.SUCCEEDED, event, now)) {
-			publisher.publishEvent(new PaymentSucceeded(Uuid7.next(clock), now, payment.getId(),
-					payment.getBookingId(), payment.getAmountMinor(), payment.getCurrency()));
-			log.info("Thanh toán {} của booking {} thành công", payment.getId(), payment.getBookingId());
+		if (!settlement.markSucceeded(payment, now)) {
+			ignoreOutOfOrder(payment, event);
 		}
 	}
 

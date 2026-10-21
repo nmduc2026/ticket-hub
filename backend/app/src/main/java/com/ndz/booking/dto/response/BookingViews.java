@@ -34,6 +34,11 @@ public final class BookingViews {
 			Instant expiresAt, List<BookingItemView> items) {
 	}
 
+	/** Dữ liệu Booking đóng gói vào {@code BookingConfirmed} cho Ticket và Notification (không cần bản sao riêng). */
+	public record ConfirmationData(UUID bookingId, UUID userId, UUID eventId, String eventTitle, Instant startsAt,
+			String venueName, String contactEmail, long totalMinor, String currency, List<BookingItemView> items) {
+	}
+
 	/** Số tiền và mức phí của booking để Payment tạo thanh toán. */
 	public record PaymentInfo(long totalMinor, String currency, int platformFeeBps) {
 	}

@@ -61,6 +61,7 @@ com.ndz.booking/
 - Event là `record` bất biến trong package `event`, có `eventId` (UUIDv7) và `occurredAt`, để sau này map 1-1 sang envelope Kafka (`overview.md` §8.2).
 - Phát bằng `ApplicationEventPublisher` trong cùng transaction với thay đổi dữ liệu (Modulith ghi vào `event_publication`).
 - Nghe bằng `@ApplicationModuleListener` đặt ở `event/listener/`; listener chỉ gọi interface service, không chứa logic nghiệp vụ. Consumer **idempotent**: ghi `processed_events` trong cùng transaction với xử lý.
+- Hai module nghe event của nhau sẽ tạo vòng phụ thuộc mà Modulith `verify()` từ chối. Phá vòng theo hướng đã có phụ thuộc đồng bộ: **bên nhận định nghĩa kiểu event nó cần** trong package `event` của mình (vd. `PaymentSucceeded` nằm ở `booking.event`, do Payment phát; Payment phụ thuộc Booking, Booking không phụ thuộc Payment). Xem `overview.md` §8.1.
 - Gọi đồng bộ sang module khác chỉ khi người dùng đang chờ kết quả (vd. Payment → `BookingApi.startPayment`), ADR 0018.
 
 ## 5. Persistence

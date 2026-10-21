@@ -30,7 +30,7 @@ import com.ndz.IntegrationTest;
 import com.ndz.MutableClock;
 import com.ndz.StripeStubConfiguration;
 import com.ndz.payment.event.PaymentFailed;
-import com.ndz.payment.event.PaymentSucceeded;
+import com.ndz.booking.event.PaymentSucceeded;
 
 /**
  * Webhook Stripe (plan Sprint 3 việc 3; overview.md §7.3, §7.7, §13.4; ADR 0019): chữ ký trên raw body, dung sai giờ
