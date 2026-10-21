@@ -15,7 +15,7 @@ Multi-module ngay từ Sprint 1:
 ```
 backend/
 ├── pom.xml        # parent, dependencyManagement
-├── app/           # modular monolith, package gốc com.ndz.backend
+├── app/           # modular monolith, package gốc com.ndz
 │                  #   account, catalog, booking, payment, ticket, notification, shared
 │                  #   (+ queue khi làm phòng chờ ở Sprint 7)
 └── gateway/       # Spring Cloud Gateway (BFF)

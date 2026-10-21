@@ -41,7 +41,7 @@ Danh sách đầy đủ: `overview.md` §21.
 Monorepo (`overview.md` §22):
 - `backend/`: Maven multi-module ngay từ đầu, `backend/pom.xml` là parent
   - `backend/gateway/`: Spring Cloud Gateway làm BFF, ứng dụng riêng
-  - `backend/app/`: modular monolith, package gốc `com.ndz.backend`, mỗi module nghiệp vụ là 1 package: `account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `shared`; `queue` (phòng chờ) thêm ở Sprint 7. Bên trong module chia theo tầng (`controller`, `service`/`impl`, `repository`, `entity`, `dto`, `mapper`...), xem skill springbot mục 1
+  - `backend/app/`: modular monolith, package gốc `com.ndz`, mỗi module nghiệp vụ là 1 package: `account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `shared`; `queue` (phòng chờ) thêm ở Sprint 7. Bên trong module chia theo tầng (`controller`, `service`/`impl`, `repository`, `entity`, `dto`, `mapper`...), xem skill springbot mục 1
   - Giai đoạn đầu event giữa các module đi bằng Spring Modulith in-process; Kafka vào ở Sprint 8
 - `frontend/`: tổ chức theo feature (`src/features/<feature>`); `src/api/generated/` do Orval sinh, không sửa tay
 - `infra/`: docker-compose, helm, argocd, keycloak, terraform

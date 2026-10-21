@@ -9,10 +9,10 @@ description: "Quy tắc backend Spring Boot của Ticket Hub: cấu trúc packag
 
 ## 1. Cấu trúc một module
 
-Package gốc `com.ndz.backend.<module>`. Mỗi module nghiệp vụ (`account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `queue`) là một Spring Modulith module và **chia theo tầng package**:
+Package gốc `com.ndz.<module>` (không có package `backend`; `AppApplication` nằm ở `com.ndz`, Spring Modulith coi mỗi package con trực tiếp là một module). Mỗi module nghiệp vụ (`account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `queue`) là một Spring Modulith module và **chia theo tầng package**:
 
 ```
-com.ndz.backend.booking/
+com.ndz.booking/
 ├── config/            # @Configuration, @ConfigurationProperties của module
 ├── controller/        # @RestController
 ├── service/           # interface service (use case)

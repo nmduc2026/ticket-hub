@@ -1270,7 +1270,7 @@ ticket-hub/                         # monorepo
 
 > Cây trên là cấu trúc khi đã tách microservices. Ở giai đoạn modular monolith, `backend/` gồm:
 > - `pom.xml`: parent, quản lý version.
-> - `app/`: monolith, package gốc `com.ndz.backend`; mỗi module nghiệp vụ là một package `com.ndz.backend.{account,catalog,booking,payment,ticket,notification,queue,shared}`.
+> - `app/`: monolith, package gốc `com.ndz`; mỗi module nghiệp vụ là một package `com.ndz.{account,catalog,booking,payment,ticket,notification,queue,shared}`.
 > - `gateway/`: Gateway BFF, ứng dụng riêng ngay từ đầu.
 >
 > `contracts/`, `platform/*` và các `*-service` xuất hiện khi tách service.
