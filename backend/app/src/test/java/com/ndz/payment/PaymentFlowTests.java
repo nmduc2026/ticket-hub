@@ -100,6 +100,8 @@ class PaymentFlowTests {
 	void cleanUp() {
 		clock.reset();
 		stripe.resetAll();
+		jdbc.update("delete from ticket.tickets");
+		jdbc.update("delete from ticket.processed_events");
 		jdbc.update("delete from payment.processed_events");
 		jdbc.update("delete from payment.stripe_events");
 		jdbc.update("delete from payment.payments");
@@ -130,6 +132,10 @@ class PaymentFlowTests {
 				.isZero();
 		assertThat(jdbc.queryForObject("select status from payment.payments where booking_id = ?", String.class,
 				booking)).isEqualTo("SUCCEEDED");
+
+		// AC-2: mỗi ghế một vé VALID (Ticket nghe BookingConfirmed).
+		await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> assertThat(count(
+				"select count(*) from ticket.tickets where booking_id = ? and status = 'VALID'", booking)).isEqualTo(2));
 
 		List<BookingConfirmed> confirmed = events.of(BookingConfirmed.class);
 		assertThat(confirmed).hasSize(1);

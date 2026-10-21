@@ -5,13 +5,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.ndz.shared.event.IntegrationEvent;
 
 /**
  * Ghi lại mọi event giữa module mà ứng dụng phát, kể cả event phát từ luồng bất đồng bộ của listener (nơi
- * {@code @RecordApplicationEvents} không với tới). Test tự {@link EventRecorder#clear()} trước khi chạy.
+ * {@code @RecordApplicationEvents} không với tới); event của transaction bị hoàn tác không được ghi. Test tự {@link EventRecorder#clear()} trước khi chạy.
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class EventRecorderConfiguration {
@@ -25,7 +26,8 @@ public class EventRecorderConfiguration {
 
 		private final List<IntegrationEvent> events = new CopyOnWriteArrayList<>();
 
-		@EventListener
+		// Chỉ ghi event của transaction đã commit (như Modulith chỉ chuyển event đã commit); không có transaction thì ghi ngay.
+		@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
 		void on(IntegrationEvent event) {
 			events.add(event);
 		}

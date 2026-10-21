@@ -672,6 +672,47 @@
         }
       }
     },
+    "/api/v1/me/tickets" : {
+      "get" : {
+        "tags" : [ "my-ticket-controller" ],
+        "summary" : "Vé của tôi, mới phát trước",
+        "operationId" : "listMyTickets",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Ticket"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/events" : {
       "get" : {
         "tags" : [ "public-event-controller" ],
@@ -1464,6 +1505,56 @@
           }
         },
         "required" : [ "email", "enabled", "fullName", "id", "roles", "username" ]
+      },
+      "Ticket" : {
+        "type" : "object",
+        "properties" : {
+          "ticketId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "venueName" : {
+            "type" : "string"
+          },
+          "seat" : {
+            "$ref" : "#/components/schemas/TicketSeat"
+          },
+          "tierName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "VALID", "USED", "REVOKED" ]
+          },
+          "qrToken" : {
+            "type" : "string",
+            "description" : "JWT ES256 để vẽ mã QR; xác minh bằng khoá công khai theo kid"
+          }
+        },
+        "required" : [ "eventTitle", "qrToken", "seat", "startsAt", "status", "ticketId", "tierName", "venueName" ]
+      },
+      "TicketSeat" : {
+        "type" : "object",
+        "properties" : {
+          "sectionCode" : {
+            "type" : "string"
+          },
+          "row" : {
+            "type" : "string"
+          },
+          "number" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "number", "row", "sectionCode" ]
       },
       "PublicEventPage" : {
         "type" : "object",
