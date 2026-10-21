@@ -2,6 +2,7 @@ package com.ndz.catalog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +15,7 @@ import java.util.UUID;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -85,6 +87,8 @@ class EventPublishApiTests {
 		jdbc.update("delete from catalog.tier_sections");
 		jdbc.update("delete from catalog.ticket_tiers");
 		jdbc.update("delete from catalog.events");
+		jdbc.update("delete from catalog.platform_fee_policies_aud");
+		jdbc.update("delete from shared.audit_log where action = 'PLATFORM_FEE_SCHEDULED'");
 		jdbc.update("delete from catalog.platform_fee_policies where id <> '00000000-0000-7000-8000-0000000f0001'");
 		jdbc.update("update catalog.seat_maps set locked = false");
 		jdbc.update("update catalog.organizers set status = 'APPROVED', payout_ready = true where id = ?",
@@ -104,6 +108,49 @@ class EventPublishApiTests {
 		assertThat(jdbc.queryForObject("select locked from catalog.seat_maps where id = ?", Boolean.class,
 				UUID.fromString(SEAT_MAP))).isTrue();
 		assertThat(publishedEvents(EventPublished.class, id)).isEqualTo(1L);
+	}
+
+	@Test
+	@DisplayName("AC-9 (BR-06): Admin đặt phí 7% từ ngày D qua API; publish trước D giữ 5%, sau D nhận 7%; có audit")
+	void adminSchedulesAFeeThatOnlyAppliesToEventsPublishedAfterItsDate() throws Exception {
+		Instant now = Instant.parse("2026-11-01T03:00:00Z");
+		Instant effectiveFrom = now.plusSeconds(86_400);
+		clock.setInstant(now);
+		String body = "{\"feeBps\":700,\"effectiveFrom\":\"%s\"}".formatted(effectiveFrom);
+		call(post("/api/v1/admin/platform-fees").contentType(MediaType.APPLICATION_JSON).content(body), admin())
+				.andExpect(status().isCreated()).andExpect(jsonPath("$.feeBps").value(700))
+				.andExpect(jsonPath("$.current").value(false));
+
+		String before = completeEvent("Trước ngày D");
+		call(post(EVENTS + "/" + before + "/publish"), organizer()).andExpect(jsonPath("$.platformFeeBps").value(500));
+		clock.setInstant(effectiveFrom.plusSeconds(60));
+		String after = completeEvent("Sau ngày D");
+		call(post(EVENTS + "/" + after + "/publish"), organizer()).andExpect(jsonPath("$.platformFeeBps").value(700));
+
+		call(get("/api/v1/admin/platform-fees"), admin()).andExpect(jsonPath("$[0].feeBps").value(700))
+				.andExpect(jsonPath("$[0].current").value(true)).andExpect(jsonPath("$[1].current").value(false));
+		assertThat(jdbc.queryForObject(
+				"select count(*) from shared.audit_log where action = 'PLATFORM_FEE_SCHEDULED' and actor_id = ?",
+				Integer.class, TestTokens.ADMIN_ID)).isEqualTo(1);
+	}
+
+	@Test
+	@DisplayName("AC-9: feeBps 2001 → 422 FEE_OUT_OF_RANGE; mốc ở quá khứ → EFFECTIVE_FROM_IN_PAST; không phải Admin → 403")
+	void invalidFeeSchedulesAreRejected() throws Exception {
+		Instant now = Instant.parse("2026-11-01T03:00:00Z");
+		clock.setInstant(now);
+
+		call(post("/api/v1/admin/platform-fees").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"feeBps\":2001,\"effectiveFrom\":\"%s\"}".formatted(now.plusSeconds(60))), admin())
+				.andExpect(status().isUnprocessableContent()).andExpect(jsonPath("$.code").value("FEE_OUT_OF_RANGE"));
+		call(post("/api/v1/admin/platform-fees").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"feeBps\":700,\"effectiveFrom\":\"%s\"}".formatted(now.minusSeconds(60))), admin())
+				.andExpect(status().isUnprocessableContent())
+				.andExpect(jsonPath("$.code").value("EFFECTIVE_FROM_IN_PAST"));
+		call(post("/api/v1/admin/platform-fees").contentType(MediaType.APPLICATION_JSON)
+				.content("{\"feeBps\":700,\"effectiveFrom\":\"%s\"}".formatted(now.plusSeconds(60))), organizer())
+				.andExpect(status().isForbidden());
+		assertThat(jdbc.queryForObject("select count(*) from catalog.platform_fee_policies", Integer.class)).isEqualTo(1);
 	}
 
 	@Test
@@ -293,6 +340,10 @@ class EventPublishApiTests {
 	private String statusOf(String eventId) {
 		return jdbc.queryForObject("select status from catalog.events where id = ?", String.class,
 				UUID.fromString(eventId));
+	}
+
+	private String admin() {
+		return TestTokens.token().subject(TestTokens.ADMIN_ID).roles("ADMIN").bearer();
 	}
 
 	private String organizer() {
