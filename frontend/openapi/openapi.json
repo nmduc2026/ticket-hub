@@ -540,6 +540,56 @@
         }
       }
     },
+    "/api/v1/checkins" : {
+      "post" : {
+        "tags" : [ "check-in-controller" ],
+        "summary" : "Check-in một vé (BR-09)",
+        "description" : "Chỉ cho vào khi server xác nhận. Vé chuyển VALID → USED nguyên tử.",
+        "operationId" : "checkIn",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CheckInRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "403" : {
+            "description" : "NOT_EVENT_OWNER (không phải organizer của sự kiện)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "TICKET_NOT_FOUND (QR sai chữ ký hoặc không có vé)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "TICKET_ALREADY_USED hoặc TICKET_REVOKED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/bookings" : {
       "post" : {
         "tags" : [ "booking-controller" ],
@@ -1016,6 +1066,25 @@
         }
       }
     },
+    "/api/v1/checkin/keys" : {
+      "get" : {
+        "tags" : [ "check-in-controller" ],
+        "summary" : "Khoá công khai (JWKS) để xác minh chữ ký QR theo kid",
+        "operationId" : "getCheckInKeys",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SigningKeySet"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/bookings/{bookingId}" : {
       "get" : {
         "tags" : [ "booking-controller" ],
@@ -1456,6 +1525,24 @@
           }
         },
         "required" : [ "amountMinor", "clientSecret", "currency", "paymentId", "platformFeeMinor" ]
+      },
+      "CheckInRequest" : {
+        "type" : "object",
+        "properties" : {
+          "qrToken" : {
+            "type" : "string",
+            "description" : "Chuỗi JWT trong mã QR của vé",
+            "maxLength" : 2048,
+            "minLength" : 0
+          },
+          "gate" : {
+            "type" : "string",
+            "description" : "Cổng soát vé, vd. A1",
+            "maxLength" : 50,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "gate", "qrToken" ]
       },
       "CreateBookingRequest" : {
         "type" : "object",
@@ -2077,6 +2164,42 @@
           }
         },
         "required" : [ "id", "number", "row", "sectionCode", "status", "x", "y" ]
+      },
+      "SigningKey" : {
+        "type" : "object",
+        "properties" : {
+          "kid" : {
+            "type" : "string"
+          },
+          "kty" : {
+            "type" : "string",
+            "description" : "Luôn là EC"
+          },
+          "crv" : {
+            "type" : "string",
+            "description" : "Luôn là P-256"
+          },
+          "x" : {
+            "type" : "string"
+          },
+          "y" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "crv", "kid", "kty", "x", "y" ]
+      },
+      "SigningKeySet" : {
+        "type" : "object",
+        "description" : "JWKS các khoá công khai ES256 (P-256) để xác minh QR theo kid",
+        "properties" : {
+          "keys" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SigningKey"
+            }
+          }
+        },
+        "required" : [ "keys" ]
       },
       "Booking" : {
         "type" : "object",

@@ -21,6 +21,9 @@ public interface CatalogApi {
 	 */
 	SeatMapLayout seatMapLayout(UUID seatMapId);
 
+	/** Người dùng này có phải organizer sở hữu sự kiện không (check-in chỉ dành cho organizer của sự kiện). */
+	boolean isEventOrganizer(UUID eventId, UUID userId);
+
 	/** Sơ đồ ghế; {@code shapeJson} là JSON nguyên văn của hình học khu / phần tử. */
 	record SeatMapLayout(int width, int height, List<LayoutSection> sections, List<LayoutElement> elements,
 			List<LayoutSeat> seats) {

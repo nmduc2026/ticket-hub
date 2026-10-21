@@ -1,5 +1,6 @@
 package com.ndz.ticket.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -27,6 +28,11 @@ public class SigningKeyRepository {
 				INSERT INTO ticket.signing_keys (key_id, public_key, status) VALUES (?, ?, 'ACTIVE')
 				ON CONFLICT (key_id) DO UPDATE SET status = 'ACTIVE'
 				""", keyId, publicJwk);
+	}
+
+	/** Mọi khoá công khai (JWK JSON), cả {@code ACTIVE} và {@code RETIRED}: vé đã phát bằng khoá cũ vẫn xác minh được. */
+	public List<String> findAllPublicKeys() {
+		return jdbc.queryForList("SELECT public_key FROM ticket.signing_keys ORDER BY created_at, key_id", String.class);
 	}
 
 	/** JWK công khai (JSON) của khoá; rỗng nếu {@code keyId} chưa từng có. */

@@ -5,10 +5,22 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.ndz.ticket.entity.Ticket;
 
 public interface TicketRepository extends JpaRepository<Ticket, UUID> {
+
+	/**
+	 * Check-in nguyên tử (BR-09, §7.5): chỉ vé còn {@code VALID} mới thành {@code USED}. Trả 0 nghĩa là vé đã dùng, đã
+	 * thu hồi hoặc không tồn tại; người gọi đọc lại trạng thái để báo đúng lý do.
+	 */
+	@Modifying(clearAutomatically = true)
+	@Query(value = "UPDATE ticket.tickets SET status = 'USED', version = version + 1 "
+			+ "WHERE id = :id AND status = 'VALID'", nativeQuery = true)
+	int markUsed(@Param("id") UUID id);
 
 	boolean existsByBookingId(UUID bookingId);
 
