@@ -11,10 +11,10 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 | 6, 6b (Resilience4j + metric, thông báo trong app) | Xong, test xanh |
 | 7, 8, 8b (FE hoàn vé, check-in, thông báo) | Xong, test xanh; chưa thử camera thật |
 | 9 (CNPG) | Đã viết manifest + runbook; **chưa chạy trên cụm** |
-| 10 (Prometheus, alert, cert-manager) | **Chưa làm** |
-| 11 (tracing, Sentry) | **Chưa làm** |
-| 12 (báo cáo verify theo AC) | **Chưa làm** |
-| 13 (review cuối sprint) | **Chưa làm** |
+| 10 (Prometheus, alert, cert-manager) | Đã viết manifest, rule, dashboard, runbook (`docs/ops/observability.md`); **chưa chạy trên cụm**, chờ Telegram token + chat id |
+| 11 (tracing, Sentry) | Code BE/FE + Jaeger manifest xong, test xanh; **chưa thấy trace trong Jaeger, chưa gửi lỗi tới Sentry**, chờ cụm + Sentry DSN |
+| 12 (báo cáo verify theo AC) | Xong phần chạy được trên máy này: `docs/test/sprint-4-verify.md` |
+| 13 (review cuối sprint) | Xong, review nội tuyến (không dùng subagent): APPROVED kèm ghi chú, xem cuối báo cáo verify |
 
 Bằng chứng đã chạy: backend `./mvnw verify` 327 test xanh; frontend `vitest` 128 test xanh, `tsc` và `oxlint` sạch, Playwright mock (`refund`, `checkin`, `notifications`) qua ở 1280px và 390px.
 
@@ -38,13 +38,18 @@ Bằng chứng đã chạy: backend `./mvnw verify` 327 test xanh; frontend `vit
 | 9 | Dựng CNPG, WAL archive, base backup, diễn tập PITR (C7: RTO ≤ 15 phút, mất ≤ 5 phút) và kill primary (C1: < 30 giây). Chưa có k3d/cụm trên máy này | Cài k3d, báo trước các lệnh `kubectl`/`helm` |
 | 9 | `kubectl --dry-run=server` cho YAML mới (`postgres/cluster.yaml`, 2 Application ArgoCD); version chart `cloudnative-pg` 0.26.0 chưa xác nhận trên mạng | Cụm |
 | 9 | Tên Service và cổng giữ chỗ `backup-s3.tickethub.svc:3900` trong `cluster.yaml` phải đổi theo phương án chọn ở mục 1 | Mục 1 |
+| 10 | Chưa chạy `helm template`/`kubectl --dry-run=server` cho `kube-prometheus-stack` (75.15.1), `prometheus-blackbox-exporter` (11.1.1): hai version chart đặt theo trí nhớ, chưa xác nhận trên mạng. Rule PromQL chưa qua `promtool check rules` | Cụm hoặc `helm search repo` + `promtool` |
+| 10 | Tên metric Prometheus (`tickethub_*_total`, `hikaricp_*`, `http_server_requests_seconds_*`), nhãn `job="app"`, tên Service blackbox, label `app.kubernetes.io/name: app` của ServiceMonitor chưa đối chiếu với `/actuator/prometheus` thật trên cụm | Cụm |
+| 10 | Alert giả lập tới Telegram (AC-12), cert 1 giờ tự gia hạn (C9), alert burn rate chưa chạy. `chat_id: 0` trong `kube-prometheus-stack.yaml` là giữ chỗ | Mục 2 + cụm |
+| 11 | Trace Gateway → app trong Jaeger chưa thấy (AC-13). Test chỉ chứng minh app nối `traceparent` vào log; chưa chứng minh Gateway (MVC proxy) tự gắn `traceparent` khi chuyển tiếp. Image `jaegertracing/jaeger:2.9.0` và cờ `--set` cho OTLP chưa kiểm | Cụm; nếu Gateway không gắn, thêm propagation ở proxy |
+| 11 | Lỗi JS giả lập trong Sentry chưa thấy (AC-13); `VITE_SENTRY_DSN` chưa có | Mục 3 |
 
 ## Việc kỹ thuật còn lại
 
 | # | Việc | Ghi chú |
 |---|---|---|
-| 1 | Hạng mục 10, 11, 12, 13 của plan | Xem bảng tiến độ |
-| 2 | Bật `monitoring.enablePodMonitor` cho CNPG | Làm ở hạng mục 10 khi có CRD của Prometheus Operator |
+| 1 | Chạy lại hạng mục 9, 10, 11 trên cụm khi có k3d và các mục ở "Cần người dùng" | Xem bảng tiến độ |
+| 2 | `monitoring.enablePodMonitor` của CNPG đã bật (việc 10); sync lỗi nếu thứ tự wave khiến CRD PodMonitor chưa có thì sync lại | Cụm |
 | 3 | PgBouncer (`Pooler`) cho CNPG | Chưa thêm; HikariCP của app đã gom kết nối |
 | 4 | Bản sao backup ra ngoài máy staging | Backup nằm cùng cụm nên mất máy là mất backup |
 | 5 | Thông báo loại "Tạm dừng bán" (`SALE_PAUSED`) và "Sắp hết giờ giữ ghế" (`HOLD_EXPIRING`) mới có cài đặt, chưa có nơi phát sinh | Cần consumer `EventSuspended` (xác định ai nhận) và job báo sắp hết giờ giữ ghế |
@@ -55,7 +60,7 @@ Bằng chứng đã chạy: backend `./mvnw verify` 327 test xanh; frontend `vit
 | 10 | Huỷ sự kiện và hoàn hàng loạt (BR-08): `RefundRequested` đã có lý do `EVENT_CANCELLED` ở tài liệu nhưng chưa có producer | Sprint 6 |
 | 11 | `TicketCheckedIn` (có trong bảng event §8) chưa phát; check-in chưa chặn theo thời gian sự kiện | Phát khi cần cho thống kê / thông báo |
 | 12 | Event listener lỗi hạ tầng được gửi lại bởi job `RepublishIncompleteEvents` (30 giây một lần) không giới hạn số lần, chưa có DLT | Kafka retry + DLT ở Sprint 8 |
-| 13 | `/actuator/prometheus` mở không cần token ở cổng của `app`; Gateway chỉ định tuyến `/api/**` nên không ra ngoài | Siết bằng NetworkPolicy chỉ cho Prometheus ở hạng mục 10 |
+| 13 | `/actuator/prometheus` mở không cần token ở cổng của `app`; Gateway chỉ định tuyến `/api/**` nên không ra ngoài | Đã thêm NetworkPolicy `allow-monitoring-ingress` (việc 10); chưa chạy trên cụm |
 | 14 | Admin hoàn thủ công (`POST /admin/bookings/{id}/refund`) không bắt `Idempotency-Key` | Đã chặn bằng trạng thái (`REFUND_FAILED` → `REFUND_REQUESTED`), gọi lần hai trả 409 |
 | 15 | `spotless:check` chưa chạy cho code mới; một số file mới là LF trong khi repo có file CRLF (Windows) | Xem pending Sprint 2 mục 11 |
 | 16 | Dọn mục đã xong ở pending Sprint 3: mục "Việc kỹ thuật" 3 (Resilience4j) và 7 (UNIQUE → hoàn) | Làm khi đóng sprint |
