@@ -52,6 +52,14 @@ spec:
         - podSelector:
             matchExpressions:
               - { key: tickethub/role, operator: In, values: [app, keycloak] }
+    # Các instance của cụm nói chuyện với nhau: replication, pg_rewind, kiểm tra trạng thái.
+    - from:
+        - podSelector:
+            matchLabels: { tickethub/role: postgres }
+    # Operator CNPG gọi cổng trạng thái (8000) và kết nối SQL của từng instance.
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: cnpg-system }
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

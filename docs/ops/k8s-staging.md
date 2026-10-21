@@ -8,7 +8,7 @@ Phạm vi Sprint 3 việc 12–13. Mọi lệnh `kubectl` / `helm` lên cụm c�
 |---|---|
 | `infra/helm/tickethub-lib` | Library chart: Deployment (3 probe, resources, non-root, root filesystem chỉ đọc), Service, PodDisruptionBudget |
 | `infra/helm/app`, `gateway`, `frontend` | Chart mỏng, chỉ có values; tag image do CI cập nhật |
-| `infra/helm/core` | Postgres, Redis, Keycloak, Mailpit, S3Mock (bản đơn giản; CNPG ở Sprint 4) |
+| `infra/helm/core` | Redis, Keycloak, Mailpit, S3Mock (bản đơn giản). Postgres do CloudNativePG quản lý: `docs/ops/postgres-cnpg.md` |
 | `infra/k3d/cluster.yaml` | Cụm 1 server + 2 agent, tắt Traefik |
 
 ## Dựng lần đầu (người dùng chạy)

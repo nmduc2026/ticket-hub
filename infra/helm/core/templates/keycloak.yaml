@@ -37,7 +37,7 @@ spec:
             - { name: management, containerPort: 9000 }
           env:
             - { name: KC_DB, value: postgres }
-            - { name: KC_DB_URL, value: "jdbc:postgresql://postgres:5432/keycloak" }
+            - { name: KC_DB_URL, value: "jdbc:postgresql://{{ .Values.postgres.host }}:5432/keycloak" }
             - { name: KC_DB_USERNAME, value: {{ .Values.postgres.user | quote }} }
             - name: KC_DB_PASSWORD
               valueFrom: { secretKeyRef: { name: tickethub-db, key: password } }

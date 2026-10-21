@@ -24,7 +24,7 @@ resources:
   limits: { memory: 768Mi }
 
 env:
-  DB_URL: jdbc:postgresql://postgres:5432/tickethub
+  DB_URL: jdbc:postgresql://tickethub-pg-rw:5432/tickethub
   DB_USER: tickethub
   MAIL_HOST: mailpit
   MAIL_PORT: "1025"

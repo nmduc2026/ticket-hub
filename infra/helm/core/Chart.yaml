@@ -1,6 +1,6 @@
 apiVersion: v2
 name: core
-description: Thành phần nền cho staging (Postgres, Redis, Keycloak, Mailpit, S3Mock); chart đơn giản, thay bằng operator ở Sprint 4
+description: Thành phần nền cho staging (Redis, Keycloak, Mailpit, S3Mock); chart đơn giản. Postgres do CloudNativePG quản lý
 type: application
 version: 0.1.0
 appVersion: "0.0.0"

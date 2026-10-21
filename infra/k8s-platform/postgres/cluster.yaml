@@ -1,0 +1,110 @@
+# PostgreSQL trên staging bằng CloudNativePG (overview.md §18, ADR 0013): 1 primary + 2 replica, tự failover.
+# WAL archive liên tục + base backup hằng ngày lên object storage tương thích S3 → PITR (RPO <= 5 phút, RTO <= 15 phút).
+# Service đọc / ghi: tickethub-pg-rw; chỉ đọc: tickethub-pg-ro. Operator chạy ở namespace cnpg-system (argocd/apps/cnpg-operator.yaml).
+#
+# Secret phải có trước (docs/ops/postgres-cnpg.md), không nằm trong Git:
+#   tickethub-db-auth  (kubernetes.io/basic-auth: username=tickethub, password=...)  chủ sở hữu database
+#   tickethub-db       (password=...) cùng mật khẩu, app và Keycloak đang đọc key này
+#   tickethub-backup-s3 (ACCESS_KEY_ID, ACCESS_SECRET_KEY) khoá của object storage chứa backup
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: tickethub-pg
+  namespace: tickethub
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:17.6
+  instances: 3
+  # Pod của cụm mang nhãn này để NetworkPolicy chỉ cho app và Keycloak vào (network-policies/policies.yaml).
+  inheritedMetadata:
+    labels:
+      tickethub/role: postgres
+      app.kubernetes.io/part-of: tickethub
+  primaryUpdateStrategy: unsupervised
+  # Chuyển primary khi node hỏng sau tối đa 30 giây (C1: failover < 30 giây).
+  failoverDelay: 0
+  switchoverDelay: 30
+  startDelay: 120
+  stopDelay: 60
+  enableSuperuserAccess: false
+
+  storage:
+    size: 5Gi
+  walStorage:
+    size: 2Gi
+
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 512Mi }
+
+  affinity:
+    enablePodAntiAffinity: true
+    topologyKey: kubernetes.io/hostname
+    podAntiAffinityType: preferred
+
+  postgresql:
+    parameters:
+      # Ép đổi và lưu trữ file WAL tối thiểu mỗi 5 phút kể cả khi ít ghi: giữ RPO <= 5 phút.
+      archive_timeout: "300"
+      max_connections: "200"
+      shared_buffers: 128MB
+      log_min_duration_statement: "500"
+
+  bootstrap:
+    initdb:
+      database: tickethub
+      owner: tickethub
+      secret:
+        name: tickethub-db-auth
+      encoding: UTF8
+      # Mỗi module một schema (overview.md §6); Keycloak dùng database riêng.
+      postInitApplicationSQL:
+        - CREATE SCHEMA IF NOT EXISTS account
+        - CREATE SCHEMA IF NOT EXISTS catalog
+        - CREATE SCHEMA IF NOT EXISTS booking
+        - CREATE SCHEMA IF NOT EXISTS payment
+        - CREATE SCHEMA IF NOT EXISTS ticket
+        - CREATE SCHEMA IF NOT EXISTS notification
+        - CREATE SCHEMA IF NOT EXISTS shared
+      postInitSQL:
+        - CREATE DATABASE keycloak OWNER tickethub
+
+  backup:
+    # Giữ backup và WAL 7 ngày: đủ để PITR về bất kỳ thời điểm nào trong tuần.
+    retentionPolicy: 7d
+    target: prefer-standby
+    barmanObjectStore:
+      # Object storage tương thích S3 chạy trên staging (không dùng S3 của AWS, overview.md §18). Địa chỉ và bucket đặt
+      # theo phương án đã chọn ở ADR 0033; đổi hai dòng dưới khi chọn xong.
+      destinationPath: s3://tickethub-backups/postgres
+      endpointURL: http://backup-s3.tickethub.svc:3900
+      s3Credentials:
+        accessKeyId: { name: tickethub-backup-s3, key: ACCESS_KEY_ID }
+        secretAccessKey: { name: tickethub-backup-s3, key: ACCESS_SECRET_KEY }
+      wal:
+        compression: gzip
+        maxParallel: 2
+      data:
+        compression: gzip
+        jobs: 2
+
+  monitoring:
+    # Bật khi kube-prometheus-stack đã có CRD PodMonitor (việc 10).
+    enablePodMonitor: false
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: ScheduledBackup
+metadata:
+  name: tickethub-pg-daily
+  namespace: tickethub
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  # CNPG dùng cron 6 trường (có giây): 02:00 mỗi ngày theo giờ của node (UTC).
+  schedule: "0 0 2 * * *"
+  backupOwnerReference: self
+  cluster:
+    name: tickethub-pg
+  method: barmanObjectStore
+  immediate: true
