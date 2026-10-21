@@ -62,8 +62,6 @@ Bằng chứng đã chạy: backend `./mvnw verify` 327 test xanh; frontend `vit
 | 12 | Event listener lỗi hạ tầng được gửi lại bởi job `RepublishIncompleteEvents` (30 giây một lần) không giới hạn số lần, chưa có DLT | Kafka retry + DLT ở Sprint 8 |
 | 13 | `/actuator/prometheus` mở không cần token ở cổng của `app`; Gateway chỉ định tuyến `/api/**` nên không ra ngoài | Đã thêm NetworkPolicy `allow-monitoring-ingress` (việc 10); chưa chạy trên cụm |
 | 14 | Admin hoàn thủ công (`POST /admin/bookings/{id}/refund`) không bắt `Idempotency-Key` | Đã chặn bằng trạng thái (`REFUND_FAILED` → `REFUND_REQUESTED`), gọi lần hai trả 409 |
-| 15 | `spotless:check` chưa chạy cho code mới; một số file mới là LF trong khi repo có file CRLF (Windows) | Xem pending Sprint 2 mục 11 |
-| 16 | Dọn mục đã xong ở pending Sprint 3: mục "Việc kỹ thuật" 3 (Resilience4j) và 7 (UNIQUE → hoàn) | Làm khi đóng sprint |
 
 ## Quyết định nhỏ đã tự chọn (để duyệt)
 
