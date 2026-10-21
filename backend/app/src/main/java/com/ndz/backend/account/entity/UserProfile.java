@@ -1,4 +1,4 @@
-package com.ndz.backend.account.internal.domain;
+package com.ndz.backend.account.entity;
 
 import java.time.Instant;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.hibernate.type.SqlTypes;
 
 /**
  * Bản sao hồ sơ Keycloak (overview.md §6.6). Chỉ đọc qua JPA; ghi bằng upsert nguyên tử ở
- * {@code UserProfileWriter} để hai request đầu tiên đồng thời không đụng khoá chính.
+ * {@code UserProfileRepositoryImpl} để hai request đầu tiên đồng thời không đụng khoá chính.
  */
 @Entity
 @Table(schema = "account", name = "user_profiles")

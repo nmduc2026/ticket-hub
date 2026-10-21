@@ -1,4 +1,4 @@
-package com.ndz.backend.account.internal.persistence;
+package com.ndz.backend.account.repository;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -6,13 +6,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
 
 import com.ndz.backend.shared.util.CurrentUser;
 
 /** Upsert hồ sơ trong một câu lệnh: tạo nếu chưa có, chỉ ghi khi claim khác bản ghi (ADR 0016). */
-@Repository
-public class UserProfileWriter {
+public class UserProfileRepositoryImpl implements UserProfileRepositoryCustom {
 
 	// `enabled` không nằm trong SET: do Admin khoá / mở khoá (Keycloak là nguồn sự thật cho đăng nhập).
 	private static final String UPSERT = """
@@ -33,10 +31,11 @@ public class UserProfileWriter {
 
 	private final JdbcTemplate jdbc;
 
-	UserProfileWriter(JdbcTemplate jdbc) {
+	UserProfileRepositoryImpl(JdbcTemplate jdbc) {
 		this.jdbc = jdbc;
 	}
 
+	@Override
 	public void upsert(CurrentUser user, Instant lastLoginAt, Instant now) {
 		Set<String> sortedRoles = new TreeSet<>(user.roles());
 		jdbc.update(connection -> {

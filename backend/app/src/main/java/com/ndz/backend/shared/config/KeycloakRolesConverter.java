@@ -25,7 +25,7 @@ public final class KeycloakRolesConverter implements Converter<Jwt, AbstractAuth
 		return new JwtAuthenticationToken(jwt, authorities(jwt), jwt.getSubject());
 	}
 
-	static Set<String> roles(Jwt jwt) {
+	public static Set<String> roles(Jwt jwt) {
 		if (jwt.getClaim("realm_access") instanceof Map<?, ?> realmAccess
 				&& realmAccess.get("roles") instanceof Collection<?> roles) {
 			return roles.stream().map(String::valueOf).filter(APP_ROLES::contains)

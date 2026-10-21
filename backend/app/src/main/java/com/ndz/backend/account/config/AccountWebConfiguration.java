@@ -1,4 +1,4 @@
-package com.ndz.backend.account.internal.web;
+package com.ndz.backend.account.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
