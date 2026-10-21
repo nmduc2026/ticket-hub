@@ -51,6 +51,15 @@ public final class BookingViews {
 			String currency, Instant createdAt, String refundStatus, Long refundAmountMinor) {
 	}
 
+	/** Một dòng trong danh sách đơn của Admin; {@code failedAt} chỉ có với đơn từng hoàn thất bại. */
+	public record AdminBookingSummary(UUID bookingId, String userEmail, String eventTitle, long totalMinor,
+			String currency, Instant failedAt) {
+	}
+
+	/** Lý do và số tiền hoàn đã chốt lúc yêu cầu hoàn, để Admin gửi lại lần hoàn mới đúng như cũ. */
+	public record RefundContext(String reason, long amountMinor) {
+	}
+
 	/** Kết quả yêu cầu hoàn vé: số tiền khách sẽ nhận lại (BR-07). */
 	public record RefundResult(UUID bookingId, BookingStatus status, long refundAmountMinor) {
 	}

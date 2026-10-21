@@ -13,7 +13,9 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
 import com.ndz.booking.dto.response.BookingViews.BookingItemView;
+import com.ndz.booking.dto.response.BookingViews.RefundContext;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
@@ -207,6 +209,36 @@ public class BookingRepository {
 				    version = version + 1
 				WHERE id = ? AND status = 'CONFIRMED'
 				""", reason, refundAmountMinor, Timestamp.from(now), bookingId) == 1;
+	}
+
+	/** Đơn theo trạng thái cho Admin, đơn hoàn thất bại lâu nhất lên trước (cần xử lý trước). */
+	public List<AdminBookingSummary> findByStatus(BookingStatus status, int limit, int offset) {
+		return jdbc.query("""
+				SELECT b.id, b.contact_email, e.title, b.total_minor, b.currency, b.refund_failed_at
+				FROM booking.bookings b JOIN booking.event_snapshots e ON e.event_id = b.event_id
+				WHERE b.status = ?
+				ORDER BY b.refund_failed_at, b.created_at, b.id
+				LIMIT ? OFFSET ?
+				""", (rs, i) -> new AdminBookingSummary(rs.getObject("id", UUID.class), rs.getString("contact_email"),
+				rs.getString("title"), rs.getLong("total_minor"), rs.getString("currency"),
+				rs.getTimestamp("refund_failed_at") == null ? null : rs.getTimestamp("refund_failed_at").toInstant()),
+				status.name(), limit, offset);
+	}
+
+	public RefundContext refundContext(UUID bookingId) {
+		return jdbc.queryForObject(
+				"SELECT refund_reason, refund_amount_minor FROM booking.bookings WHERE id = ?",
+				(rs, i) -> new RefundContext(rs.getString("refund_reason"), rs.getLong("refund_amount_minor")),
+				bookingId);
+	}
+
+	/** Admin hoàn thủ công: {@code REFUND_FAILED → REFUND_REQUESTED} cho lần thử mới. */
+	public boolean markRefundRetried(UUID bookingId, Instant now) {
+		return jdbc.update("""
+				UPDATE booking.bookings
+				SET status = 'REFUND_REQUESTED', refund_requested_at = ?, refund_failed_at = NULL, version = version + 1
+				WHERE id = ? AND status = 'REFUND_FAILED'
+				""", Timestamp.from(now), bookingId) == 1;
 	}
 
 	public void markRefundFailedAt(UUID bookingId, Instant at) {

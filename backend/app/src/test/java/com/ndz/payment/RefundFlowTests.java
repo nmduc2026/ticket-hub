@@ -287,6 +287,85 @@ class RefundFlowTests {
 				.untilAsserted(() -> stripe.verify(1, postRequestedFor(urlEqualTo("/v1/refunds"))));
 	}
 
+	// ---- Admin hoàn thủ công (việc 3) ----
+
+	@Test
+	@DisplayName("AC-4: Admin hoàn thủ công → bản ghi refunds mới với khoá mới → REFUNDED; vé vẫn REVOKED")
+	void adminRetryCreatesANewRefundAttemptWithANewKey() throws Exception {
+		stripe.stubFor(WireMock.post(urlEqualTo("/v1/refunds")).willReturn(refund("pending", "re_1")));
+		issueTicket();
+		requestRefund().andExpect(status().isAccepted());
+		await().atMost(Duration.ofSeconds(20)).untilAsserted(
+				() -> assertThat(count("select count(*) from payment.refunds where stripe_refund_id = 're_1'")).isEqualTo(1));
+		webhook("evt_failed", "refund.failed", failedRefund("expired_or_canceled_card")).andExpect(status().isOk());
+		await().atMost(Duration.ofSeconds(20)).untilAsserted(
+				() -> assertThat(statusOf(bookingId)).isEqualTo("REFUND_FAILED"));
+		stripe.stubFor(WireMock.post(urlEqualTo("/v1/refunds")).willReturn(refund("succeeded", "re_2")));
+		events.clear();
+
+		mockMvc.perform(post("/api/v1/admin/bookings/" + bookingId + "/refund").header(HttpHeaders.AUTHORIZATION,
+				TestTokens.token().subject(TestTokens.ADMIN_ID).roles("ADMIN").bearer()))
+				.andExpect(status().isAccepted());
+
+		await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> assertThat(statusOf(bookingId)).isEqualTo("REFUNDED"));
+		assertThat(jdbc.queryForList("select id from payment.refunds order by created_at", UUID.class)).hasSize(2);
+		assertThat(jdbc.queryForList("select status from payment.refunds order by created_at", String.class))
+				.containsExactly("FAILED", "SUCCEEDED");
+		var requests = stripe.findAll(postRequestedFor(urlEqualTo("/v1/refunds")));
+		assertThat(requests).hasSize(2);
+		assertThat(requests.get(0).getHeader("Idempotency-Key")).isNotEqualTo(requests.get(1).getHeader("Idempotency-Key"));
+		assertThat(requests.get(1).getBodyAsString()).contains("amount=950000"); // đúng số tiền đã chốt lần đầu
+		assertThat(jdbc.queryForList("select status from ticket.tickets where booking_id = ?", String.class, bookingId))
+				.containsOnly("REVOKED");
+	}
+
+	@Test
+	@DisplayName("Danh sách REFUND_FAILED cho Admin có email, sự kiện, tổng tiền, thời điểm lỗi; chỉ ADMIN gọi được")
+	void adminListsRefundFailedBookingsAndOnlyAdminMay() throws Exception {
+		jdbc.update("update booking.bookings set status = 'REFUND_FAILED', refund_failed_at = ? where id = ?",
+				Timestamp.from(NOW), bookingId);
+
+		mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+				.get("/api/v1/admin/bookings?status=REFUND_FAILED")
+				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(TestTokens.ADMIN_ID).roles("ADMIN").bearer()))
+				.andExpect(status().isOk())
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].bookingId")
+						.value(bookingId.toString()))
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].userEmail")
+						.value(email))
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].eventTitle")
+						.value("Sự kiện thử"))
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].totalMinor")
+						.value(1_000_000))
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].failedAt")
+						.value("2026-11-01T03:00:00Z"));
+
+		for (String roles : new String[] { "CUSTOMER", "ORGANIZER" }) {
+			mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+					.get("/api/v1/admin/bookings?status=REFUND_FAILED")
+					.header(HttpHeaders.AUTHORIZATION, TestTokens.token().roles(roles).bearer()))
+					.andExpect(status().isForbidden());
+			mockMvc.perform(post("/api/v1/admin/bookings/" + bookingId + "/refund")
+					.header(HttpHeaders.AUTHORIZATION, TestTokens.token().roles(roles).bearer()))
+					.andExpect(status().isForbidden());
+		}
+		assertThat(statusOf(bookingId)).isEqualTo("REFUND_FAILED");
+	}
+
+	@Test
+	@DisplayName("Admin hoàn thủ công đơn không ở REFUND_FAILED → 409; đơn không tồn tại → 404")
+	void adminRetryOnlyWorksOnRefundFailedBookings() throws Exception {
+		String admin = TestTokens.token().subject(TestTokens.ADMIN_ID).roles("ADMIN").bearer();
+
+		mockMvc.perform(post("/api/v1/admin/bookings/" + bookingId + "/refund").header(HttpHeaders.AUTHORIZATION, admin))
+				.andExpect(status().isConflict());
+		mockMvc.perform(post("/api/v1/admin/bookings/" + UUID.randomUUID() + "/refund")
+				.header(HttpHeaders.AUTHORIZATION, admin)).andExpect(status().isNotFound());
+
+		assertThat(statusOf(bookingId)).isEqualTo("CONFIRMED");
+		stripe.verify(0, postRequestedFor(urlEqualTo("/v1/refunds")));
+	}
+
 	// ---- helpers ----
 
 	private ResultActions requestRefund() throws Exception {
@@ -306,10 +385,14 @@ class RefundFlowTests {
 	}
 
 	private static ResponseDefinitionBuilder refund(String status) {
+		return refund(status, "re_1");
+	}
+
+	private static ResponseDefinitionBuilder refund(String status, String id) {
 		return aResponse().withHeader("Content-Type", "application/json").withBody("""
-				{"id":"re_1","object":"refund","amount":950000,"currency":"vnd","status":"%s",
+				{"id":"%s","object":"refund","amount":950000,"currency":"vnd","status":"%s",
 				 "payment_intent":"%s"}
-				""".formatted(status, INTENT_ID));
+				""".formatted(id, status, INTENT_ID));
 	}
 
 	private static String charge() {

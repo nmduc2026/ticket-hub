@@ -649,6 +649,55 @@
         }
       }
     },
+    "/api/v1/admin/bookings/{bookingId}/refund" : {
+      "post" : {
+        "tags" : [ "admin-booking-controller" ],
+        "summary" : "Hoàn thủ công đơn REFUND_FAILED bằng lần hoàn mới",
+        "description" : "Tạo lần thử hoàn mới (refundId và khoá Stripe mới). Vé vẫn bị thu hồi.",
+        "operationId" : "retryBookingRefund",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "BOOKING_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "BOOKING_NOT_REFUNDABLE (đơn không ở trạng thái REFUND_FAILED)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "202" : {
+            "description" : "Accepted",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BookingRefund"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/venues" : {
       "get" : {
         "tags" : [ "venue-controller" ],
@@ -1082,6 +1131,55 @@
                   "type" : "array",
                   "items" : {
                     "$ref" : "#/components/schemas/AdministrativeUnit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bookings" : {
+      "get" : {
+        "tags" : [ "admin-booking-controller" ],
+        "summary" : "Đơn theo trạng thái, vd. REFUND_FAILED cần hoàn thủ công",
+        "operationId" : "listAdminBookings",
+        "parameters" : [ {
+          "name" : "status",
+          "in" : "query",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "PENDING_PAYMENT", "CONFIRMED", "EXPIRED", "CANCELLED", "REFUND_REQUESTED", "REFUNDED", "REFUND_FAILED" ]
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminBooking"
                   }
                 }
               }
@@ -2074,6 +2172,36 @@
           }
         },
         "required" : [ "code", "id", "level", "name", "type" ]
+      },
+      "AdminBooking" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "userEmail" : {
+            "type" : "string",
+            "description" : "Email liên hệ lúc đặt vé"
+          },
+          "eventTitle" : {
+            "type" : "string"
+          },
+          "totalMinor" : {
+            "type" : "integer",
+            "format" : "int64",
+            "description" : "Tổng tiền, đơn vị nhỏ nhất của tiền tệ"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "failedAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time",
+            "description" : "Lần hoàn thất bại gần nhất; vắng mặt nếu đơn chưa từng hoàn thất bại"
+          }
+        },
+        "required" : [ "bookingId", "currency", "eventTitle", "totalMinor", "userEmail" ]
       }
     }
   }
