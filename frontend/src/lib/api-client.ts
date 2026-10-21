@@ -12,6 +12,8 @@ export class ApiError extends Error {
   readonly code: string | undefined
   readonly traceId: string | undefined
   readonly errors: ReadonlyArray<{ field: string; message: string }>
+  /** Body Problem Details nguyên bản, để đọc trường phụ của từng mã lỗi (vd. `missing`, `reasons`). */
+  readonly problem: Record<string, unknown>
 
   constructor(status: number, problem: Record<string, unknown> = {}) {
     super(typeof problem.detail === 'string' ? problem.detail : `HTTP ${status}`)
@@ -20,7 +22,14 @@ export class ApiError extends Error {
     this.code = typeof problem.code === 'string' ? problem.code : undefined
     this.traceId = typeof problem.traceId === 'string' ? problem.traceId : undefined
     this.errors = Array.isArray(problem.errors) ? (problem.errors as ApiError['errors']) : []
+    this.problem = problem
   }
+}
+
+/** Trường phụ dạng danh sách chuỗi của một lỗi nghiệp vụ (vd. `missing` của PUBLISH_INCOMPLETE); rỗng nếu không có. */
+export function problemList(error: unknown, key: string): string[] {
+  const value = error instanceof ApiError ? error.problem[key] : undefined
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
 /** Mỗi lần người dùng bấm tạo một key mới; giữ nguyên key khi retry cùng thao tác. */

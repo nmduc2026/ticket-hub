@@ -1,4 +1,5 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { MoreHorizontal, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -8,10 +9,13 @@ import type { ListOrganizerEventsStatusItem, OrganizerEventSummary } from '@/api
 import { type Column, DataTable } from '@/components/list/DataTable'
 import { FacetFilter } from '@/components/list/FacetFilter'
 import { ListToolbar } from '@/components/list/ListToolbar'
+import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ApiError } from '@/lib/api-client'
 import { downloadCsv } from '@/lib/csv'
 import { formatDate, formatTime } from '@/lib/date'
 
+import { CreateEventDialog } from './CreateEventDialog'
 import type { OrganizerEventSearch } from './organizerEventSearch'
 import { StatusBadge } from './StatusBadge'
 
@@ -24,6 +28,7 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
   const navigate = useNavigate({ from: '/organizer/events/' })
   const [hiddenColumns, setHiddenColumns] = useState<ReadonlySet<string>>(new Set())
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  const [creating, setCreating] = useState(false)
 
   const page = search.page ?? 0
   const size = search.size ?? DEFAULT_PAGE_SIZE
@@ -120,7 +125,14 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
         }}
         selectedCount={selected.size}
         onExport={exportRows}
+        primaryAction={
+          <Button size="sm" onClick={() => setCreating(true)}>
+            <Plus aria-hidden="true" />
+            {t('organizerEvents.createButton')}
+          </Button>
+        }
       />
+      <CreateEventDialog open={creating} onOpenChange={setCreating} />
       <DataTable
         columns={columns}
         hiddenColumns={hiddenColumns}
@@ -140,6 +152,23 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
         emptyTitle={t('organizerEvents.emptyTitle')}
         emptyBody={t('organizerEvents.emptyBody')}
         selection={{ selected, onChange: setSelected }}
+        actionsHeader={t('organizerEvents.actions')}
+        rowActions={(row) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label={t('organizerEvents.rowMenu', { name: row.title })}>
+                <MoreHorizontal aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/organizer/events/$eventId/edit" params={{ eventId: row.id }}>
+                  {t('organizerEvents.editRow')}
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         pagination={{
           page,
           size,

@@ -68,3 +68,18 @@ export function startOfVnMonth(reference: Date, monthOffset = 0): string {
 export function vnWeekday(reference: Date): number {
   return new Date(reference.getTime() + VN_OFFSET_MS).getUTCDay()
 }
+
+/** "2026-11-15" + "20:00" (giờ Việt Nam) → ISO UTC "2026-11-15T13:00:00.000Z"; `undefined` khi thiếu hoặc sai định dạng. */
+export function vnInputsToIso(date: string, time: string): string | undefined {
+  const [year, month, day] = date.split('-').map(Number)
+  const [hour, minute] = time.split(':').map(Number)
+  if ([year, month, day, hour, minute].some((part) => !Number.isInteger(part))) return undefined
+  return new Date(Date.UTC(year, month - 1, day, hour, minute) - VN_OFFSET_MS).toISOString()
+}
+
+/** ISO UTC → giá trị cho ô nhập ngày / giờ theo giờ Việt Nam (`''` khi chưa có). */
+export function isoToVnInputs(iso: string | undefined): { date: string; time: string } {
+  if (!iso) return { date: '', time: '' }
+  const { year, month, day, hour, minute } = vnParts(iso)
+  return { date: `${year}-${pad(month)}-${pad(day)}`, time: `${pad(hour)}:${pad(minute)}` }
+}

@@ -15,3 +15,13 @@ afterAll(() => server.close())
 
 // jsdom chưa cài scrollTo; router gọi khi chuyển trang.
 window.scrollTo = () => {}
+
+// Radix (Checkbox, Popover…) đo kích thước bằng ResizeObserver; jsdom chưa có.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+// cmdk cuộn mục đang chọn vào khung nhìn; jsdom chưa cài scrollIntoView.
+Element.prototype.scrollIntoView ??= () => {}
