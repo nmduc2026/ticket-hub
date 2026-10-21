@@ -35,9 +35,9 @@ import org.springframework.test.web.servlet.ResultActions;
 import com.ndz.backend.IntegrationTest;
 import com.ndz.backend.MutableClock;
 import com.ndz.backend.TestTokens;
-import com.ndz.backend.booking.events.BookingCancelled;
-import com.ndz.backend.booking.events.BookingExpired;
-import com.ndz.backend.booking.internal.application.BookingExpiryService;
+import com.ndz.backend.booking.event.BookingCancelled;
+import com.ndz.backend.booking.event.BookingExpired;
+import com.ndz.backend.booking.service.BookingExpiryService;
 
 /**
  * Hết hạn giữ ghế và huỷ booking (plan Sprint 2 việc 8; BR-03, BR-12; overview.md §7.3, §7.7): dùng {@code Clock}

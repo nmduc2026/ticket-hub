@@ -10,7 +10,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import com.ndz.backend.booking.internal.domain.BookingStatus;
+import com.ndz.backend.booking.entity.enums.BookingStatus;
 import com.ndz.backend.shared.exception.BusinessException;
 
 /** Máy trạng thái booking (overview.md §7.7): mỗi chuyển hợp lệ, và mọi chuyển còn lại đều bị từ chối. */

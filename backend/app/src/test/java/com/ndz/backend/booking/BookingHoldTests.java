@@ -39,7 +39,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import com.ndz.backend.IntegrationTest;
 import com.ndz.backend.MutableClock;
 import com.ndz.backend.TestTokens;
-import com.ndz.backend.booking.events.BookingCreated;
+import com.ndz.backend.booking.event.BookingCreated;
 
 /**
  * Giữ ghế {@code POST /bookings} (plan Sprint 2 việc 7; BR-01, BR-02, BR-03; overview.md §7.2, §10; ADR 0020, 0025):
