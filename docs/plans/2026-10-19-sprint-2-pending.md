@@ -6,20 +6,16 @@ Ghi những việc chưa xong hoặc cần người dùng làm. Xoá dòng khi x
 
 | # | Việc | Vì sao treo | Cách làm |
 |---|---|---|---|
-| 1 | Bật Docker rồi chạy `./mvnw verify` và Playwright trên stack thật | Phiên làm FE không bật Docker; AC-1…10 phía backend (kể cả 50 luồng tranh 1 ghế) chưa chạy lại | Xem cuối `docs/test/sprint-2-verify.md` |
 | 2 | Duyệt `docs/design/seat-map.md` | Việc 10 yêu cầu người dùng duyệt phần bổ sung (luồng lỗi, polling, bàn phím) | Đọc và báo chỗ cần đổi |
 | 3 | Chạy lab AWS 1 | `terraform apply` luôn hỏi từng lần; cần tài khoản AWS, checklist bảo vệ và bảng thăm dò Free plan (việc treo Sprint 1 số 4, 5) | `infra/terraform/aws/lab1/README.md`; xong thì `destroy` và `verify-clean.sh` |
 | 4 | Push `feature/sprint-2`, mở PR | Push / PR cần báo trước | Duyệt rồi ra lệnh |
-| 5 | Hoàn tất hạng mục 16 và làm hạng mục 17 | Hạng mục 16 mới verify phần FE và test backend không cần Docker; hạng mục 17 (review cuối sprint theo skill `tech-lead`, kèm subagent review SQL giữ ghế) chưa làm vì cần verify backend xong trước | Sau mục 1: cập nhật `docs/test/sprint-2-verify.md`, rồi gọi review |
-| 7 | Chạy lại toàn bộ test BE của `catalog`, `booking`, `account` sau refactor cấu trúc package | Code Sprint 2 đã được chuyển sang cấu trúc chia theo tầng (nhánh `feature/sprint-3`) mà chưa chạy test cần Docker | Xem bảng "Refactor cấu trúc BE" ở `2026-10-19-sprint-3-pending.md` |
-| 6 | Chạy lại `OpenApiContractTests` | `openapi.json` được sửa tay (response 200 và Problem Details cho booking và organizer) nên chưa chắc khớp bản springdoc sinh ra | Khi bật Docker: nếu test ghi file khác thì commit bản mới rồi `npm run api:generate` |
+| 5 | Làm hạng mục 17 | Review cuối sprint theo skill `tech-lead`, kèm subagent review SQL giữ ghế; hạng mục 16 đã verify trên Docker 21/10 (`docs/test/sprint-2-verify.md`) | Gọi review |
 
 ## Việc kỹ thuật còn lại
 
 | # | Việc | Ghi chú |
 |---|---|---|
 | 1 | `Idempotency-Key` chưa có trong OpenAPI của `POST /bookings` | Orval không sinh tham số header nên FE gọi hàm `createBooking(data, { headers })` trực tiếp trong `useHoldSeats`. Khai header bằng `@Parameter` ở backend rồi sinh lại |
-| 2 | `shape` của khu / phần tử sơ đồ ghế bị sinh thành `JsonNode` rỗng | FE đọc bằng schema Zod trong `seatGeometry.ts`. Nên khai `shape` là object ở OpenAPI |
 | 3 | `PENDING_BOOKING_EXISTS` chưa kèm `bookingId` | Khách không có link quay lại đơn đang giữ (chưa có `GET /me/bookings`, Sprint 3). Đề xuất thêm `bookingId` vào Problem Details |
 | 4 | Bộ lọc facet chưa có "Tuỳ chọn khoảng ngày" | README §3; danh sách sự kiện organizer chưa cần lọc theo ngày. Thêm khi có màn cần |
 | 5 | Breadcrumb khung Admin / Organizer chỉ 2 cấp | Prototype #13, #24 có `Trang chủ › Sự kiện › <tên> › <tab>`; trang sửa tạm hiện tên và tab ở đầu trang |
