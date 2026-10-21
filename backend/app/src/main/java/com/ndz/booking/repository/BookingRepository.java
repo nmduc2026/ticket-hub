@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,10 +28,11 @@ import com.ndz.booking.entity.enums.LatePayment;
  */
 public interface BookingRepository extends JpaRepository<Booking, UUID>, BookingRepositoryCustom {
 
-	boolean existsByUserIdAndEventIdAndStatus(UUID userId, UUID eventId, BookingStatus status);
+	Optional<Booking> findFirstByUserIdAndEventIdAndStatus(UUID userId, UUID eventId, BookingStatus status);
 
-	default boolean hasPendingBooking(UUID userId, UUID eventId) {
-		return existsByUserIdAndEventIdAndStatus(userId, eventId, BookingStatus.PENDING_PAYMENT);
+	/** Booking đang chờ thanh toán của người dùng cho sự kiện (BR-02: tối đa một). */
+	default Optional<UUID> pendingBookingId(UUID userId, UUID eventId) {
+		return findFirstByUserIdAndEventIdAndStatus(userId, eventId, BookingStatus.PENDING_PAYMENT).map(Booking::getId);
 	}
 
 	@Query("""

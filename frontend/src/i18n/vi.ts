@@ -103,6 +103,7 @@ export const vi = {
     network: 'Không kết nối được. Kiểm tra mạng rồi thử lại.',
   },
   seatPage: {
+    openPendingBooking: 'Mở đơn đang giữ',
     step: 'Bước 1/2 · Chọn ghế',
     loadError: 'Không tải được sơ đồ ghế',
     notOnSale: 'Sự kiện chưa mở bán hoặc đã dừng bán.',

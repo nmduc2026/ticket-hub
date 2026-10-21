@@ -27,8 +27,10 @@ import type {
   Booking,
   BookingHold,
   BookingRefund,
+  CreateBookingHeaders,
   CreateBookingRequest,
-  ProblemDetail
+  ProblemDetail,
+  RequestBookingRefundHeaders
 } from '../../model';
 
 import { apiFetch } from '../../../../lib/api-client';
@@ -77,13 +79,14 @@ export const getCreateBookingUrl = () => {
   return `/api/v1/bookings`
 }
 
-export const createBooking = async (createBookingRequest: CreateBookingRequest, options?: RequestInit): Promise<createBookingResponse> => {
+export const createBooking = async (createBookingRequest: CreateBookingRequest,
+    headers: CreateBookingHeaders, options?: RequestInit): Promise<createBookingResponse> => {
   
   return apiFetch<createBookingResponse>(getCreateBookingUrl(),
   {      
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json',...headers, ...options?.headers },
     body: JSON.stringify(
       createBookingRequest,)
   }
@@ -93,8 +96,8 @@ export const createBooking = async (createBookingRequest: CreateBookingRequest, 
 
 
 export const getCreateBookingMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest;headers: CreateBookingHeaders}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest;headers: CreateBookingHeaders}, TContext> => {
 
 const mutationKey = ['createBooking'];
 const {mutation: mutationOptions} = options ?
@@ -106,10 +109,10 @@ const {mutation: mutationOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBooking>>, {data: CreateBookingRequest}> = (props) => {
-          const {data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBooking>>, {data: CreateBookingRequest;headers: CreateBookingHeaders}> = (props) => {
+          const {data,headers} = props ?? {};
 
-          return  createBooking(data,)
+          return  createBooking(data,headers,)
         }
 
         
@@ -125,11 +128,11 @@ const {mutation: mutationOptions} = options ?
  * @summary Giữ ghế, tạo đơn chờ thanh toán
  */
 export const useCreateBooking = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest;headers: CreateBookingHeaders}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createBooking>>,
         TError,
-        {data: CreateBookingRequest},
+        {data: CreateBookingRequest;headers: CreateBookingHeaders},
         TContext
       > => {
 
@@ -178,13 +181,14 @@ export const getRequestBookingRefundUrl = (bookingId: string,) => {
   return `/api/v1/bookings/${bookingId}/refund`
 }
 
-export const requestBookingRefund = async (bookingId: string, options?: RequestInit): Promise<requestBookingRefundResponse> => {
+export const requestBookingRefund = async (bookingId: string,
+    headers: RequestBookingRefundHeaders, options?: RequestInit): Promise<requestBookingRefundResponse> => {
   
   return apiFetch<requestBookingRefundResponse>(getRequestBookingRefundUrl(bookingId),
   {      
     ...options,
-    method: 'POST'
-    
+    method: 'POST',
+    headers: { ...headers, ...options?.headers }
     
   }
 );}
@@ -193,8 +197,8 @@ export const requestBookingRefund = async (bookingId: string, options?: RequestI
 
 
 export const getRequestBookingRefundMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string;headers: RequestBookingRefundHeaders}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string;headers: RequestBookingRefundHeaders}, TContext> => {
 
 const mutationKey = ['requestBookingRefund'];
 const {mutation: mutationOptions} = options ?
@@ -206,10 +210,10 @@ const {mutation: mutationOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestBookingRefund>>, {bookingId: string}> = (props) => {
-          const {bookingId} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof requestBookingRefund>>, {bookingId: string;headers: RequestBookingRefundHeaders}> = (props) => {
+          const {bookingId,headers} = props ?? {};
 
-          return  requestBookingRefund(bookingId,)
+          return  requestBookingRefund(bookingId,headers,)
         }
 
         
@@ -225,11 +229,11 @@ const {mutation: mutationOptions} = options ?
  * @summary Yêu cầu hoàn cả đơn đã thanh toán (BR-07)
  */
 export const useRequestBookingRefund = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof requestBookingRefund>>, TError,{bookingId: string;headers: RequestBookingRefundHeaders}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof requestBookingRefund>>,
         TError,
-        {bookingId: string},
+        {bookingId: string;headers: RequestBookingRefundHeaders},
         TContext
       > => {
 

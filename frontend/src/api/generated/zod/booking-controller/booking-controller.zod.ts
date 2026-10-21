@@ -11,6 +11,10 @@ import * as zod from 'zod';
  * Bắt buộc header Idempotency-Key. Giữ ghế 10 phút (BR-03).
  * @summary Giữ ghế, tạo đơn chờ thanh toán
  */
+export const createBookingHeader = zod.object({
+  "Idempotency-Key": zod.string().describe('Khoá chống gửi lặp (1-128 ký tự in được)')
+})
+
 export const createBookingBody = zod.object({
   "eventId": zod.uuid(),
   "seatIds": zod.array(zod.uuid()).min(1)
@@ -22,6 +26,10 @@ export const createBookingBody = zod.object({
  */
 export const requestBookingRefundParams = zod.object({
   "bookingId": zod.uuid()
+})
+
+export const requestBookingRefundHeader = zod.object({
+  "Idempotency-Key": zod.string().describe('Khoá chống gửi lặp (1-128 ký tự in được)')
 })
 
 /**

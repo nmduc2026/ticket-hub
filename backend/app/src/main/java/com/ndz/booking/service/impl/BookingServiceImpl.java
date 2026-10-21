@@ -121,7 +121,7 @@ public class BookingServiceImpl implements BookingService {
 				// Hai request cùng lúc của một người: chỉ bản ghi đầu tiên qua được unique index (BR-02).
 				String cause = e.getMostSpecificCause().getMessage();
 				if (cause != null && cause.contains(ONE_PENDING_INDEX)) {
-					throw pendingExists();
+					throw pendingExists(bookings.pendingBookingId(userId, eventId).orElse(null));
 				}
 				throw e;
 			}
@@ -184,9 +184,9 @@ public class BookingServiceImpl implements BookingService {
 
 	/** BR-02: một booking chờ thanh toán mỗi sự kiện; tổng vé (chờ thanh toán + đã xác nhận) không vượt giới hạn. */
 	private void checkUserLimits(UUID userId, EventRules rules, int requested) {
-		if (bookings.hasPendingBooking(userId, rules.eventId())) {
-			throw pendingExists();
-		}
+		bookings.pendingBookingId(userId, rules.eventId()).ifPresent(pending -> {
+			throw pendingExists(pending);
+		});
 		if (bookings.activeTicketCount(userId, rules.eventId()) + requested > rules.maxTicketsPerUser()) {
 			throw new BusinessException(ErrorCode.TICKET_LIMIT_EXCEEDED,
 					"Mỗi người mua tối đa " + rules.maxTicketsPerUser() + " vé cho sự kiện này");
@@ -221,9 +221,11 @@ public class BookingServiceImpl implements BookingService {
 		return new BusinessException(ErrorCode.SEAT_UNAVAILABLE, "Ghế vừa có người giữ, vui lòng chọn ghế khác");
 	}
 
-	private static BusinessException pendingExists() {
-		return new BusinessException(ErrorCode.PENDING_BOOKING_EXISTS,
+	/** Kèm {@code bookingId} của đơn đang giữ để FE dẫn khách về đơn đó (null nếu đơn vừa hết hạn / bị huỷ). */
+	private static BusinessException pendingExists(UUID pendingBookingId) {
+		BusinessException exception = new BusinessException(ErrorCode.PENDING_BOOKING_EXISTS,
 				"Bạn đang có một đơn chờ thanh toán cho sự kiện này");
+		return pendingBookingId == null ? exception : exception.with("bookingId", pendingBookingId);
 	}
 
 }

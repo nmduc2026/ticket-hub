@@ -190,6 +190,24 @@ describe('giữ ghế (AC-6, AC-7)', () => {
     expect(screen.getByRole('button', { name: 'Bỏ chọn Hàng B, ghế 1' })).toBeInTheDocument()
   })
 
+  it('409 PENDING_BOOKING_EXISTS kèm bookingId: có link mở đơn đang giữ', async () => {
+    mockCatalog()
+    server.use(
+      http.post('/api/v1/bookings', () =>
+        HttpResponse.json(
+          { type: 'about:blank', title: 'Conflict', status: 409, code: 'PENDING_BOOKING_EXISTS', bookingId: 'b-dang-giu' },
+          { status: 409, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    )
+    const user = userEvent.setup()
+    renderAt(`/events/${EVENT_ID}/seats`)
+    await selectFirstSeat(user)
+    await user.click(screen.getByRole('button', { name: 'Tiếp tục' }))
+
+    expect(await screen.findByRole('link', { name: 'Mở đơn đang giữ' })).toHaveAttribute('href', '/checkout/b-dang-giu')
+  })
+
   it('mất kết nối khi cập nhật ghế: hiện banner và khoá nút Tiếp tục', async () => {
     let fail = false
     mockCatalog(() => seatsResponse())

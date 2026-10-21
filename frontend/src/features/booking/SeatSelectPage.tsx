@@ -1,4 +1,4 @@
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { AlertCircle, WifiOff } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -91,6 +91,11 @@ export function SeatSelectPage({ eventId }: { eventId: string }) {
 
   const isOffline = seats.isRefetchError
   const holdError = hold.error ? errorMessage(hold.error, t, { max: detail.maxTicketsPerUser }) : null
+  // Đơn đang chờ thanh toán của khách cho sự kiện này (BR-02): dẫn về đơn đó thay vì bắt chọn lại.
+  const pendingBookingId =
+    hold.error instanceof ApiError && hold.error.code === 'PENDING_BOOKING_EXISTS' && typeof hold.error.problem.bookingId === 'string'
+      ? hold.error.problem.bookingId
+      : null
   const banners = [
     !onSale && { id: 'not-on-sale', text: t('seatPage.notOnSale') },
     lostSeats.length > 0 && { id: 'lost', text: t('seatPage.lostSeats', { seats: lostSeats.join('; ') }) },
@@ -144,6 +149,14 @@ export function SeatSelectPage({ eventId }: { eventId: string }) {
       {banners.map((banner) => (
         <div key={banner.id} role="alert" className="border-destructive/40 bg-destructive/5 rounded-lg border px-4 py-2.5 text-sm">
           {banner.text}
+          {banner.id === 'hold' && pendingBookingId && (
+            <>
+              {' '}
+              <Link to="/checkout/$bookingId" params={{ bookingId: pendingBookingId }} className="font-medium underline">
+                {t('seatPage.openPendingBooking')}
+              </Link>
+            </>
+          )}
         </div>
       ))}
 

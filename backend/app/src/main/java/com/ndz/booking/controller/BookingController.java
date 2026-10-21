@@ -5,6 +5,8 @@ import java.util.UUID;
 import jakarta.validation.Valid;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -50,7 +52,10 @@ class BookingController {
 
 	@Operation(operationId = "createBooking", summary = "Giữ ghế, tạo đơn chờ thanh toán",
 			description = "Bắt buộc header Idempotency-Key. Giữ ghế 10 phút (BR-03).")
-	@ApiResponse(responseCode = "409", description = "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS",
+	@Parameter(name = "Idempotency-Key", in = ParameterIn.HEADER, required = true,
+			description = "Khoá chống gửi lặp (1-128 ký tự in được)", schema = @Schema(type = "string"))
+	@ApiResponse(responseCode = "409",
+			description = "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS (kèm bookingId của đơn đang chờ thanh toán)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "503",
 			description = "SEAT_HOLD_UNAVAILABLE: hệ thống giữ ghế tạm dừng (Redis không dùng được), thử lại sau Retry-After",
@@ -79,6 +84,8 @@ class BookingController {
 
 	@Operation(operationId = "requestBookingRefund", summary = "Yêu cầu hoàn cả đơn đã thanh toán (BR-07)",
 			description = "Bắt buộc header Idempotency-Key. Vé bị thu hồi ngay (BR-09); yêu cầu hoàn không huỷ được.")
+	@Parameter(name = "Idempotency-Key", in = ParameterIn.HEADER, required = true,
+			description = "Khoá chống gửi lặp (1-128 ký tự in được)", schema = @Schema(type = "string"))
 	@ApiResponse(responseCode = "202", description = "Đã nhận yêu cầu hoàn",
 			content = @Content(schema = @Schema(implementation = RefundResponse.class)))
 	@ApiResponse(responseCode = "404", description = "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",

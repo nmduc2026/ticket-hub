@@ -15,6 +15,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  CreatePaymentHeaders,
   CreatePaymentRequest,
   Payment,
   ProblemDetail
@@ -66,13 +67,14 @@ export const getCreatePaymentUrl = () => {
   return `/api/v1/payments`
 }
 
-export const createPayment = async (createPaymentRequest: CreatePaymentRequest, options?: RequestInit): Promise<createPaymentResponse> => {
+export const createPayment = async (createPaymentRequest: CreatePaymentRequest,
+    headers: CreatePaymentHeaders, options?: RequestInit): Promise<createPaymentResponse> => {
   
   return apiFetch<createPaymentResponse>(getCreatePaymentUrl(),
   {      
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    headers: { 'Content-Type': 'application/json',...headers, ...options?.headers },
     body: JSON.stringify(
       createPaymentRequest,)
   }
@@ -82,8 +84,8 @@ export const createPayment = async (createPaymentRequest: CreatePaymentRequest, 
 
 
 export const getCreatePaymentMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError,{data: CreatePaymentRequest}, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError,{data: CreatePaymentRequest}, TContext> => {
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError,{data: CreatePaymentRequest;headers: CreatePaymentHeaders}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError,{data: CreatePaymentRequest;headers: CreatePaymentHeaders}, TContext> => {
 
 const mutationKey = ['createPayment'];
 const {mutation: mutationOptions} = options ?
@@ -95,10 +97,10 @@ const {mutation: mutationOptions} = options ?
       
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPayment>>, {data: CreatePaymentRequest}> = (props) => {
-          const {data} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createPayment>>, {data: CreatePaymentRequest;headers: CreatePaymentHeaders}> = (props) => {
+          const {data,headers} = props ?? {};
 
-          return  createPayment(data,)
+          return  createPayment(data,headers,)
         }
 
         
@@ -114,11 +116,11 @@ const {mutation: mutationOptions} = options ?
  * @summary Bắt đầu thanh toán, nhận clientSecret của Stripe
  */
 export const useCreatePayment = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError,{data: CreatePaymentRequest}, TContext>, }
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createPayment>>, TError,{data: CreatePaymentRequest;headers: CreatePaymentHeaders}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createPayment>>,
         TError,
-        {data: CreatePaymentRequest},
+        {data: CreatePaymentRequest;headers: CreatePaymentHeaders},
         TContext
       > => {
 

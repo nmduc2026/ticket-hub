@@ -18,6 +18,8 @@ export default defineConfig({
         // Orval 7 + fetch truyền AbortSignal vào tham số RequestInit (lỗi kiểu); tắt để code sinh ra qua type-check.
         query: { signal: false },
       },
+      // Header khai trong OpenAPI (Idempotency-Key) thành tham số của hàm sinh ra, không truyền tay qua RequestInit.
+      headers: true,
     },
   },
   apiZod: {

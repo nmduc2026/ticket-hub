@@ -859,6 +859,15 @@
         "summary" : "Giữ ghế, tạo đơn chờ thanh toán",
         "description" : "Bắt buộc header Idempotency-Key. Giữ ghế 10 phút (BR-03).",
         "operationId" : "createBooking",
+        "parameters" : [ {
+          "name" : "Idempotency-Key",
+          "in" : "header",
+          "description" : "Khoá chống gửi lặp (1-128 ký tự in được)",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -871,7 +880,7 @@
         },
         "responses" : {
           "409" : {
-            "description" : "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS",
+            "description" : "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS (kèm bookingId của đơn đang chờ thanh toán)",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -926,6 +935,14 @@
           "schema" : {
             "type" : "string",
             "format" : "uuid"
+          }
+        }, {
+          "name" : "Idempotency-Key",
+          "in" : "header",
+          "description" : "Khoá chống gửi lặp (1-128 ký tự in được)",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
           }
         } ],
         "responses" : {

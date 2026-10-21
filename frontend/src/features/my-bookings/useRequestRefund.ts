@@ -17,7 +17,7 @@ export function useRequestRefund(bookingId: string, onDone: () => void) {
   return useMutation({
     mutationFn: () => {
       key.current ??= newIdempotencyKey()
-      return requestBookingRefund(bookingId, { headers: { 'Idempotency-Key': key.current } })
+      return requestBookingRefund(bookingId, { 'Idempotency-Key': key.current })
     },
     onSuccess: async () => {
       key.current = null

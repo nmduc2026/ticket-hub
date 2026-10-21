@@ -11,7 +11,7 @@ import { newIdempotencyKey } from '@/lib/api-client'
 export function useStartPayment(bookingId: string, enabled: boolean) {
   const key = useRef(newIdempotencyKey())
   const mutation = useMutation({
-    mutationFn: () => createPayment({ bookingId }, { headers: { 'Idempotency-Key': key.current } }),
+    mutationFn: () => createPayment({ bookingId }, { 'Idempotency-Key': key.current }),
   })
   const { mutate, isIdle } = mutation
 

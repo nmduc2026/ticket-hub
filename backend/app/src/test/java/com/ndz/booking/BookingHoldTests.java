@@ -181,10 +181,13 @@ class BookingHoldTests {
 		UUID event = onSaleEvent(6);
 		List<UUID> seats = seats(event, 4, 1000);
 		UUID user = UUID.randomUUID();
-		hold(user, event, seats.subList(0, 2)).andExpect(status().isCreated());
+		String first = com.jayway.jsonpath.JsonPath.read(hold(user, event, seats.subList(0, 2))
+				.andExpect(status().isCreated()).andReturn().getResponse().getContentAsString(), "$.bookingId");
 
+		// Kèm id đơn đang giữ để FE dẫn khách về đơn đó.
 		hold(user, event, seats.subList(2, 4)).andExpect(status().isConflict())
-				.andExpect(jsonPath("$.code").value("PENDING_BOOKING_EXISTS"));
+				.andExpect(jsonPath("$.code").value("PENDING_BOOKING_EXISTS"))
+				.andExpect(jsonPath("$.bookingId").value(first));
 
 		// Sự kiện khác thì được.
 		UUID other = onSaleEvent(6);

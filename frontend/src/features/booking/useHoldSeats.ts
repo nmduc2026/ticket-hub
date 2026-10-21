@@ -16,7 +16,7 @@ export function useHoldSeats(eventId: string) {
   const mutation = useMutation({
     mutationFn: (seatIds: string[]) => {
       key.current ??= newIdempotencyKey()
-      return createBooking({ eventId, seatIds }, { headers: { 'Idempotency-Key': key.current } })
+      return createBooking({ eventId, seatIds }, { 'Idempotency-Key': key.current })
     },
     onSuccess: () => {
       key.current = null
