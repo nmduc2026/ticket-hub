@@ -34,6 +34,9 @@ env:
   STORAGE_BUCKET: tickethub-media
   STORAGE_PUBLIC_BASE_URL: https://tickethub.localhost/media
   WEB_BASE_URL: https://tickethub.localhost
+  # Trace xuyên Gateway → app (docs/ops/observability.md).
+  OTLP_TRACES_ENABLED: "true"
+  OTLP_TRACES_ENDPOINT: http://jaeger.monitoring.svc:4318/v1/traces
 
 # Secret tạo tay một lần bằng kubectl (xem docs/ops/k8s-staging.md); chart không tạo secret.
 secretEnv:

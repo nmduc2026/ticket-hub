@@ -89,3 +89,17 @@ management:
     health:
       probes:
         enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      otlp:
+        # Tắt mặc định để dev/test không cần Jaeger.
+        enabled: ${OTLP_TRACES_ENABLED:false}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          # Trong cụm: OTLP_TRACES_ENDPOINT=http://jaeger:4318/v1/traces và OTLP_TRACES_ENABLED=true.
+          endpoint: ${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+          transport: http

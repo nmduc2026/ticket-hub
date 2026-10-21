@@ -8,6 +8,8 @@ RUN npm install -g npm@11.6.2
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --no-audit --no-fund
 COPY . .
+# DSN công khai theo thiết kế của Sentry nhưng vẫn truyền lúc build, không commit.
+ARG VITE_SENTRY_DSN=
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.31.7-alpine3.24

@@ -28,6 +28,9 @@ env:
   REDIS_PORT: "6379"
   KEYCLOAK_ISSUER_URI: https://auth.tickethub.localhost/realms/tickethub
   GATEWAY_COOKIE_SECURE: "true"
+  # Trace xuyên Gateway → app (docs/ops/observability.md).
+  OTLP_TRACES_ENABLED: "true"
+  OTLP_TRACES_ENDPOINT: http://jaeger.monitoring.svc:4318/v1/traces
 
 secretEnv:
   - { name: REDIS_PASSWORD, secret: tickethub-redis, key: password }

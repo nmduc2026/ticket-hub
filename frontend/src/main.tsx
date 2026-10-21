@@ -8,6 +8,9 @@ import { createRoot } from 'react-dom/client'
 
 import { createQueryClient } from '@/app/query-client'
 import { createAppRouter } from '@/app/router'
+import { initMonitoring } from '@/lib/monitoring'
+
+initMonitoring()
 
 const queryClient = createQueryClient()
 const router = createAppRouter(queryClient)
