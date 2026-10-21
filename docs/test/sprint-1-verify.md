@@ -33,7 +33,7 @@ Nhánh `feature/sprint-1`. Chạy ngày 20/10/2026 trên máy dev (Windows 11, D
 
 ## Review nhanh vùng rủi ro (bảo mật, secret, AWS)
 
-Kết luận: **APPROVED, kèm việc treo** (`docs/plans/2026-10-19-sprint-1-pending.md`). Chưa gọi subagent review độc lập vì Sprint 1 chưa có tiền hay ghế; sẽ làm từ Sprint 2 cho vùng tiền / oversell.
+Kết luận: **APPROVED, kèm việc treo** (`docs/plans/2026-10-21-pending-sprint-1-4.md`, mục Sprint 1). Chưa gọi subagent review độc lập vì Sprint 1 chưa có tiền hay ghế; sẽ làm từ Sprint 2 cho vùng tiền / oversell.
 
 - Secret: không có secret thật trong repo; `.env` bị ignore; `.env.example`, realm và test chỉ có giá trị giả cho máy dev. gitleaks chạy ở pre-commit và CI.
 - Gateway: PKCE S256, token chỉ ở session Redis, cookie `SESSION` HttpOnly SameSite=Lax, CSRF double-submit, `returnTo` chỉ nhận đường dẫn nội bộ, bỏ `Cookie` trước khi chuyển xuống `app`, webhook miễn CSRF và không session.

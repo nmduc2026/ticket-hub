@@ -2,7 +2,7 @@
 
 **Mục tiêu:** chứng minh không bán trùng dưới tải (500 user / 100 ghế), có số đo trước và sau khi thêm lớp Redis; mở phần quản trị organizer và người dùng; quan sát được bằng log tập trung và diễn tập được các sự cố C2, C4, C8.
 
-**Đầu vào:** Sprint 1–4 đã xong (giữ ghế bằng Postgres, thanh toán, vé, hoàn vé, check-in, thông báo trong app, CNPG, Prometheus / Grafana / Alertmanager, Jaeger, Sentry). Mỗi hạng mục chỉ đọc đúng các § `overview.md` và ADR ở cột "Đọc".
+**Đầu vào:** Sprint 1–4 và sprint dọn dẹp (`2026-10-21-sprint-cleanup-plan.md`) đã xong (giữ ghế bằng Postgres qua JPA, thanh toán, vé, hoàn vé, check-in, thông báo trong app, CNPG, Prometheus / Grafana / Alertmanager, Jaeger, Sentry). Mỗi hạng mục chỉ đọc đúng các § `overview.md` và ADR ở cột "Đọc".
 
 **Ngoài sprint này:** Stripe Connect thật, huỷ / tạm dừng sự kiện, xem audit log trên màn Admin (Sprint 6); phòng chờ, rate limit, SSE, cache sự kiện, kịch bản Spike (Sprint 7); thành viên của organizer (ngoài phạm vi dự án).
 

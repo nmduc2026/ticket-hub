@@ -1,6 +1,6 @@
 # Báo cáo verify Sprint 3
 
-Nhánh `feature/sprint-3`. Chạy ngày 21/10/2026 trên máy dev (Windows 11), Docker bật. Plan: `docs/plans/2026-10-19-sprint-3-plan.md`, hạng mục 15. Việc cần người dùng hoặc cụm Kubernetes nằm ở `docs/plans/2026-10-19-sprint-3-pending.md`.
+Nhánh `feature/sprint-3`. Chạy ngày 21/10/2026 trên máy dev (Windows 11), Docker bật. Plan: `docs/plans/2026-10-19-sprint-3-plan.md`, hạng mục 15. Việc cần người dùng hoặc cụm Kubernetes nằm ở `docs/plans/2026-10-21-pending-sprint-1-4.md` (mục Sprint 3).
 
 ## Lệnh đã chạy
 

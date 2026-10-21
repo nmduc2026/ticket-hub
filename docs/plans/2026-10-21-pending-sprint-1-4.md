@@ -1,6 +1,6 @@
 # Việc còn treo: Sprint 1–4
 
-Gộp từ các file `2026-10-19-sprint-N-pending.md`, từ nay chỉ cập nhật ở file này. Xoá dòng khi xong. Mã dòng có dạng `S<sprint>-<loại><số>`: `U` là việc cần người dùng, `V` là chưa kiểm chứng, `T` là việc kỹ thuật. Cột "Vào plan" ghi hạng mục của plan Sprint 5–8 đã bao việc đó; "chưa có" là việc chưa nằm trong plan nào.
+Mọi việc treo của Sprint 1–4 nằm ở file này. Xoá dòng khi xong. Mã dòng có dạng `S<sprint>-<loại><số>`: `U` là việc cần người dùng, `V` là chưa kiểm chứng, `T` là việc kỹ thuật. Việc treo được xử lý ở [sprint dọn dẹp](2026-10-21-sprint-cleanup-plan.md) trước Sprint 5. Cột "Vào plan" ghi hạng mục bao việc đó: `DD-n` là hạng mục n của sprint dọn dẹp, `S<n>-<m>` là hạng mục m của plan Sprint n (chỉ cho việc phụ thuộc tính năng của sprint đó).
 
 Trạng thái Git: `feature/sprint-1` → `sprint-4` xếp chồng (nhánh sau tách từ nhánh trước), chưa nhánh nào được push hay merge vào `main`.
 
@@ -37,14 +37,14 @@ Trạng thái Git: `feature/sprint-1` → `sprint-4` xếp chồng (nhánh sau t
 
 | # | Việc | Ghi chú | Vào plan |
 |---|---|---|---|
-| S1-T1 | Hồ sơ cá nhân (#19) thiếu ảnh đại diện, số điện thoại, ngày sinh, thành phố, tài khoản liên kết, danh sách phiên, xoá tài khoản | `user_profiles` chưa có cột và API; hiện đổi email / mật khẩu / phiên dẫn sang Keycloak. Cần quyết định thêm trường hay để Keycloak giữ | chưa có |
-| S1-T2 | Chạy `app`, `gateway`, `frontend` dạng container trong compose `core` | Cần chốt hostname Keycloak (`localhost:8180` cho trình duyệt, `keycloak:8080` cho container) | chưa có |
-| S1-T3 | Nâng Orval 8 | Cần Node ≥ 22.18 (máy dev Node 20) | chưa có |
+| S1-T1 | Hồ sơ cá nhân (#19) thiếu ảnh đại diện, số điện thoại, ngày sinh, thành phố, tài khoản liên kết, danh sách phiên, xoá tài khoản | `user_profiles` chưa có cột và API; hiện đổi email / mật khẩu / phiên dẫn sang Keycloak. Cần quyết định thêm trường hay để Keycloak giữ | DD-6 |
+| S1-T2 | Chạy `app`, `gateway`, `frontend` dạng container trong compose `core` | Cần chốt hostname Keycloak (`localhost:8180` cho trình duyệt, `keycloak:8080` cho container) | bỏ (quyết định A9) |
+| S1-T3 | Nâng Orval 8 | Cần Node ≥ 22.18 (máy dev Node 20) | DD-3 nếu nâng Node 22 |
 | S1-T4 | Spring Cloud 2025.1.3 (build cho Boot 4.0.x) đang chạy trên Boot 4.1.1 | Nâng khi có release train cho Boot 4.1 | Renovate |
 | S1-T5 | Ghi đè `tomcat` 11.0.27, `jackson-bom` 3.1.8 trong `backend/pom.xml` vì CVE | Bỏ khi Spring Boot cập nhật | Renovate |
 | S1-T6 | npm 10.8 ở máy dev lỗi peer dependency của Vite 8 | Dùng `npx -y npm@11 install`; Dockerfile và CI đã dùng npm 11 | — |
 | S1-T7 | OpenAPI do test backend ghi ra `frontend/openapi/openapi.json` | Đổi API thì commit file này; CI kiểm lệch | — (quy ước) |
-| S1-T8 | Layout khách còn thiếu: ô tìm kiếm, link "Bán vé cùng Ticket Hub", tab danh mục | Thêm khi trang tương ứng có | chưa có |
+| S1-T8 | Layout khách còn thiếu: ô tìm kiếm, link "Bán vé cùng Ticket Hub", tab danh mục | Thêm khi trang tương ứng có | DD-10 |
 
 ---
 
@@ -63,18 +63,18 @@ Trạng thái Git: `feature/sprint-1` → `sprint-4` xếp chồng (nhánh sau t
 
 | # | Việc | Ghi chú | Vào plan |
 |---|---|---|---|
-| S2-T1 | `Idempotency-Key` chưa có trong OpenAPI của `POST /bookings` | FE truyền header tay trong `useHoldSeats`; khai `@Parameter` ở backend rồi sinh lại | chưa có |
-| S2-T2 | `PENDING_BOOKING_EXISTS` chưa kèm `bookingId` | Khách không có link quay lại đơn đang giữ; thêm `bookingId` vào Problem Details | chưa có |
+| S2-T1 | `Idempotency-Key` chưa có trong OpenAPI của `POST /bookings` | FE truyền header tay trong `useHoldSeats`; khai `@Parameter` ở backend rồi sinh lại | DD-3 |
+| S2-T2 | `PENDING_BOOKING_EXISTS` chưa kèm `bookingId` | Khách không có link quay lại đơn đang giữ; thêm `bookingId` vào Problem Details | DD-3 |
 | S2-T3 | Bộ lọc facet chưa có "Tuỳ chọn khoảng ngày" | README §3; thêm khi có màn cần | S6-11 (đơn hàng organizer lọc ngày) |
-| S2-T4 | Breadcrumb Admin / Organizer chỉ 2 cấp | Prototype #13, #24 có 4 cấp | chưa có |
-| S2-T5 | Trang sửa sự kiện chưa có: thẻ, độ tuổi, quy định, giờ mở cửa, công khai / chỉ link, kết thúc bán, xem trước | API không có trường tương ứng; không tự thêm | chưa có (cần quyết định) |
-| S2-T6 | Tab "Phòng chờ" ở trang sửa sự kiện | | S7-10 |
+| S2-T4 | Breadcrumb Admin / Organizer chỉ 2 cấp | Prototype #13, #24 có 4 cấp | DD-10 |
+| S2-T5 | Trang sửa sự kiện chưa có: thẻ, độ tuổi, quy định, giờ mở cửa, công khai / chỉ link, kết thúc bán, xem trước | API không có trường tương ứng; không tự thêm | DD-7 |
+| S2-T6 | Tab "Phòng chờ" ở trang sửa sự kiện | | S7-9 |
 | S2-T7 | Link "Kết nối Stripe" trong hộp "Chưa thể publish" | | S6-10 |
 | S2-T8 | Upload banner trên lab AWS: app còn trỏ S3 giả | Cần bucket thật hoặc S3Mock trên EC2 | S6-8 (lab 2) |
-| S2-T9 | E2E trên stack thật cho giữ ghế và publish | Hiện chỉ có `*.mock.spec.ts` | chưa có |
-| S2-T10 | Thêm `.gitattributes` (`* text=auto eol=lf`); `spotless:check` đỏ ở máy Windows vì CRLF | CI Linux không gặp | chưa có |
+| S2-T9 | E2E trên stack thật cho giữ ghế và publish | Hiện chỉ có `*.mock.spec.ts` | DD-11 |
+| S2-T10 | Thêm `.gitattributes` (`* text=auto eol=lf`); `spotless:check` đỏ ở máy Windows vì CRLF | CI Linux không gặp | DD-3 |
 | S2-T11 | Sơ đồ ghế chưa vẽ khu `IMPORTED` và khu xoay (`sectionRect` bỏ qua `rotation`) | | S6-16, 18 |
-| S2-T12 | Ghế ~6 px ở 390px, phải zoom mới chọn được | Cân nhắc phóng sẵn hoặc vùng chạm lớn hơn | chưa có |
+| S2-T12 | Ghế ~6 px ở 390px, phải zoom mới chọn được | Cân nhắc phóng sẵn hoặc vùng chạm lớn hơn | DD-10 |
 
 ---
 
@@ -107,16 +107,16 @@ Trạng thái Git: `feature/sprint-1` → `sprint-4` xếp chồng (nhánh sau t
 
 | # | Việc | Ghi chú | Vào plan |
 |---|---|---|---|
-| S3-T1 | `.env.example` thiếu `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_SIGNING_JWK`, `MAIL_*` và chưa truyền vào `app` khi chạy compose; chưa có `frontend/.env.example` | `TICKET_SIGNING_JWK` trống thì Ticket sinh khoá tạm, vé cũ không xác minh được sau khi khởi động lại | chưa có |
-| S3-T2 | Thêm service stripe-mock vào compose | | S5-1 (staging); compose dev chưa có |
-| S3-T3 | `booking` còn dùng JdbcTemplate | Chuyển sang entity + native query khi bạn muốn; đã có test 50 luồng làm lưới an toàn | chưa có (tuỳ chọn) |
-| S3-T4 | `shared/idempotency`, `shared/storage` chưa chia `config` / `util` | Chia nếu muốn đồng nhất | chưa có (tuỳ chọn) |
-| S3-T5 | Đơn `EXPIRED` / `CANCELLED` nhận thanh toán muộn: FE chỉ chờ, chưa nói "không giữ lại được ghế, sẽ hoàn tiền" | Cần API báo `BookingConfirmationFailed` / hoàn tiền cho khách | chưa có |
-| S3-T6 | Mở lại trang thanh toán sau khi Stripe đã nhận tiền mà chưa `CONFIRMED` vẫn hiện form | Cần `GET` trạng thái payment | chưa có |
-| S3-T7 | "Vé của tôi" và "Đơn của tôi": tab / tìm / lọc ở client; "Tải PDF", "Thêm vào lịch", hoá đơn đang ẩn | API chưa có lọc | chưa có |
-| S3-T8 | Image GHCR chỉ có sau khi `main` chạy CI; trước đó cụm báo `ImagePullBackOff` | Sau B1 | — |
-| S3-T9 | Job `update-image-tags` push thẳng `main`, bị chặn nếu bắt buộc PR | Cho github-actions bỏ qua hoặc đổi sang PR tự động | chưa có |
-| S3-T10 | Gateway trong cụm phải phân giải `auth.tickethub.localhost` (CoreDNS rewrite về Envoy Gateway) | Kiểm khi dựng cụm | chưa có |
+| S3-T1 | `.env.example` thiếu `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_SIGNING_JWK`, `MAIL_*` và chưa truyền vào `app` khi chạy compose; chưa có `frontend/.env.example` | `TICKET_SIGNING_JWK` trống thì Ticket sinh khoá tạm, vé cũ không xác minh được sau khi khởi động lại | DD-3 |
+| S3-T2 | Thêm service stripe-mock vào compose | | DD-3 (dev), S5-1 (staging) |
+| S3-T3 | `booking` còn dùng JdbcTemplate | Chuyển sang entity + native query khi bạn muốn; đã có test 50 luồng làm lưới an toàn | DD-4 |
+| S3-T4 | `shared/idempotency`, `shared/storage` chưa chia `config` / `util` | Chia nếu muốn đồng nhất | giữ nguyên |
+| S3-T5 | Đơn `EXPIRED` / `CANCELLED` nhận thanh toán muộn: FE chỉ chờ, chưa nói "không giữ lại được ghế, sẽ hoàn tiền" | Cần API báo `BookingConfirmationFailed` / hoàn tiền cho khách | DD-5 |
+| S3-T6 | Mở lại trang thanh toán sau khi Stripe đã nhận tiền mà chưa `CONFIRMED` vẫn hiện form | Cần `GET` trạng thái payment | DD-5 |
+| S3-T7 | "Vé của tôi" và "Đơn của tôi": tab / tìm / lọc ở client; "Tải PDF", "Thêm vào lịch", hoá đơn đang ẩn | API chưa có lọc | DD-10 |
+| S3-T8 | Image GHCR chỉ có sau khi `main` chạy CI; trước đó cụm báo `ImagePullBackOff` | Sau B1 | DD-1, DD-2 |
+| S3-T9 | Job `update-image-tags` push thẳng `main`, bị chặn nếu bắt buộc PR | Cho github-actions bỏ qua hoặc đổi sang PR tự động | DD-2 |
+| S3-T10 | Gateway trong cụm phải phân giải `auth.tickethub.localhost` (CoreDNS rewrite về Envoy Gateway) | Kiểm khi dựng cụm | DD-13 |
 
 ---
 
@@ -153,17 +153,17 @@ Trạng thái: hạng mục 1–8b và 12–13 xong (`./mvnw verify` 327 test, `
 
 | # | Việc | Ghi chú | Vào plan |
 |---|---|---|---|
-| S4-T1 | Chạy lại hạng mục 9, 10, 11 trên cụm | Sau B3–B6 | — |
-| S4-T2 | Wave ArgoCD: CRD PodMonitor chưa có thì sync CNPG lỗi, phải sync lại | Kiểm trên cụm | — |
+| S4-T1 | Chạy lại hạng mục 9, 10, 11 trên cụm | Sau B3–B6 | DD-13, DD-14 |
+| S4-T2 | Wave ArgoCD: CRD PodMonitor chưa có thì sync CNPG lỗi, phải sync lại | Kiểm trên cụm | DD-13 |
 | S4-T3 | PgBouncer (`Pooler`) cho CNPG | | S5-12 |
-| S4-T4 | Bản sao backup ra ngoài máy staging (backup cùng cụm, mất máy là mất backup) | | chưa có |
-| S4-T5 | Thông báo `SALE_PAUSED` và `HOLD_EXPIRING` mới có cài đặt, chưa có nơi phát sinh | | S6-4, S7-5 |
-| S4-T6 | Thông báo cho Organizer / Admin và SSE `/me/notifications/stream` | Admin: S5-9, S6-7; SSE: S7-4. Organizer nhận "khách yêu cầu hoàn": chưa có | một phần |
-| S4-T7 | Gửi email theo cờ `email` của loại thông báo tuỳ chọn (cờ mới chỉ lưu) | | chưa có |
+| S4-T4 | Bản sao backup ra ngoài máy staging (backup cùng cụm, mất máy là mất backup) | | DD-13 (chờ A2) |
+| S4-T5 | Thông báo `SALE_PAUSED` và `HOLD_EXPIRING` mới có cài đặt, chưa có nơi phát sinh | | `HOLD_EXPIRING`: DD-8; `SALE_PAUSED`: S6-4 |
+| S4-T6 | Thông báo cho Organizer / Admin và SSE `/me/notifications/stream` | Admin: S5-9, S6-7; SSE: S7-4. Organizer nhận "khách yêu cầu hoàn": chưa có | Organizer: DD-8; Admin: S5-9, S6-7; SSE: S7-4 |
+| S4-T7 | Gửi email theo cờ `email` của loại thông báo tuỳ chọn (cờ mới chỉ lưu) | | DD-8 |
 | S4-T8 | Huỷ sự kiện và hoàn hàng loạt (BR-08) chưa có producer `RefundRequested(EVENT_CANCELLED)` | | S6-5 |
-| S4-T9 | `TicketCheckedIn` chưa phát; check-in chưa chặn theo thời gian sự kiện | Phát event: S6-6; chặn theo thời gian: chưa có | một phần |
+| S4-T9 | `TicketCheckedIn` chưa phát; check-in chưa chặn theo thời gian sự kiện | Phát event: S6-6; chặn theo thời gian: chưa có | DD-9 |
 | S4-T10 | `RepublishIncompleteEvents` gửi lại event lỗi không giới hạn số lần, chưa có DLT | | S8-6 |
-| S4-T11 | NetworkPolicy `allow-monitoring-ingress` cho `/actuator/prometheus` chưa chạy trên cụm | B3 | — |
+| S4-T11 | NetworkPolicy `allow-monitoring-ingress` cho `/actuator/prometheus` chưa chạy trên cụm | B3 | DD-14 |
 | S4-T12 | Admin hoàn thủ công không bắt `Idempotency-Key` | Đã chặn bằng trạng thái, gọi lần hai trả 409; giữ nguyên trừ khi bạn muốn đổi | — |
 
 ### Quyết định nhỏ Sprint 4 (chờ duyệt, S4-U6)
