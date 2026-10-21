@@ -63,6 +63,16 @@ export function UserMenu({ user, placement }: UserMenuProps) {
             {t('shell.profile')}
           </Link>
         </DropdownMenuItem>
+        {!isSidebar && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/me/tickets">{t('tickets.title')}</Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/me/bookings">{t('myBookings.title')}</Link>
+            </DropdownMenuItem>
+          </>
+        )}
         {!isSidebar && hasRole(user.roles, 'ORGANIZER') && (
           <DropdownMenuItem asChild>
             <Link to="/organizer">{t('shell.organizer.roleName')}</Link>
