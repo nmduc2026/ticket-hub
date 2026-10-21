@@ -1,5 +1,7 @@
 package com.ndz.booking.api;
 
+import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -17,6 +19,12 @@ public interface BookingApi {
 	 *         gọi), {@code BOOKING_NOT_PAYABLE} (không còn chờ thanh toán) hoặc {@code HOLD_EXPIRING}
 	 */
 	PaymentStart startPayment(UUID userId, UUID bookingId);
+
+	/**
+	 * Trong các booking đã cho, những booking chưa {@code CONFIRMED} (kể cả booking không tồn tại). Payment dùng để đếm
+	 * "đã thu tiền mà booking chưa xác nhận" cho cảnh báo (overview.md §16.3), không đọc bảng của Booking.
+	 */
+	Set<UUID> notConfirmed(Collection<UUID> bookingIds);
 
 	/** Số tiền cần thu và mức phí nền tảng đã chốt khi publish (BR-06). Tiền là số nguyên đơn vị nhỏ nhất (BR-10). */
 	record PaymentStart(UUID bookingId, long amountMinor, String currency, int platformFeeBps) {

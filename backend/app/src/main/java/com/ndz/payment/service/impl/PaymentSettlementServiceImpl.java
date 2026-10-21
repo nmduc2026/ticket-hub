@@ -42,6 +42,11 @@ public class PaymentSettlementServiceImpl implements PaymentSettlementService {
 	}
 
 	@Override
+	public boolean markProcessing(Payment payment, Instant now) {
+		return move(payment, PaymentStatus.PROCESSING, now);
+	}
+
+	@Override
 	public boolean markCanceled(Payment payment, Instant now) {
 		return move(payment, PaymentStatus.CANCELED, now);
 	}

@@ -3,7 +3,10 @@ package com.ndz.booking.repository;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -163,6 +166,16 @@ public class BookingRepository {
 	public boolean transition(UUID bookingId, BookingStatus from, BookingStatus to) {
 		return jdbc.update("UPDATE booking.bookings SET status = ?, version = version + 1 WHERE id = ? AND status = ?",
 				to.name(), bookingId, from.name()) == 1;
+	}
+
+	/** Id các booking đã cho đang {@code CONFIRMED}. */
+	public Set<UUID> findConfirmed(Collection<UUID> bookingIds) {
+		return new HashSet<>(jdbc.query(connection -> {
+			var statement = connection
+					.prepareStatement("SELECT id FROM booking.bookings WHERE id = ANY (?) AND status = 'CONFIRMED'");
+			statement.setArray(1, connection.createArrayOf("uuid", bookingIds.toArray()));
+			return statement;
+		}, (rs, i) -> rs.getObject("id", UUID.class)));
 	}
 
 	/** Ghi mốc bắt đầu thanh toán một lần (BR-03: từ đó booking được ân hạn thêm); gọi lại không đổi mốc. */

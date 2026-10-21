@@ -18,6 +18,9 @@ public interface PaymentSettlementService {
 	 */
 	boolean markSucceeded(Payment payment, Instant now);
 
+	/** Stripe báo đang xử lý: {@code REQUIRES_PAYMENT → PROCESSING}. */
+	boolean markProcessing(Payment payment, Instant now);
+
 	/** Payment bị huỷ cùng PaymentIntent: {@code REQUIRES_PAYMENT / PROCESSING → CANCELED}. */
 	boolean markCanceled(Payment payment, Instant now);
 

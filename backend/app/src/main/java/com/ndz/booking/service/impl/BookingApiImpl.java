@@ -3,7 +3,10 @@ package com.ndz.booking.service.impl;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +57,16 @@ public class BookingApiImpl implements BookingApi {
 		}
 		PaymentInfo info = bookings.paymentInfo(bookingId);
 		return new PaymentStart(bookingId, info.totalMinor(), info.currency(), info.platformFeeBps());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Set<UUID> notConfirmed(Collection<UUID> bookingIds) {
+		if (bookingIds.isEmpty()) {
+			return Set.of();
+		}
+		Set<UUID> confirmed = bookings.findConfirmed(bookingIds);
+		return bookingIds.stream().filter(id -> !confirmed.contains(id)).collect(Collectors.toSet());
 	}
 
 	private static BusinessException holdExpiring() {
