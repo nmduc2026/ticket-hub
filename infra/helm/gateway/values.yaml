@@ -12,6 +12,10 @@ service:
 pdb:
   maxUnavailable: 1
 
+# Tắt êm (docs/ops/autoscaling.md): 10 giây preStop + tối đa 30 giây chờ request = 40 < 45.
+terminationGracePeriodSeconds: 45
+preStopSeconds: 10
+
 probes:
   startup: /actuator/health/liveness
   startupFailureThreshold: 36
@@ -23,6 +27,7 @@ resources:
   limits: { memory: 512Mi }
 
 env:
+  SHUTDOWN_TIMEOUT: 30s
   APP_URI: http://app:8081
   REDIS_HOST: redis
   REDIS_PORT: "6379"

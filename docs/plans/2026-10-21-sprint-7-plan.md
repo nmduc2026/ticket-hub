@@ -87,7 +87,9 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 | 5 Rate limit | Bucket4j trên Redis ở Gateway, fail-open; 5 test với Redis thật (kể cả `docker pause`) | Alert cho `tickethub_gateway_ratelimit_bypassed_total` (hạ tầng, S7-2) |
 | 7 Load shedding, tắt êm | `503 OVERLOADED` + `Retry-After`, SSE đếm riêng, `server.shutdown=graceful`, `SseHub` đóng kết nối trước khi tắt, metric `tickethub_events_opening_soon`; 7 test | `preStop` / `terminationGracePeriodSeconds`, rolling restart 0 lỗi 5xx (S7-2) |
 | 9 (phần BE) | `highDemand` ở tạo / sửa sự kiện, khoá sau publish; 2 test | FE (#24, #5, #23, #25) |
-| 8, FE của 9 | Chưa làm | S7-1 |
+| 8 FE phòng chờ | Route `/events/:id/queue`, SSE + nối lại + polling dự phòng, giữ phiên 5 phút, nút "Vào phòng chờ" ở chi tiết; 22 test (FE) | Playwright mock SSE (S7-4); so bố cục với prototype #4 trên trình duyệt thật |
+| 9 FE realtime | Sơ đồ ghế và chuông qua SSE (polling dự phòng), công tắc phòng chờ ở #24, thông báo `ADMISSION_REQUIRED` / `RATE_LIMITED` / `OVERLOADED`, #25 tự làm mới 30 giây; 14 test | Playwright hai trình duyệt (S7-4); câu chữ 429 / 503 chưa có trong prototype #23 (xem quyết định) |
+| 4, 5, 7, 10 (hạ tầng) | Đã viết: preStop + thời hạn tắt (chart lib), KEDA (`ScaledObject` app / gateway, pre-warm), Envoy `h2` + bỏ timeout SSE, ServiceMonitor và alert Gateway, runbook `gateway-overload.md`, `docs/ops/autoscaling.md`; `helm lint` + `helm template` đạt | Chưa chạy trên cụm (S7-2) |
 
 ### Quyết định / thoả hiệp khi làm (chưa hỏi trước, cần duyệt)
 
@@ -101,14 +103,18 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 - Rate limit: `POST /bookings` 10/phút, `POST /queue/*/join` 20/phút, còn lại 50/giây theo user; chưa đăng nhập 20/giây theo IP. IP lấy từ `getRemoteAddr()` sau `ForwardedHeaderFilter`, chỉ đúng khi Gateway chỉ nhận request qua proxy tin cậy ghi đè `X-Forwarded-For`. Redis lỗi: timeout lệnh 200 ms rồi bỏ qua giới hạn 5 giây.
 - Load shedding: ngưỡng ghi 500, ngưỡng đọc 350 request đang xử lý (chỉnh theo load test).
 - Gateway có chuyển SSE không buffer được hay không chưa kiểm (Spring Cloud Gateway Server MVC); cần chạy thật ở S7-2 trước khi tin SSE qua Gateway.
+- Câu chữ `RATE_LIMITED` ("Bạn thao tác quá nhanh…") và `OVERLOADED` ("Hệ thống đang quá tải…") tôi tự viết vì prototype #23 chưa có hai trạng thái này; `ADMISSION_REQUIRED` dùng chữ "Lượt vào chọn ghế đã hết hạn" của prototype. Cần bạn duyệt câu chữ.
+- Trang phòng chờ dừng 3 giây ở "Đến lượt bạn" rồi tự sang chọn ghế (plan vừa nói "tự chuyển" vừa nói "đồng hồ lượt vào"); nút "Chọn ghế" bấm sớm được. Không có "Mã hàng chờ" như prototype vì API không trả.
+- Gateway phải xuất metric Prometheus (`/actuator/prometheus`) cho KEDA và alert: thêm `micrometer-registry-prometheus` vào Gateway và ServiceMonitor.
 - `IntegrationTest` đặt `tickethub.queue.admit-interval=24h` để job không chạy nền trong test; test gọi `QueueAdmissionService.admitWaiting()` với đồng hồ test.
 
 ## Việc treo của Sprint 7
 
 | # | Việc | Bị chặn bởi | Làm gì khi được gỡ |
 |---|---|---|---|
-| S7-1 | Hạng mục 4, 5, 7, 8, 9 (code) | Không bị chặn, chưa làm | Làm tiếp theo thứ tự: 5 → 4 → 7 → FE 8, 9 (mock MSW / SSE) |
+| S7-1 | Kịch bản JMeter cho hạng mục 11 (hỏi `GET /queue/{id}/status`) | Không bị chặn, chưa viết | Thêm thread group phòng chờ vào `load-tests/jmeter/ticket-hub.jmx` |
 | S7-2 | Hạng mục 4 và 7 phần hạ tầng (Gateway SSE không buffer, Envoy HTTP/2, `preStop`, `terminationGracePeriodSeconds`), hạng mục 10 (KEDA, PDB, probe) | B3, hạng mục 13, 14 dọn dẹp | Viết manifest trước, chạy trên k3d khi có cụm |
 | S7-3 | Hạng mục 11 (load test có phòng chờ, chaos C5), 12 (verify) | B3, S5-1 (baseline chưa đo), JMeter | Viết kịch bản JMeter với `GET /queue/{eventId}/status`, chạy trên staging |
-| S7-4 | Test Playwright hai trình duyệt (hạng mục 9), SSE đa pod (AC-6) | Hạng mục 11 dọn dẹp (E2E stack thật) | Chuyển sang chạy với `app` + `gateway` thật |
+| S7-4 | Playwright: phòng chờ (mock SSE), hai trình duyệt thấy ghế đổi màu ≤ 2 giây, chuông cập nhật khi SSE bị cắt; SSE đa pod thật (AC-6) | Hạng mục 11 dọn dẹp (E2E stack thật), trình duyệt thật | Viết spec mock trước; chạy với `app` + `gateway` thật khi có stack |
 | S7-5 | Review độc lập `queue` và lượt vào bằng subagent (hạng mục 13), `./mvnw verify` toàn bộ | Để cuối sprint theo quyết định của bạn | Gọi subagent review theo skill `code-review` |
+| S7-6 | Test Vitest đỏ có sẵn: `my-bookings/refund.test.tsx` (Admin hoàn thủ công) còn giả lập `/admin/bookings?status=REFUND_FAILED` kiểu cũ, lệch sau khi màn #29 đổi ở Sprint 6 (nợ S6-1) | Không bị chặn | Sửa test theo API `GET /admin/bookings` hiện tại |

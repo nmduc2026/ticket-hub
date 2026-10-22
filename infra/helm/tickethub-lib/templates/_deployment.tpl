@@ -28,6 +28,8 @@ spec:
         {{- end }}
     spec:
       automountServiceAccountToken: false
+      # Tắt êm: preStop chờ gỡ pod khỏi Service, rồi app chờ request đang chạy (SHUTDOWN_TIMEOUT) và đóng SSE.
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 45 }}
       securityContext:
         runAsNonRoot: true
         runAsUser: {{ .Values.runAsUser }}
@@ -58,6 +60,10 @@ spec:
                   {{- end }}
             {{- end }}
           {{- end }}
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: {{ .Values.preStopSeconds | default 10 }}
           startupProbe:
             httpGet:
               path: {{ .Values.probes.startup }}

@@ -153,3 +153,29 @@ spec:
           annotations:
             summary: "Alert giả lập (diễn tập): đường Alertmanager → Telegram"
             runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/duplicate-seat-tickets.md
+---
+# Gateway: bảo vệ quá tải và rate limit (overview.md §13.4, §15.3). Runbook: docs/runbooks/gateway-overload.md.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tickethub-gateway
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  groups:
+    - name: tickethub.gateway
+      rules:
+        - alert: GatewayShedding
+          expr: sum(rate(tickethub_gateway_shed_total[1m])) > 0
+          for: 1m
+          labels: { severity: warning }
+          annotations:
+            summary: "Gateway đang từ chối request vì quá tải (503 OVERLOADED)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/gateway-overload.md
+        - alert: RateLimitBypassed
+          expr: sum(rate(tickethub_gateway_ratelimit_bypassed_total[5m])) > 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: "Redis lỗi: rate limit ở Gateway đang bỏ qua (fail-open)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/gateway-overload.md

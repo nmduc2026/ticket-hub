@@ -13,6 +13,10 @@ service:
 pdb:
   maxUnavailable: 1
 
+# Tắt êm (docs/ops/autoscaling.md): 10 giây preStop + tối đa 30 giây chờ request = 40 < 45.
+terminationGracePeriodSeconds: 45
+preStopSeconds: 10
+
 probes:
   startup: /actuator/health/liveness
   startupFailureThreshold: 36
@@ -24,6 +28,7 @@ resources:
   limits: { memory: 768Mi }
 
 env:
+  SHUTDOWN_TIMEOUT: 30s
   # Qua PgBouncer (k8s-platform/postgres/pooler.yaml, ADR 0034); migration Flyway nối thẳng Postgres (khoá advisory theo phiên).
   DB_URL: jdbc:postgresql://tickethub-pg-pooler-rw:5432/tickethub
   SPRING_FLYWAY_URL: jdbc:postgresql://tickethub-pg-rw:5432/tickethub

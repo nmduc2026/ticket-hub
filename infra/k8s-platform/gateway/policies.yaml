@@ -1,0 +1,31 @@
+# Chính sách Envoy Gateway cho luồng SSE qua BFF (overview.md §12, plan Sprint 7 hạng mục 4).
+# - HTTP/2: nhiều luồng SSE chung một kết nối, không chạm giới hạn 6 kết nối mỗi domain của HTTP/1.1.
+# - Không đặt timeout cho cả request: mặc định cắt luồng SSE sau vài chục giây. Heartbeat 15 giây của server giữ luồng
+#   khỏi bị coi là rảnh.
+# Chưa chạy trên cụm: tên trường theo Envoy Gateway v1.5, kiểm bằng `kubectl apply --dry-run=server` (docs/ops/autoscaling.md).
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: tickethub-clients
+  namespace: tickethub
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: tickethub
+  tls:
+    alpnProtocols: [h2, http/1.1]
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: tickethub-web-streams
+  namespace: tickethub
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: web
+  timeout:
+    http:
+      requestTimeout: 0s
