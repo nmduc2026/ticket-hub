@@ -214,7 +214,7 @@ Làm hạng mục 7, 10, 11, 12 (không bị chặn) theo yêu cầu người d�
 |---|---|---|
 | 7 Admin dashboard/vận hành | `GET /admin/dashboard`, `GET /admin/events` (+ CSV), `GET /admin/bookings` mở rộng (+ CSV); cờ `needs_reconcile` trên `bookings` do Payment phát hiện khi đối soát quá hạn | – |
 | 10 FE kết nối Stripe (#26) | 5 trạng thái, thanh 4 bước, modal mở Stripe, Express Dashboard, nút ngắt kết nối luôn khoá; link "Kết nối Stripe" trong hộp "Chưa thể publish" (#24) | – |
-| 11 FE organizer số liệu | Tổng quan (#11) dùng `GET /organizer/dashboard`; bảng điều khiển sự kiện (#25, rút gọn — xem quyết định dưới) dùng `GET /organizer/events/{id}/sales`; đơn hàng (#14) có lọc + CSV server | – (số đếm "đã vào / tổng vé" ở app check-in đã bật lại 22/10/2026, chưa chạy tsc, lint, test; handler MSW `/sales` đã thêm vào `checkInPage.test.tsx`, chưa chạy) |
+| 11 FE organizer số liệu | Tổng quan (#11) dùng `GET /organizer/dashboard`; bảng điều khiển sự kiện (#25, rút gọn — xem quyết định dưới) dùng `GET /organizer/events/{id}/sales`; đơn hàng (#14) có lọc + CSV server | – (số đếm "đã vào / tổng vé" ở app check-in đã bật lại 22/10/2026; 3 test mới (hiện số, làm mới sau vé hợp lệ, ẩn khi API lỗi), cả 20 test check-in xanh; chưa chạy `tsc`, lint) |
 | 12 FE Admin vận hành | Tổng quan (#35), sự kiện (#34: lọc, tạm dừng/mở lại/huỷ gõ "HUY", tạm dừng hàng loạt, tiến độ hoàn), đơn hàng & đối soát (#29: lọc rộng hơn + CSV, hoàn thủ công), phí (#30: lịch sử + đặt mức mới) | – |
 
 ### Quyết định / thoả hiệp khi làm (chưa hỏi bạn trước, cần duyệt lại)

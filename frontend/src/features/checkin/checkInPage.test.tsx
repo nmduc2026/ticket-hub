@@ -168,3 +168,64 @@ describe('Check-in tại cổng', () => {
     expect(screen.queryByRole('button', { name: 'đọc mã' })).not.toBeInTheDocument()
   })
 })
+
+describe('Số đếm đã vào / tổng vé', () => {
+  const sales = (checkedIn: number) => ({
+    eventId: EVENT,
+    currency: 'VND',
+    grossMinor: 0,
+    feeMinor: 0,
+    refundedMinor: 0,
+    netMinor: 0,
+    ticketsSold: 1200,
+    capacity: 1500,
+    checkedIn,
+    byTier: [],
+    byDay: [],
+  })
+
+  it('hiện "Đã vào 312 / 1.200 vé" theo số vé đã bán (không phải sức chứa)', async () => {
+    await startScanning()
+    expect(await screen.findByTestId('checkin-counter')).toHaveTextContent('Đã vào 312 / 1.200 vé')
+  })
+
+  it('vé hợp lệ làm mới số đếm; vé bị từ chối thì không gọi lại', async () => {
+    let checkedIn = 312
+    let salesCalls = 0
+    server.use(http.get(`/api/v1/organizer/events/${EVENT}/sales`, () => (salesCalls++, HttpResponse.json(sales(checkedIn)))))
+    const user = await startScanning()
+    expect(await screen.findByText('Đã vào 312 / 1.200 vé')).toBeInTheDocument()
+    expect(salesCalls).toBe(1)
+
+    server.use(
+      http.post('/api/v1/checkins', () =>
+        HttpResponse.json({ type: 'about:blank', title: 'x', status: 409, code: 'TICKET_ALREADY_USED' }, { status: 409, headers: { 'Content-Type': 'application/problem+json' } }),
+      ),
+    )
+    nextToken = await token()
+    await user.click(await screen.findByRole('button', { name: 'đọc mã' }))
+    expect(await screen.findByRole('heading', { name: 'Vé đã được sử dụng' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(salesCalls).toBe(1)
+
+    await user.click(screen.getByRole('button', { name: 'Quét vé tiếp theo' }))
+    checkedIn = 313
+    server.use(http.post('/api/v1/checkins', () => HttpResponse.json({ ticketId: TICKET, seat: 'A-B-7', status: 'USED' })))
+    await user.click(await screen.findByRole('button', { name: 'đọc mã' }))
+    expect(await screen.findByRole('heading', { name: 'Hợp lệ' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByText('Đã vào 313 / 1.200 vé')).toBeInTheDocument()
+    expect(salesCalls).toBe(2)
+  })
+
+  it('API số liệu lỗi thì ẩn số đếm nhưng vẫn quét và cho vào bình thường', async () => {
+    server.use(
+      http.get(`/api/v1/organizer/events/${EVENT}/sales`, () => HttpResponse.json({ status: 500 }, { status: 500 })),
+      http.post('/api/v1/checkins', () => HttpResponse.json({ ticketId: TICKET, seat: 'A-B-7', status: 'USED' })),
+    )
+    nextToken = await token()
+    const user = await startScanning()
+    await user.click(await screen.findByRole('button', { name: 'đọc mã' }))
+
+    expect(await screen.findByRole('heading', { name: 'Hợp lệ' }, { timeout: 5000 })).toBeInTheDocument()
+    expect(screen.queryByTestId('checkin-counter')).not.toBeInTheDocument()
+  })
+})
