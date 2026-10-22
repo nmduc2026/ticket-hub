@@ -674,7 +674,7 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 | `queue:open-events` | SET (eventId) | — | Sự kiện đang có phòng chờ, để scheduler biết phải điều tiết sự kiện nào; thêm khi có người vào hàng, xoá khi đóng phòng chờ |
 | `seatstatus:{eventId}` | HASH (seatId → status) | — | Trạng thái ghế để render sơ đồ nhanh |
 | `lock:seatmap:{seatMapId}` | Redisson Lock | tự gia hạn | Chặn sửa sơ đồ đồng thời |
-| `rl:{userId}` / `rl:ip:{ip}` | Bucket4j | — | Rate limit |
+| `rl:{userId}:{nhóm}` / `rl:ip:{ip}:anonymous` | Bucket4j | tự hết hạn khi bucket đầy | Rate limit ở Gateway; nhóm: `bookings` (10/phút), `queue-join` (20/phút), `general` (50/giây); chưa đăng nhập 20/giây/IP. Redis lỗi thì bỏ qua giới hạn (fail-open) |
 | `cache:event:{eventId}` | STRING (JSON) | 5 phút + jitter | Cache chi tiết sự kiện |
 | `spring:session:*` | HASH | 30 phút | Session của Gateway |
 | channel `seat-updates:{eventId}` | Pub/Sub | — | Broadcast trạng thái ghế tới mọi pod đang giữ kết nối SSE |

@@ -2,6 +2,9 @@ package com.ndz.gateway;
 
 import java.util.LinkedHashMap;
 
+import com.ndz.gateway.ratelimit.RateLimitFilter;
+import com.ndz.gateway.ratelimit.RateLimitProperties;
+import com.ndz.gateway.ratelimit.RateLimiter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +20,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.DelegatingAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -35,7 +39,8 @@ class SecurityConfiguration {
 
 	@Bean
 	SecurityFilterChain securityFilterChain(HttpSecurity http, ClientRegistrationRepository clients,
-			OAuth2AuthorizedClientRepository authorizedClients) {
+			OAuth2AuthorizedClientRepository authorizedClients, RateLimiter rateLimiter,
+			RateLimitProperties rateLimits) {
 		http
 				.authorizeHttpRequests(requests -> requests
 						// Webhook xác thực bằng chữ ký Stripe, không cần session.
@@ -60,6 +65,8 @@ class SecurityConfiguration {
 						.ignoringRequestMatchers(WEBHOOKS))
 				.addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
 				.addFilterBefore(new ReturnToFilter(), OAuth2AuthorizationRequestRedirectFilter.class)
+				// Sau khi nạp session (biết user) nhưng trước khi từ chối request chưa đăng nhập: spam 401 cũng bị chặn.
+				.addFilterBefore(new RateLimitFilter(rateLimiter, rateLimits), AuthorizationFilter.class)
 				.headers(headers -> headers
 						.frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
 						.referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
