@@ -34,6 +34,9 @@ public interface EventRepository extends JpaRepository<Event, UUID>, JpaSpecific
 	/** Đếm sự kiện theo trạng thái, cho Admin dashboard (§11.2). */
 	long countByStatus(EventStatus status);
 
+	/** Còn sự kiện dùng địa điểm này (chặn xoá, §11.2). */
+	boolean existsByVenueId(UUID venueId);
+
 	/** Sự kiện đã publish, sắp tới giờ mở bán, cho Admin dashboard ("sự kiện sắp mở bán"). */
 	List<Event> findTop10ByStatusAndSaleStartsAtBetweenOrderBySaleStartsAt(EventStatus status, Instant from,
 			Instant to);

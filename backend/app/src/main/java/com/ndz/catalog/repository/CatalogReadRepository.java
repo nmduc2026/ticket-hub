@@ -43,13 +43,14 @@ public class CatalogReadRepository {
 
 	public List<VenueRow> listVenues() {
 		return jdbc.query("""
-				SELECT v.id, v.name, v.address, w.name AS ward_name, c.name AS city_name, v.capacity
+				SELECT v.id, v.name, v.address, v.ward_id, w.name AS ward_name, c.name AS city_name, v.capacity
 				FROM catalog.venues v
 				         JOIN catalog.administrative_units w ON w.id = v.ward_id
 				         JOIN catalog.administrative_units c ON c.id = w.parent_id
 				ORDER BY v.name
 				""", (rs, i) -> new VenueRow(rs.getObject("id", UUID.class), rs.getString("name"),
-				rs.getString("address"), rs.getString("ward_name"), rs.getString("city_name"), rs.getInt("capacity")));
+				rs.getString("address"), rs.getObject("ward_id", UUID.class), rs.getString("ward_name"),
+				rs.getString("city_name"), rs.getInt("capacity")));
 	}
 
 	public boolean venueExists(UUID venueId) {
