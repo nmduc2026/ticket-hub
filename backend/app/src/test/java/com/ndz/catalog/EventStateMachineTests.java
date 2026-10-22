@@ -135,7 +135,7 @@ class EventStateMachineTests {
 	private static Event draft() {
 		EventContent content = new EventContent("Sự kiện", null, null, UUID.randomUUID(), UUID.randomUUID(),
 				SALE_STARTS.plusSeconds(86_400), SALE_STARTS.plusSeconds(100_000), SALE_STARTS, (short) 6, null, null,
-				null);
+				null, false);
 		return Event.draft(UUID.randomUUID(), UUID.randomUUID(), content, SALE_STARTS.minusSeconds(86_400));
 	}
 

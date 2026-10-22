@@ -198,6 +198,33 @@ class OrganizerEventApiTests {
 	}
 
 	@Test
+	@DisplayName("AC-13 (BR-04): organizer bật high_demand khi tạo và sửa nháp; mặc định tắt")
+	void highDemandCanBeSwitchedOnWhileDraft() throws Exception {
+		String id = createEvent("Phòng chờ nháp");
+		call(get(EVENTS + "/" + id), organizer()).andExpect(status().isOk()).andExpect(jsonPath("$.highDemand").value(false));
+
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON).content(withHighDemand(body("Phòng chờ nháp"), true)),
+				organizer()).andExpect(status().isOk()).andExpect(jsonPath("$.highDemand").value(true));
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON).content(withHighDemand(body("Phòng chờ nháp"), false)),
+				organizer()).andExpect(status().isOk()).andExpect(jsonPath("$.highDemand").value(false));
+	}
+
+	@Test
+	@DisplayName("AC-13 (BR-04, BR-14): sau publish không đổi được high_demand, giữ nguyên thì vẫn sửa được thông tin khác")
+	void highDemandIsLockedAfterPublish() throws Exception {
+		String id = idOf(call(post(EVENTS).contentType(MediaType.APPLICATION_JSON)
+				.content(withHighDemand(body("Phòng chờ khoá"), true)), organizer()).andExpect(status().isCreated()));
+		publish(id);
+
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(withHighDemand(body("Phòng chờ khoá"), false)), organizer()).andExpect(status().isConflict())
+				.andExpect(jsonPath("$.code").value("EVENT_LOCKED"));
+		call(put(EVENTS + "/" + id).contentType(MediaType.APPLICATION_JSON)
+				.content(withHighDemand(body("Tên mới sau publish"), true)), organizer()).andExpect(status().isOk())
+				.andExpect(jsonPath("$.highDemand").value(true)).andExpect(jsonPath("$.title").value("Tên mới sau publish"));
+	}
+
+	@Test
 	@DisplayName("AC-6 (BR-14): sau publish sửa được giờ mở cửa, độ tuổi, quy định; xoá trắng cũng được")
 	void afterPublishGuestInfoCanChange() throws Exception {
 		String id = createEvent("Thông tin khách");
@@ -464,6 +491,10 @@ class OrganizerEventApiTests {
 	private static String bodyWithVenue(String title, String venueId, String seatMapId) {
 		return "{\"title\":\"%s\"%s%s}".formatted(title, venueId == null ? "" : ",\"venueId\":\"" + venueId + "\"",
 				seatMapId == null ? "" : ",\"seatMapId\":\"" + seatMapId + "\"");
+	}
+
+	private static String withHighDemand(String json, boolean highDemand) {
+		return json.replace("}", ",\"highDemand\":" + highDemand + "}");
 	}
 
 	private static String tierBody(String name, long priceMinor) {

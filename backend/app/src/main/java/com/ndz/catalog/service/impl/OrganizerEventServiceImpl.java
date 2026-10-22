@@ -239,7 +239,7 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 		EventContent content = new EventContent(source.getTitle(), source.getDescription(), source.getCategory(),
 				source.getVenueId(), source.getSeatMapId(), source.getStartsAt(), source.getEndsAt(), null,
 				source.getMaxTicketsPerUser(), source.getDoorsOpenAt(), source.getAgeRestriction(),
-				source.getRules());
+				source.getRules(), source.isHighDemand());
 		Event copy = events.save(Event.draft(Uuid7.next(clock), source.getOrganizerId(), content, clock.instant()));
 		Map<UUID, UUID> tierIdMap = new HashMap<>();
 		for (TicketTier sourceTier : tiers.findByEventIdOrderById(source.getId())) {

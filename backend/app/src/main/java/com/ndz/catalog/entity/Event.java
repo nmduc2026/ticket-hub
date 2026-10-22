@@ -115,7 +115,7 @@ public class Event {
 	public void update(EventContent content) {
 		requireDisplayEditable();
 		if (status != EventStatus.DRAFT && !content.sameSalesInfoAs(this)) {
-			// BR-14: giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, giới hạn vé bị khoá sau publish
+			// BR-14: giờ diễn, giờ mở bán, địa điểm, sơ đồ ghế, giới hạn vé, phòng chờ bị khoá sau publish
 			throw locked("Sau khi publish chỉ sửa được tiêu đề, mô tả, ảnh banner, danh mục, giờ mở cửa, độ tuổi và quy định");
 		}
 		if (status == EventStatus.DRAFT) {
@@ -153,6 +153,7 @@ public class Event {
 		this.endsAt = content.endsAt();
 		this.saleStartsAt = content.saleStartsAt();
 		this.maxTicketsPerUser = content.maxTicketsPerUser();
+		this.highDemand = content.highDemand();
 	}
 
 	private void applyDisplayInfo(EventContent content) {

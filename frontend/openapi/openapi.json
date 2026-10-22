@@ -3937,6 +3937,10 @@
             "maximum" : 100,
             "minimum" : 1
           },
+          "highDemand" : {
+            "type" : "boolean",
+            "description" : "Bật phòng chờ cho sự kiện nhu cầu cao (BR-04); trống là tắt. Khoá sau publish (BR-14)"
+          },
           "doorsOpenAt" : {
             "type" : "string",
             "format" : "date-time",
@@ -4041,9 +4045,13 @@
           },
           "rules" : {
             "type" : "string"
+          },
+          "highDemand" : {
+            "type" : "boolean",
+            "description" : "Bật phòng chờ (BR-04); khoá sau publish"
           }
         },
-        "required" : [ "id", "inventoryReady", "maxTicketsPerUser", "salesInfoLocked", "status", "tierSections", "tiers", "title" ]
+        "required" : [ "highDemand", "id", "inventoryReady", "maxTicketsPerUser", "salesInfoLocked", "status", "tierSections", "tiers", "title" ]
       },
       "TicketTier" : {
         "type" : "object",

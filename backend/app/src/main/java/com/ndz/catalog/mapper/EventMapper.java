@@ -26,7 +26,8 @@ public class EventMapper {
 		return new EventContent(request.title().trim(), request.description(), request.category(), request.venueId(),
 				request.seatMapId(), request.startsAt(), request.endsAt(), request.saleStartsAt(),
 				request.maxTicketsPerUser() == null ? DEFAULT_MAX_TICKETS_PER_USER : request.maxTicketsPerUser(),
-				request.doorsOpenAt(), request.ageRestriction(), blankToNull(request.rules()));
+				request.doorsOpenAt(), request.ageRestriction(), blankToNull(request.rules()),
+				Boolean.TRUE.equals(request.highDemand()));
 	}
 
 	private static String blankToNull(String value) {
@@ -45,7 +46,7 @@ public class EventMapper {
 				event.getStartsAt(), event.getEndsAt(), event.getSaleStartsAt(), event.getMaxTicketsPerUser(),
 				event.getPlatformFeeBps(), event.isInventoryReady(), event.getStatus() != EventStatus.DRAFT,
 				tiers.stream().map(this::toTier).toList(), assignments.stream().map(this::toAssignment).toList(),
-				event.getDoorsOpenAt(), event.getAgeRestriction(), event.getRules());
+				event.getDoorsOpenAt(), event.getAgeRestriction(), event.getRules(), event.isHighDemand());
 	}
 
 	public Tier toTier(TicketTier tier) {

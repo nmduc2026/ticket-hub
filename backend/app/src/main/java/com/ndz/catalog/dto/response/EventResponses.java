@@ -52,7 +52,9 @@ public final class EventResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Assignment> tierSections,
 			Instant doorsOpenAt,
 			Short ageRestriction,
-			String rules) {
+			String rules,
+			@Schema(description = "Bật phòng chờ (BR-04); khoá sau publish",
+					requiredMode = Schema.RequiredMode.REQUIRED) boolean highDemand) {
 
 	}
 
