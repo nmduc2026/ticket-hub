@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
 import { useApplyOrganizer } from '@/api/generated/endpoints/organizer-application-controller/organizer-application-controller'
+import { useUpdateOrganizerProfile } from '@/api/generated/endpoints/organizer-profile-controller/organizer-profile-controller'
 import type { OrganizerApplication } from '@/api/generated/model'
 import { Field } from '@/components/form/Field'
 import { Button } from '@/components/ui/button'
@@ -38,16 +39,20 @@ const SERVER_FIELD: Record<string, keyof FormValues> = {
 }
 
 interface Props {
-  /** Điền sẵn khi nộp lại sau khi bị từ chối. */
+  /** Điền sẵn khi nộp lại sau khi bị từ chối, hoặc khi sửa hồ sơ ở Cài đặt. */
   previous?: OrganizerApplication
+  /** `update`: sửa hồ sơ organizer đã có (màn #27) thay vì nộp đơn đăng ký. */
+  mode?: 'apply' | 'update'
   submitLabel: string
   onSubmitted: () => void
 }
 
 /** Form hồ sơ organizer (màn #22): cá nhân khai họ tên + CCCD, doanh nghiệp khai tên + mã số thuế. */
-export function ApplicationForm({ previous, submitLabel, onSubmitted }: Props) {
+export function ApplicationForm({ previous, mode = 'apply', submitLabel, onSubmitted }: Props) {
   const { t } = useTranslation()
-  const apply = useApplyOrganizer()
+  const create = useApplyOrganizer()
+  const update = useUpdateOrganizerProfile()
+  const apply = mode === 'update' ? update : create
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
