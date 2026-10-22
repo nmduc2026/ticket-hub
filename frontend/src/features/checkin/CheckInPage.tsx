@@ -6,6 +6,7 @@ import { useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useGetOrganizerEvent } from '@/api/generated/endpoints/organizer-event-controller/organizer-event-controller'
+import { useGetEventSales } from '@/api/generated/endpoints/organizer-sales-controller/organizer-sales-controller'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,6 +19,8 @@ import { useOnline } from './useOnline'
 import { useStoredSetting } from './useStoredSetting'
 
 const MAX_GATE_LENGTH = 50
+/** Các cổng khác cùng soát vé: số đếm tự làm mới theo chu kỳ này, ngoài lần làm mới sau mỗi vé hợp lệ ở cổng này. */
+const COUNTER_REFRESH_MS = 30_000
 
 /** Check-in tại cổng (màn #10): quét QR bằng camera, xác minh chữ ký rồi xác nhận với server (docs/design/checkin.md). */
 export function CheckInPage({ eventId }: { eventId: string }) {
@@ -36,6 +39,9 @@ export function CheckInPage({ eventId }: { eventId: string }) {
   const eventQuery = useGetOrganizerEvent(eventId, { query: { staleTime: 60_000, retry: false } })
   const title = eventQuery.data?.status === 200 ? eventQuery.data.data.title : undefined
   const scan = useCheckInScan(eventId, gate)
+  // Số đếm chỉ là thông tin phụ: lỗi hay đang tải thì ẩn, không ảnh hưởng việc quét vé.
+  const salesQuery = useGetEventSales(eventId, { query: { retry: false, refetchInterval: COUNTER_REFRESH_MS } })
+  const sales = salesQuery.data?.status === 200 ? salesQuery.data.data : undefined
 
   const start = (event: FormEvent) => {
     event.preventDefault()
@@ -51,6 +57,7 @@ export function CheckInPage({ eventId }: { eventId: string }) {
     busy.current = true
     lastToken.current = token
     const result = await scan(token)
+    if (isAccepted(result)) void salesQuery.refetch()
     if (sound === 'on') (isAccepted(result) ? playAccepted : playRejected)()
     setOutcome(result)
     busy.current = false
@@ -83,6 +90,11 @@ export function CheckInPage({ eventId }: { eventId: string }) {
             {gate ? t('checkin.headerWithGate', { gate }) : t('checkin.header')}
           </div>
           {title && <div className="text-muted-foreground truncate text-xs">{title}</div>}
+          {sales && (
+            <div className="text-muted-foreground truncate text-xs tabular-nums" data-testid="checkin-counter">
+              {t('checkin.counter', { checkedIn: sales.checkedIn.toLocaleString('vi-VN'), sold: sales.ticketsSold.toLocaleString('vi-VN') })}
+            </div>
+          )}
         </div>
         <Button
           variant="ghost"

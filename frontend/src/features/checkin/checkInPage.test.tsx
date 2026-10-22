@@ -62,6 +62,9 @@ beforeEach(() => {
   server.use(
     http.get('/api/v1/checkin/keys', () => HttpResponse.json({ keys: [keyset] })),
     http.get(`/api/v1/organizer/events/${EVENT}`, () => HttpResponse.json({ id: EVENT, title: 'Đêm nhạc Rock Sài Gòn' })),
+    http.get(`/api/v1/organizer/events/${EVENT}/sales`, () =>
+      HttpResponse.json({ eventId: EVENT, currency: 'VND', grossMinor: 0, feeMinor: 0, refundedMinor: 0, netMinor: 0, ticketsSold: 1200, capacity: 1500, checkedIn: 312, byTier: [], byDay: [] }),
+    ),
   )
 })
 

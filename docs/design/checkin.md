@@ -7,7 +7,7 @@ Bổ sung cho prototype [Checkin](prototype/Checkin.dc.html): phần prototype c
 - Route `/checkin/:eventId`, dành cho organizer sở hữu sự kiện. Tối ưu cho điện thoại dọc (390px), toàn màn hình, không dùng khung Admin / Organizer.
 - Người soát vé dùng điện thoại của mình; cổng soát vé (vd. "Cổng 2") nhập một lần, nhớ trên máy (chỉ tên cổng, không dữ liệu nhạy cảm).
 - PWA ở mức cài được lên màn hình chính (`manifest`, chế độ standalone). **Không có service worker và không check-in offline** (ADR 0024): mất mạng thì không cho vào.
-- Prototype có số đếm "312/1.200" và dòng "Người mua": API check-in chưa trả, **ẩn** cho tới khi có API.
+- Số đếm "Đã vào 312 / 1.200 vé" hiện dưới tên sự kiện ở thanh trên, lấy từ `GET /organizer/events/{id}/sales` (`checkedIn` / `ticketsSold`), làm mới sau mỗi vé hợp lệ và mỗi 30 giây để thấy cả các cổng khác. Lỗi hay đang tải thì ẩn, không ảnh hưởng việc quét. Dòng "Người mua": API check-in chưa trả, **ẩn** cho tới khi có API.
 
 ## 2. Luồng
 

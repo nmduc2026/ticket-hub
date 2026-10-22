@@ -345,6 +345,7 @@ export const vi = {
     back: 'Quay lại',
     header: 'Check-in',
     headerWithGate: 'Check-in · {{gate}}',
+    counter: 'Đã vào {{checkedIn}} / {{sold}} vé',
     soundOn: 'Bật âm thanh',
     soundOff: 'Tắt âm thanh',
     offlineBanner: 'Mất kết nối. Chưa check-in được.',
