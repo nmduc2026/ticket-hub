@@ -18,7 +18,9 @@ import { Field } from '@/components/form/Field'
 import { Combobox } from '@/components/list/Combobox'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { EVENT_CATEGORIES } from '@/features/events/categories'
@@ -47,6 +49,7 @@ const formSchema = z.object({
   doorsTime: z.string(),
   venueId: z.string().min(1, required),
   seatMapId: z.string().min(1, required),
+  highDemand: z.boolean(),
 })
 type FormValues = z.infer<typeof formSchema>
 
@@ -64,6 +67,7 @@ function toFormValues(event: OrganizerEventDetail): FormValues {
     doorsTime: isoToVnInputs(event.doorsOpenAt).time,
     venueId: event.venueId ?? '',
     seatMapId: event.seatMapId ?? '',
+    highDemand: event.highDemand,
   }
 }
 
@@ -119,6 +123,7 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
             seatMapId: values.seatMapId,
             startsAt,
             endsAt: values.endTime ? endInstant(startsAt, values.date, values.endTime) : undefined,
+            highDemand: values.highDemand,
           }
         })()
     update.mutate(
@@ -268,6 +273,25 @@ function InfoForm({ event }: { event: OrganizerEventDetail }) {
             )}
           />
         </Field>
+      </section>
+
+      <section aria-labelledby="queue-heading" className="bg-card flex flex-col gap-3 rounded-xl border p-4">
+        <h2 id="queue-heading" className="text-base font-semibold">
+          {t('organizerEvents.form.queue')}
+        </h2>
+        <Controller
+          control={form.control}
+          name="highDemand"
+          render={({ field }) => (
+            <div className="flex items-start gap-3">
+              <Checkbox id="info-high-demand" checked={field.value} onCheckedChange={(value) => field.onChange(value === true)} disabled={locked} className="mt-0.5" />
+              <div className="flex flex-col gap-0.5">
+                <Label htmlFor="info-high-demand">{t('organizerEvents.form.highDemand')}</Label>
+                <p className="text-muted-foreground text-sm">{locked ? t('organizerEvents.form.lockedHint') : t('organizerEvents.form.highDemandHint')}</p>
+              </div>
+            </div>
+          )}
+        />
       </section>
 
       {update.isError && (

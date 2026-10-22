@@ -14,19 +14,21 @@ import { errorMessage } from '@/lib/error-messages'
 
 import { SelectionPanel } from './SelectionPanel'
 import { useHoldSeats } from './useHoldSeats'
+import { useSeatStream } from './useSeatStream'
 
 const SEAT_POLL_MS = 5000
 
 /**
- * Chọn ghế và giữ ghế (màn #5). Trạng thái ghế lấy bằng polling 5 giây tới Sprint 7 (SSE), dừng khi tab ẩn
+ * Chọn ghế và giữ ghế (màn #5). Trạng thái ghế cập nhật qua SSE; luồng đứt thì rơi về polling 5 giây, dừng khi tab ẩn
  * (docs/design/seat-map.md §3). Lỗi chặn luồng hiện ngay trong trang theo bảng ở §2 cùng file.
  */
 export function SeatSelectPage({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const event = useGetEvent(eventId, { query: { staleTime: 15_000, retry: false } })
+  const streaming = useSeatStream(eventId)
   const seats = useGetEventSeats(eventId, {
-    query: { staleTime: 0, refetchInterval: SEAT_POLL_MS, refetchIntervalInBackground: false },
+    query: { staleTime: 0, refetchInterval: streaming ? false : SEAT_POLL_MS, refetchIntervalInBackground: false },
   })
   const hold = useHoldSeats(eventId)
   // Lấy trước các early return bên dưới: TypeScript thu hẹp `event` / `seats` theo nhánh thành công.
@@ -96,6 +98,8 @@ export function SeatSelectPage({ eventId }: { eventId: string }) {
     hold.error instanceof ApiError && hold.error.code === 'PENDING_BOOKING_EXISTS' && typeof hold.error.problem.bookingId === 'string'
       ? hold.error.problem.bookingId
       : null
+  // Sự kiện có phòng chờ mà lượt vào đã hết hạn hoặc chưa có: dẫn về hàng chờ.
+  const admissionRequired = hold.error instanceof ApiError && hold.error.code === 'ADMISSION_REQUIRED'
   const banners = [
     !onSale && { id: 'not-on-sale', text: t('seatPage.notOnSale') },
     lostSeats.length > 0 && { id: 'lost', text: t('seatPage.lostSeats', { seats: lostSeats.join('; ') }) },
@@ -149,6 +153,14 @@ export function SeatSelectPage({ eventId }: { eventId: string }) {
       {banners.map((banner) => (
         <div key={banner.id} role="alert" className="border-destructive/40 bg-destructive/5 rounded-lg border px-4 py-2.5 text-sm">
           {banner.text}
+          {banner.id === 'hold' && admissionRequired && (
+            <>
+              {' '}
+              <Link to="/events/$eventId/queue" params={{ eventId }} className="font-medium underline">
+                {t('seatPage.rejoinQueue')}
+              </Link>
+            </>
+          )}
           {banner.id === 'hold' && pendingBookingId && (
             <>
               {' '}

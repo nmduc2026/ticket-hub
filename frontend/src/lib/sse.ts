@@ -6,20 +6,34 @@
 export interface SseOptions {
   /** Xử lý theo tên sự kiện; `data` là chuỗi JSON nguyên văn. */
   handlers: Record<string, (data: string) => void>
+  /** Kết nối đang mở (kể cả lần đầu): nơi dùng có thể tắt polling. */
+  onOpen?: () => void
+  /** Kết nối mở lại sau khi đứt: tải lại snapshot. */
   onReconnect?: () => void
+  /** Kết nối đang đứt (trình duyệt đang tự thử lại hoặc đã bỏ cuộc): nơi dùng bật polling. */
+  onDown?: () => void
+  /** Trình duyệt bỏ cuộc hẳn. */
   onFailure?: () => void
 }
 
 /** Mở luồng SSE tới `url` (cùng origin, kèm cookie phiên); trả hàm đóng. */
-export function openSse(url: string, { handlers, onReconnect, onFailure }: SseOptions): () => void {
+export function openSse(url: string, { handlers, onOpen, onReconnect, onDown, onFailure }: SseOptions): () => void {
+  if (typeof EventSource === 'undefined') {
+    // Môi trường không có SSE (trình duyệt cũ, test jsdom): coi như luồng không dùng được, nơi gọi rơi về polling.
+    onDown?.()
+    onFailure?.()
+    return () => undefined
+  }
   const source = new EventSource(url, { withCredentials: true })
   let opened = false
 
   source.onopen = () => {
     if (opened) onReconnect?.()
     opened = true
+    onOpen?.()
   }
   source.onerror = () => {
+    onDown?.()
     // CLOSED: trình duyệt không thử lại nữa. Còn CONNECTING là đang tự nối lại.
     if (source.readyState === EventSource.CLOSED) onFailure?.()
   }

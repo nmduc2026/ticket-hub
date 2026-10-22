@@ -13,6 +13,9 @@ import { formatMoney } from '@/lib/money'
 
 import { useOrganizerEvent } from './useOrganizerEvent'
 
+/** Số liệu bán vé không có luồng SSE (overview.md §12): tự làm mới 30 giây, dừng khi tab ẩn. */
+const DASHBOARD_REFRESH_MS = 30_000
+
 const TIER_COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--color-chart-3)', 'var(--color-chart-4)', 'var(--color-chart-5)']
 
 /** Bảng điều khiển sự kiện (màn #25, rút gọn theo plan Sprint 6 hạng mục 11): doanh thu theo ngày, lấp đầy theo hạng
@@ -20,7 +23,7 @@ const TIER_COLORS = ['var(--color-chart-1)', 'var(--color-chart-2)', 'var(--colo
 export function EventDashboardTab({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
   const { event } = useOrganizerEvent(eventId)
-  const query = useGetEventSales(eventId, { query: { retry: false } })
+  const query = useGetEventSales(eventId, { query: { retry: false, refetchInterval: DASHBOARD_REFRESH_MS, refetchIntervalInBackground: false } })
 
   if (query.isPending) return <Skeleton className="h-96 w-full" aria-busy="true" />
   if (query.isError) {

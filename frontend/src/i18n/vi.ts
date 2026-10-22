@@ -87,6 +87,9 @@ export const vi = {
     legend: { available: 'Còn trống (màu theo hạng)', selected: 'Đang chọn', sold: 'Đã bán', unavailable: 'Không bán' },
   },
   errors: {
+    ADMISSION_REQUIRED: 'Lượt vào chọn ghế đã hết hạn. Lượt vào từ hàng chờ có hiệu lực 15 phút.',
+    RATE_LIMITED: 'Bạn thao tác quá nhanh. Thử lại sau ít giây.',
+    OVERLOADED: 'Hệ thống đang quá tải. Thử lại sau ít giây.',
     SEAT_UNAVAILABLE: 'Ghế vừa có người giữ. Chọn ghế khác.',
     MAX_SEATS_EXCEEDED: 'Tối đa 6 ghế mỗi lượt.',
     TICKET_LIMIT_EXCEEDED: 'Sự kiện này cho tối đa {{max}} vé mỗi người, tính cả các đơn trước.',
@@ -159,6 +162,7 @@ export const vi = {
   },
   seatPage: {
     openPendingBooking: 'Mở đơn đang giữ',
+    rejoinQueue: 'Vào lại hàng chờ',
     step: 'Bước 1/2 · Chọn ghế',
     loadError: 'Không tải được sơ đồ ghế',
     notOnSale: 'Sự kiện chưa mở bán hoặc đã dừng bán.',
@@ -1017,6 +1021,9 @@ export const vi = {
       timeAndPlace: 'Thời gian & địa điểm',
       timeZone: 'Giờ Việt Nam (GMT+7)',
       lockedHint: 'Khoá sau khi publish',
+      queue: 'Phòng chờ',
+      highDemand: 'Bật phòng chờ cho sự kiện nhu cầu cao',
+      highDemandHint: 'Khách xếp hàng công bằng trước khi chọn ghế. Không đổi được sau khi publish.',
       save: 'Lưu thay đổi',
       discard: 'Huỷ thay đổi',
       saved: 'Đã lưu thay đổi',

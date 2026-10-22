@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useCurrentUser } from '@/features/auth/useCurrentUser'
 import { NotificationItem } from '@/features/notifications/NotificationItem'
+import { useNotificationStream } from '@/features/notifications/useNotificationStream'
 import { useNotificationActions } from '@/features/notifications/useNotificationActions'
 
 const POLL_INTERVAL_MS = 60_000
@@ -21,7 +22,7 @@ const PREVIEW_SIZE = 5
 const PREVIEW_PARAMS = { size: PREVIEW_SIZE }
 
 /**
- * Chuông thông báo ở khung của cả 3 vai trò (màn #20). Số chưa đọc polling 60 giây cho tới khi có SSE; popover liệt
+ * Chuông thông báo ở khung của cả 3 vai trò (màn #20). Số chưa đọc cập nhật qua SSE, rơi về polling 60 giây khi luồng lỗi; popover liệt
  * kê vài thông báo mới nhất, có "Đánh dấu tất cả đã đọc" và lối tới trang Thông báo. Khách chưa đăng nhập không có
  * hộp thư nên không hiện chuông. Popover đóng khi bấm ra ngoài hoặc nhấn Esc, và luôn trả focus về nút chuông.
  */
@@ -32,12 +33,14 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const actions = useNotificationActions()
   const enabled = user !== null
+  const streaming = useNotificationStream(enabled)
 
   const unread = useQuery({
     queryKey: getGetMyUnreadNotificationCountQueryKey(),
     queryFn: () => getMyUnreadNotificationCount(),
     enabled,
-    refetchInterval: POLL_INTERVAL_MS,
+    // SSE đang mở thì không cần hỏi; luồng lỗi thì rơi về polling.
+    refetchInterval: streaming ? false : POLL_INTERVAL_MS,
     retry: false,
   })
   const preview = useQuery({

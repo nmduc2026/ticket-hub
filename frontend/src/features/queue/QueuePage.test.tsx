@@ -69,9 +69,12 @@ function renderQueue() {
   return router
 }
 
+/** Chuông thông báo của khung trang cũng mở SSE, nên chỉ xét luồng của phòng chờ. */
+const queueSources = () => FakeEventSource.instances.filter((source) => source.url.includes('/queue/'))
+
 async function connected() {
-  await waitFor(() => expect(FakeEventSource.instances).toHaveLength(1))
-  const source = FakeEventSource.latest()
+  await waitFor(() => expect(queueSources()).toHaveLength(1))
+  const source = queueSources()[0]
   act(() => source.reconnect())
   return source
 }
@@ -88,7 +91,7 @@ describe('phòng chờ (màn #4, BR-04)', () => {
     expect(await screen.findByRole('heading', { name: 'Đang trong hàng chờ' }, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.getByText('199')).toBeInTheDocument()
     expect(screen.getByText('dưới 1 phút')).toBeInTheDocument()
-    expect(FakeEventSource.latest().url).toBe(`/api/v1/queue/${EVENT_ID}/stream`)
+    expect(queueSources().at(-1)?.url).toBe(`/api/v1/queue/${EVENT_ID}/stream`)
 
     const source = await connected()
     act(() => source.emit('position', { phase: 'QUEUED', position: 50, estimatedWaitSeconds: 130 }))
@@ -125,7 +128,7 @@ describe('phòng chờ (màn #4, BR-04)', () => {
     renderQueue()
 
     expect(await screen.findByRole('heading', { name: 'Đến lượt bạn' })).toBeInTheDocument()
-    expect(FakeEventSource.instances).toHaveLength(0)
+    expect(queueSources()).toHaveLength(0)
   })
 
   it('AC-4: SSE đứt rồi nối lại → hỏi status rồi nghe tiếp, không mất lượt', async () => {
@@ -198,7 +201,7 @@ describe('phòng chờ (màn #4, BR-04)', () => {
 
     const dialogHeading = await screen.findByRole('heading', { name: title })
     expect(within(dialogHeading.closest('main') as HTMLElement).queryByRole('progressbar')).not.toBeInTheDocument()
-    expect(FakeEventSource.instances).toHaveLength(0)
+    expect(queueSources()).toHaveLength(0)
   })
 
   it('"Rời hàng chờ" về trang chi tiết sự kiện', async () => {

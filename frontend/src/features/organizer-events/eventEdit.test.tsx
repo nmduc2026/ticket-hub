@@ -43,6 +43,7 @@ function eventDetail(overrides: Detail = {}): Detail {
     maxTicketsPerUser: 6,
     inventoryReady: false,
     salesInfoLocked: false,
+    highDemand: false,
     tiers: [],
     tierSections: [],
     ...overrides,
@@ -216,6 +217,51 @@ describe('tab Thông tin chung (BR-14)', () => {
       saleStartsAt: '2026-10-01T03:00:00Z',
       maxTicketsPerUser: 6,
     })
+  })
+
+  it('AC-13 (BR-04): bản nháp bật được phòng chờ và gửi highDemand lên server', async () => {
+    const state = mockOrganizerApi(eventDetail())
+    let body: Record<string, unknown> = {}
+    server.use(
+      http.put(`/api/v1/organizer/events/${EVENT_ID}`, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...state.detail, highDemand: body.highDemand })
+      }),
+    )
+    const user = userEvent.setup()
+    renderAt(`/organizer/events/${EVENT_ID}/edit`)
+
+    const toggle = await screen.findByRole('checkbox', { name: 'Bật phòng chờ cho sự kiện nhu cầu cao' }, T)
+    expect(toggle).toBeEnabled()
+    expect(toggle).not.toBeChecked()
+    await user.click(toggle)
+    await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+
+    await waitFor(() => expect(body.highDemand).toBe(true))
+  })
+
+  it('AC-13 (BR-04, BR-14): sau publish công tắc phòng chờ bị khoá và giá trị cũ được gửi nguyên', async () => {
+    const state = mockOrganizerApi(eventDetail({ status: 'PUBLISHED', salesInfoLocked: true, highDemand: true }))
+    let body: Record<string, unknown> = {}
+    server.use(
+      http.put(`/api/v1/organizer/events/${EVENT_ID}`, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>
+        return HttpResponse.json({ ...state.detail, title: body.title })
+      }),
+    )
+    const user = userEvent.setup()
+    renderAt(`/organizer/events/${EVENT_ID}/edit`)
+
+    const toggle = await screen.findByRole('checkbox', { name: 'Bật phòng chờ cho sự kiện nhu cầu cao' }, T)
+    expect(toggle).toBeDisabled()
+    expect(toggle).toBeChecked()
+    const title = screen.getByLabelText(/Tên sự kiện/)
+    await user.clear(title)
+    await user.type(title, 'Tên mới')
+    await user.click(screen.getByRole('button', { name: 'Lưu thay đổi' }))
+
+    await waitFor(() => expect(body.title).toBe('Tên mới'))
+    expect(body.highDemand).toBe(true)
   })
 
   it('sau publish: giờ mở cửa, quy định vẫn sửa được; giờ mở cửa tính theo ngày diễn (AC-6)', async () => {

@@ -20,6 +20,7 @@ export function toEventRequest(detail: OrganizerEventDetail, changes: Partial<Ev
     doorsOpenAt: detail.doorsOpenAt,
     ageRestriction: detail.ageRestriction,
     rules: detail.rules,
+    highDemand: detail.highDemand,
     ...changes,
   }
 }
