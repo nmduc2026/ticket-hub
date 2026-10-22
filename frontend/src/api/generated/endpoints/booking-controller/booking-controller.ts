@@ -47,6 +47,11 @@ export type createBookingResponse201 = {
   status: 201
 }
 
+export type createBookingResponse403 = {
+  data: ProblemDetail
+  status: 403
+}
+
 export type createBookingResponse409 = {
   data: ProblemDetail
   status: 409
@@ -65,7 +70,7 @@ export type createBookingResponse503 = {
 export type createBookingResponseSuccess = (createBookingResponse201) & {
   headers: Headers;
 };
-export type createBookingResponseError = (createBookingResponse409 | createBookingResponse422 | createBookingResponse503) & {
+export type createBookingResponseError = (createBookingResponse403 | createBookingResponse409 | createBookingResponse422 | createBookingResponse503) & {
   headers: Headers;
 };
 
@@ -95,7 +100,7 @@ export const createBooking = async (createBookingRequest: CreateBookingRequest,
 
 
 
-export const getCreateBookingMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
+export const getCreateBookingMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest;headers: CreateBookingHeaders}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest;headers: CreateBookingHeaders}, TContext> => {
 
@@ -122,12 +127,12 @@ const {mutation: mutationOptions} = options ?
 
     export type CreateBookingMutationResult = NonNullable<Awaited<ReturnType<typeof createBooking>>>
     export type CreateBookingMutationBody = CreateBookingRequest
-    export type CreateBookingMutationError = ProblemDetail | ProblemDetail | ProblemDetail
+    export type CreateBookingMutationError = ProblemDetail | ProblemDetail | ProblemDetail | ProblemDetail
 
     /**
  * @summary Giữ ghế, tạo đơn chờ thanh toán
  */
-export const useCreateBooking = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
+export const useCreateBooking = <TError = ProblemDetail | ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBooking>>, TError,{data: CreateBookingRequest;headers: CreateBookingHeaders}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createBooking>>,

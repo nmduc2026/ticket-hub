@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { formatDateChip, formatTime } from '@/lib/date'
 import { formatMoney } from '@/lib/money'
 
-import { EventPoster } from './EventPoster'
+import { EventPoster } from '@/components/EventPoster'
 import { EventsGrid } from './EventsGrid'
 import { useEventSearch } from './useEventSearch'
 

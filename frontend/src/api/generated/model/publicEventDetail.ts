@@ -30,4 +30,6 @@ export interface PublicEventDetail {
   ageRestriction?: number;
   /** Quy định khi tham dự */
   rules?: string;
+  /** true khi sự kiện dùng phòng chờ: phải vào phòng chờ trước khi chọn ghế (BR-04) */
+  highDemand: boolean;
 }

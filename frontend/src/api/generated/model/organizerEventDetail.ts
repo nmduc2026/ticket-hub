@@ -31,4 +31,6 @@ export interface OrganizerEventDetail {
   doorsOpenAt?: string;
   ageRestriction?: number;
   rules?: string;
+  /** Bật phòng chờ (BR-04); khoá sau publish */
+  highDemand: boolean;
 }

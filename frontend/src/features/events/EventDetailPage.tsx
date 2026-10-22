@@ -9,8 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { ApiError } from '@/lib/api-client'
 import { formatDate, formatEventRange, formatTime } from '@/lib/date'
 import { formatMoney } from '@/lib/money'
+import { QUEUE_OPENS_BEFORE_MS } from '@/lib/queue-window'
 
-import { EventPoster } from './EventPoster'
+import { EventPoster } from '@/components/EventPoster'
 
 /** Chi tiết sự kiện (màn #3): thông tin, hạng vé và còn vé hay không, giới thiệu, chính sách, nút chọn ghế. */
 export function EventDetailPage({ eventId }: { eventId: string }) {
@@ -145,7 +146,10 @@ function PurchasePanel({ event, minPrice, currency }: { event: PublicEventDetail
   let action: React.ReactNode
   switch (event.status) {
     case 'ON_SALE':
-      action = event.soldOut ? (
+      // Sự kiện có phòng chờ: phải xếp hàng trước khi chọn ghế, kể cả khi đang hết vé (ghế có thể trống lại).
+      action = event.highDemand ? (
+        <QueueButton eventId={event.id} />
+      ) : event.soldOut ? (
         <Button disabled>{t('eventDetail.soldOut')}</Button>
       ) : (
         <Button asChild>
@@ -157,9 +161,14 @@ function PurchasePanel({ event, minPrice, currency }: { event: PublicEventDetail
       break
     case 'PUBLISHED':
       action = (
-        <p role="status" className="text-sm font-medium">
-          {t('eventDetail.saleStartsAt', { time: `${formatTime(event.saleStartsAt)} · ${formatDate(event.saleStartsAt)}` })}
-        </p>
+        <>
+          <p role="status" className="text-sm font-medium">
+            {t('eventDetail.saleStartsAt', { time: `${formatTime(event.saleStartsAt)} · ${formatDate(event.saleStartsAt)}` })}
+          </p>
+          {event.highDemand && Date.now() >= new Date(event.saleStartsAt).getTime() - QUEUE_OPENS_BEFORE_MS && (
+            <QueueButton eventId={event.id} />
+          )}
+        </>
       )
       break
     case 'SUSPENDED':
@@ -186,6 +195,17 @@ function PurchasePanel({ event, minPrice, currency }: { event: PublicEventDetail
       )}
       {action}
     </div>
+  )
+}
+
+function QueueButton({ eventId }: { eventId: string }) {
+  const { t } = useTranslation()
+  return (
+    <Button asChild>
+      <Link to="/events/$eventId/queue" params={{ eventId }}>
+        {t('eventDetail.joinQueue')}
+      </Link>
+    </Button>
   )
 }
 

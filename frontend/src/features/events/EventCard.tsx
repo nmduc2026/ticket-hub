@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { formatDateChip, formatTime } from '@/lib/date'
 import { formatMoney } from '@/lib/money'
 
-import { EventPoster } from './EventPoster'
+import { EventPoster } from '@/components/EventPoster'
 
 /** Thẻ sự kiện (màn #1–2): ảnh 16:10, chip ngày nằm ngang trên ảnh, tên, giờ · địa điểm, giá từ. */
 export function EventCard({ event }: { event: PublicEventSummary }) {

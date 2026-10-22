@@ -31,6 +31,8 @@ export interface EventRequest {
    * @maximum 100
    */
   maxTicketsPerUser?: number;
+  /** Bật phòng chờ cho sự kiện nhu cầu cao (BR-04); trống là tắt. Khoá sau publish (BR-14) */
+  highDemand?: boolean;
   /** Giờ mở cửa, không được sau giờ diễn */
   doorsOpenAt?: string;
   /**

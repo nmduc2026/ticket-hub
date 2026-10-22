@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils'
 
 import { Confirming } from './Confirming'
 import { PaymentSection } from './PaymentSection'
-import { formatCountdown, useCountdown } from './useCountdown'
+import { formatCountdown, useCountdown } from '@/lib/use-countdown'
 import { useStartPayment } from './useStartPayment'
 
 const URGENT_SECONDS = 60

@@ -39,6 +39,7 @@ import { Route as OrganizerEventsEventIdRouteRouteImport } from './routes/organi
 import { Route as GuestCheckoutBookingIdIndexRouteImport } from './routes/_guest/checkout/$bookingId/index'
 import { Route as GuestCheckoutBookingIdSuccessRouteImport } from './routes/_guest/checkout/$bookingId/success'
 import { Route as GuestEventsEventIdIndexRouteImport } from './routes/_guest/events/$eventId/index'
+import { Route as GuestEventsEventIdQueueRouteImport } from './routes/_guest/events/$eventId/queue'
 import { Route as GuestEventsEventIdSeatsRouteImport } from './routes/_guest/events/$eventId/seats'
 import { Route as GuestMeTicketsIndexRouteImport } from './routes/_guest/me/tickets/index'
 import { Route as GuestMeTicketsTicketIdRouteImport } from './routes/_guest/me/tickets/$ticketId'
@@ -201,6 +202,11 @@ const GuestEventsEventIdIndexRoute = GuestEventsEventIdIndexRouteImport.update({
   path: '/events/$eventId/',
   getParentRoute: () => GuestRoute,
 } as any)
+const GuestEventsEventIdQueueRoute = GuestEventsEventIdQueueRouteImport.update({
+  id: '/events/$eventId/queue',
+  path: '/events/$eventId/queue',
+  getParentRoute: () => GuestRoute,
+} as any)
 const GuestEventsEventIdSeatsRoute = GuestEventsEventIdSeatsRouteImport.update({
   id: '/events/$eventId/seats',
   path: '/events/$eventId/seats',
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/events/': typeof GuestEventsIndexRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/checkout/$bookingId/success': typeof GuestCheckoutBookingIdSuccessRoute
+  '/events/$eventId/queue': typeof GuestEventsEventIdQueueRoute
   '/events/$eventId/seats': typeof GuestEventsEventIdSeatsRoute
   '/me/tickets/$ticketId': typeof GuestMeTicketsTicketIdRoute
   '/organizer/events/$eventId/dashboard': typeof OrganizerEventsEventIdDashboardRoute
@@ -318,6 +325,7 @@ export interface FileRoutesByTo {
   '/events': typeof GuestEventsIndexRoute
   '/organizer/events': typeof OrganizerEventsIndexRoute
   '/checkout/$bookingId/success': typeof GuestCheckoutBookingIdSuccessRoute
+  '/events/$eventId/queue': typeof GuestEventsEventIdQueueRoute
   '/events/$eventId/seats': typeof GuestEventsEventIdSeatsRoute
   '/me/tickets/$ticketId': typeof GuestMeTicketsTicketIdRoute
   '/organizer/events/$eventId/dashboard': typeof OrganizerEventsEventIdDashboardRoute
@@ -360,6 +368,7 @@ export interface FileRoutesById {
   '/_guest/events/': typeof GuestEventsIndexRoute
   '/organizer/events/': typeof OrganizerEventsIndexRoute
   '/_guest/checkout/$bookingId/success': typeof GuestCheckoutBookingIdSuccessRoute
+  '/_guest/events/$eventId/queue': typeof GuestEventsEventIdQueueRoute
   '/_guest/events/$eventId/seats': typeof GuestEventsEventIdSeatsRoute
   '/_guest/me/tickets/$ticketId': typeof GuestMeTicketsTicketIdRoute
   '/organizer/events/$eventId/dashboard': typeof OrganizerEventsEventIdDashboardRoute
@@ -402,6 +411,7 @@ export interface FileRouteTypes {
     | '/events/'
     | '/organizer/events/'
     | '/checkout/$bookingId/success'
+    | '/events/$eventId/queue'
     | '/events/$eventId/seats'
     | '/me/tickets/$ticketId'
     | '/organizer/events/$eventId/dashboard'
@@ -439,6 +449,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/organizer/events'
     | '/checkout/$bookingId/success'
+    | '/events/$eventId/queue'
     | '/events/$eventId/seats'
     | '/me/tickets/$ticketId'
     | '/organizer/events/$eventId/dashboard'
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/_guest/events/'
     | '/organizer/events/'
     | '/_guest/checkout/$bookingId/success'
+    | '/_guest/events/$eventId/queue'
     | '/_guest/events/$eventId/seats'
     | '/_guest/me/tickets/$ticketId'
     | '/organizer/events/$eventId/dashboard'
@@ -712,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuestEventsEventIdIndexRouteImport
       parentRoute: typeof GuestRoute
     }
+    '/_guest/events/$eventId/queue': {
+      id: '/_guest/events/$eventId/queue'
+      path: '/events/$eventId/queue'
+      fullPath: '/events/$eventId/queue'
+      preLoaderRoute: typeof GuestEventsEventIdQueueRouteImport
+      parentRoute: typeof GuestRoute
+    }
     '/_guest/events/$eventId/seats': {
       id: '/_guest/events/$eventId/seats'
       path: '/events/$eventId/seats'
@@ -864,6 +883,7 @@ interface GuestRouteChildren {
   GuestOrganizerApplyRoute: typeof GuestOrganizerApplyRoute
   GuestEventsIndexRoute: typeof GuestEventsIndexRoute
   GuestCheckoutBookingIdSuccessRoute: typeof GuestCheckoutBookingIdSuccessRoute
+  GuestEventsEventIdQueueRoute: typeof GuestEventsEventIdQueueRoute
   GuestEventsEventIdSeatsRoute: typeof GuestEventsEventIdSeatsRoute
   GuestMeTicketsTicketIdRoute: typeof GuestMeTicketsTicketIdRoute
   GuestCheckoutBookingIdIndexRoute: typeof GuestCheckoutBookingIdIndexRoute
@@ -880,6 +900,7 @@ const GuestRouteChildren: GuestRouteChildren = {
   GuestOrganizerApplyRoute: GuestOrganizerApplyRoute,
   GuestEventsIndexRoute: GuestEventsIndexRoute,
   GuestCheckoutBookingIdSuccessRoute: GuestCheckoutBookingIdSuccessRoute,
+  GuestEventsEventIdQueueRoute: GuestEventsEventIdQueueRoute,
   GuestEventsEventIdSeatsRoute: GuestEventsEventIdSeatsRoute,
   GuestMeTicketsTicketIdRoute: GuestMeTicketsTicketIdRoute,
   GuestCheckoutBookingIdIndexRoute: GuestCheckoutBookingIdIndexRoute,

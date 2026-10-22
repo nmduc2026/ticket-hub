@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useUploadEventBanner } from '@/api/generated/endpoints/organizer-event-controller/organizer-event-controller'
 import type { OrganizerEventDetail } from '@/api/generated/model'
 import { Button } from '@/components/ui/button'
-import { EventPoster } from '@/features/events/EventPoster'
+import { EventPoster } from '@/components/EventPoster'
 import { errorMessage } from '@/lib/error-messages'
 import { ACCEPTED_IMAGE_TYPES, imageFileError } from '@/lib/image-upload'
 

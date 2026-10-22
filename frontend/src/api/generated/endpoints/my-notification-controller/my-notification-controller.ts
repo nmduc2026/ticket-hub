@@ -28,6 +28,7 @@ import type {
   NotificationPage,
   NotificationPreference,
   ProblemDetail,
+  SseEmitter,
   UnreadCount,
   UpdateNotificationPreferencesRequest
 } from '../../model';
@@ -622,6 +623,118 @@ export function useGetMyUnreadNotificationCount<TData = Awaited<ReturnType<typeo
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getGetMyUnreadNotificationCountQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  query.queryKey = queryOptions.queryKey ;
+
+  return query;
+}
+
+
+
+/**
+ * event: notification {…} (thông báo mới), event: unread {count}; gửi unread ngay khi nối; heartbeat 15 giây. Rơi về polling 60 giây khi SSE lỗi.
+ * @summary Luồng SSE thông báo của tôi
+ */
+export type streamMyNotificationsResponse200 = {
+  data: SseEmitter
+  status: 200
+}
+    
+export type streamMyNotificationsResponseSuccess = (streamMyNotificationsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type streamMyNotificationsResponse = (streamMyNotificationsResponseSuccess)
+
+export const getStreamMyNotificationsUrl = () => {
+
+
+  
+
+  return `/api/v1/me/notifications/stream`
+}
+
+export const streamMyNotifications = async ( options?: RequestInit): Promise<streamMyNotificationsResponse> => {
+  
+  return apiFetch<streamMyNotificationsResponse>(getStreamMyNotificationsUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+
+
+export const getStreamMyNotificationsQueryKey = () => {
+    return [
+    `/api/v1/me/notifications/stream`
+    ] as const;
+    }
+
+    
+export const getStreamMyNotificationsQueryOptions = <TData = Awaited<ReturnType<typeof streamMyNotifications>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamMyNotifications>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStreamMyNotificationsQueryKey();
+
+  
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof streamMyNotifications>>> = () => streamMyNotifications();
+
+      
+
+      
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof streamMyNotifications>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StreamMyNotificationsQueryResult = NonNullable<Awaited<ReturnType<typeof streamMyNotifications>>>
+export type StreamMyNotificationsQueryError = unknown
+
+
+export function useStreamMyNotifications<TData = Awaited<ReturnType<typeof streamMyNotifications>>, TError = unknown>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamMyNotifications>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof streamMyNotifications>>,
+          TError,
+          Awaited<ReturnType<typeof streamMyNotifications>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useStreamMyNotifications<TData = Awaited<ReturnType<typeof streamMyNotifications>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamMyNotifications>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof streamMyNotifications>>,
+          TError,
+          Awaited<ReturnType<typeof streamMyNotifications>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useStreamMyNotifications<TData = Awaited<ReturnType<typeof streamMyNotifications>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamMyNotifications>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Luồng SSE thông báo của tôi
+ */
+
+export function useStreamMyNotifications<TData = Awaited<ReturnType<typeof streamMyNotifications>>, TError = unknown>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof streamMyNotifications>>, TError, TData>>, }
+ , queryClient?: QueryClient 
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStreamMyNotificationsQueryOptions(options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

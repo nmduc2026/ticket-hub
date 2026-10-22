@@ -73,7 +73,9 @@ public final class PublicEventResponses {
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Tier> tiers,
 			@Schema(description = "Giờ mở cửa; trống nếu ban tổ chức chưa nhập") Instant doorsOpenAt,
 			@Schema(description = "Số tuổi tối thiểu; trống là không giới hạn") Short ageRestriction,
-			@Schema(description = "Quy định khi tham dự") String rules) {
+			@Schema(description = "Quy định khi tham dự") String rules,
+			@Schema(description = "true khi sự kiện dùng phòng chờ: phải vào phòng chờ trước khi chọn ghế (BR-04)",
+					requiredMode = Schema.RequiredMode.REQUIRED) boolean highDemand) {
 
 	}
 

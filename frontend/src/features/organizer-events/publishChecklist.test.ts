@@ -9,6 +9,7 @@ const draft: OrganizerEventDetail = {
   maxTicketsPerUser: 6,
   inventoryReady: false,
   salesInfoLocked: false,
+  highDemand: false,
   tiers: [],
   tierSections: [],
 }

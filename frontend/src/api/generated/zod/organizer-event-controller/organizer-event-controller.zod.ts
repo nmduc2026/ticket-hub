@@ -38,6 +38,7 @@ export const updateOrganizerEventBody = zod.object({
   "endsAt": zod.iso.datetime({}).optional(),
   "saleStartsAt": zod.iso.datetime({}).optional(),
   "maxTicketsPerUser": zod.number().min(1).max(updateOrganizerEventBodyMaxTicketsPerUserMax).optional(),
+  "highDemand": zod.boolean().optional().describe('Bật phòng chờ cho sự kiện nhu cầu cao (BR-04); trống là tắt. Khoá sau publish (BR-14)'),
   "doorsOpenAt": zod.iso.datetime({}).optional().describe('Giờ mở cửa, không được sau giờ diễn'),
   "ageRestriction": zod.number().min(1).max(updateOrganizerEventBodyAgeRestrictionMax).optional().describe('Số tuổi tối thiểu; trống là không giới hạn'),
   "rules": zod.string().min(updateOrganizerEventBodyRulesMin).max(updateOrganizerEventBodyRulesMax).optional().describe('Quy định khi tham dự (văn bản)')
@@ -113,6 +114,7 @@ export const createOrganizerEventBody = zod.object({
   "endsAt": zod.iso.datetime({}).optional(),
   "saleStartsAt": zod.iso.datetime({}).optional(),
   "maxTicketsPerUser": zod.number().min(1).max(createOrganizerEventBodyMaxTicketsPerUserMax).optional(),
+  "highDemand": zod.boolean().optional().describe('Bật phòng chờ cho sự kiện nhu cầu cao (BR-04); trống là tắt. Khoá sau publish (BR-14)'),
   "doorsOpenAt": zod.iso.datetime({}).optional().describe('Giờ mở cửa, không được sau giờ diễn'),
   "ageRestriction": zod.number().min(1).max(createOrganizerEventBodyAgeRestrictionMax).optional().describe('Số tuổi tối thiểu; trống là không giới hạn'),
   "rules": zod.string().min(createOrganizerEventBodyRulesMin).max(createOrganizerEventBodyRulesMax).optional().describe('Quy định khi tham dự (văn bản)')

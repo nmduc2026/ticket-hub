@@ -5800,9 +5800,13 @@
           "rules" : {
             "type" : "string",
             "description" : "Quy định khi tham dự"
+          },
+          "highDemand" : {
+            "type" : "boolean",
+            "description" : "true khi sự kiện dùng phòng chờ: phải vào phòng chờ trước khi chọn ghế (BR-04)"
           }
         },
-        "required" : [ "cityName", "endsAt", "id", "maxTicketsPerUser", "organizerId", "saleStartsAt", "soldOut", "startsAt", "status", "tiers", "title", "venueName" ]
+        "required" : [ "cityName", "endsAt", "highDemand", "id", "maxTicketsPerUser", "organizerId", "saleStartsAt", "soldOut", "startsAt", "status", "tiers", "title", "venueName" ]
       },
       "PublicTier" : {
         "type" : "object",
