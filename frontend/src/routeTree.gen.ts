@@ -20,6 +20,7 @@ import { Route as AdminEventsRouteImport } from './routes/admin/events'
 import { Route as AdminFeesRouteImport } from './routes/admin/fees'
 import { Route as AdminOrdersRouteImport } from './routes/admin/orders'
 import { Route as AdminOrganizersRouteImport } from './routes/admin/organizers'
+import { Route as AdminPaymentsRouteImport } from './routes/admin/payments'
 import { Route as AdminRegionsRouteImport } from './routes/admin/regions'
 import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminVenuesRouteImport } from './routes/admin/venues'
@@ -27,6 +28,7 @@ import { Route as CheckinEventIdRouteImport } from './routes/checkin/$eventId'
 import { Route as OrganizerIndexRouteImport } from './routes/organizer/index'
 import { Route as OrganizerOrdersRouteImport } from './routes/organizer/orders'
 import { Route as OrganizerPaymentsRouteImport } from './routes/organizer/payments'
+import { Route as OrganizerSettingsRouteImport } from './routes/organizer/settings'
 import { Route as GuestEventsIndexRouteImport } from './routes/_guest/events/index'
 import { Route as GuestMeBookingsRouteImport } from './routes/_guest/me/bookings'
 import { Route as GuestMeNotificationsRouteImport } from './routes/_guest/me/notifications'
@@ -99,6 +101,11 @@ const AdminOrganizersRoute = AdminOrganizersRouteImport.update({
   path: '/organizers',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
+  id: '/payments',
+  path: '/payments',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminRegionsRoute = AdminRegionsRouteImport.update({
   id: '/regions',
   path: '/regions',
@@ -132,6 +139,11 @@ const OrganizerOrdersRoute = OrganizerOrdersRouteImport.update({
 const OrganizerPaymentsRoute = OrganizerPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => OrganizerRouteRoute,
+} as any)
+const OrganizerSettingsRoute = OrganizerSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => OrganizerRouteRoute,
 } as any)
 const GuestEventsIndexRoute = GuestEventsIndexRouteImport.update({
@@ -237,12 +249,14 @@ export interface FileRoutesByFullPath {
   '/admin/fees': typeof AdminFeesRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/organizers': typeof AdminOrganizersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/admin/regions': typeof AdminRegionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/checkin/$eventId': typeof CheckinEventIdRoute
   '/organizer/orders': typeof OrganizerOrdersRoute
   '/organizer/payments': typeof OrganizerPaymentsRoute
+  '/organizer/settings': typeof OrganizerSettingsRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
   '/organizer/events/$eventId': typeof OrganizerEventsEventIdRouteRouteWithChildren
@@ -270,12 +284,14 @@ export interface FileRoutesByTo {
   '/admin/fees': typeof AdminFeesRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/organizers': typeof AdminOrganizersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/admin/regions': typeof AdminRegionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/checkin/$eventId': typeof CheckinEventIdRoute
   '/organizer/orders': typeof OrganizerOrdersRoute
   '/organizer/payments': typeof OrganizerPaymentsRoute
+  '/organizer/settings': typeof OrganizerSettingsRoute
   '/': typeof GuestIndexRoute
   '/admin': typeof AdminIndexRoute
   '/organizer': typeof OrganizerIndexRoute
@@ -307,12 +323,14 @@ export interface FileRoutesById {
   '/admin/fees': typeof AdminFeesRoute
   '/admin/orders': typeof AdminOrdersRoute
   '/admin/organizers': typeof AdminOrganizersRoute
+  '/admin/payments': typeof AdminPaymentsRoute
   '/admin/regions': typeof AdminRegionsRoute
   '/admin/users': typeof AdminUsersRoute
   '/admin/venues': typeof AdminVenuesRoute
   '/checkin/$eventId': typeof CheckinEventIdRoute
   '/organizer/orders': typeof OrganizerOrdersRoute
   '/organizer/payments': typeof OrganizerPaymentsRoute
+  '/organizer/settings': typeof OrganizerSettingsRoute
   '/_guest/': typeof GuestIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/organizer/': typeof OrganizerIndexRoute
@@ -346,12 +364,14 @@ export interface FileRouteTypes {
     | '/admin/fees'
     | '/admin/orders'
     | '/admin/organizers'
+    | '/admin/payments'
     | '/admin/regions'
     | '/admin/users'
     | '/admin/venues'
     | '/checkin/$eventId'
     | '/organizer/orders'
     | '/organizer/payments'
+    | '/organizer/settings'
     | '/admin/'
     | '/organizer/'
     | '/organizer/events/$eventId'
@@ -379,12 +399,14 @@ export interface FileRouteTypes {
     | '/admin/fees'
     | '/admin/orders'
     | '/admin/organizers'
+    | '/admin/payments'
     | '/admin/regions'
     | '/admin/users'
     | '/admin/venues'
     | '/checkin/$eventId'
     | '/organizer/orders'
     | '/organizer/payments'
+    | '/organizer/settings'
     | '/'
     | '/admin'
     | '/organizer'
@@ -415,12 +437,14 @@ export interface FileRouteTypes {
     | '/admin/fees'
     | '/admin/orders'
     | '/admin/organizers'
+    | '/admin/payments'
     | '/admin/regions'
     | '/admin/users'
     | '/admin/venues'
     | '/checkin/$eventId'
     | '/organizer/orders'
     | '/organizer/payments'
+    | '/organizer/settings'
     | '/_guest/'
     | '/admin/'
     | '/organizer/'
@@ -529,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrganizersRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/payments': {
+      id: '/admin/payments'
+      path: '/payments'
+      fullPath: '/admin/payments'
+      preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/regions': {
       id: '/admin/regions'
       path: '/regions'
@@ -576,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/organizer/payments'
       preLoaderRoute: typeof OrganizerPaymentsRouteImport
+      parentRoute: typeof OrganizerRouteRoute
+    }
+    '/organizer/settings': {
+      id: '/organizer/settings'
+      path: '/settings'
+      fullPath: '/organizer/settings'
+      preLoaderRoute: typeof OrganizerSettingsRouteImport
       parentRoute: typeof OrganizerRouteRoute
     }
     '/_guest/events/': {
@@ -706,6 +744,7 @@ interface AdminRouteRouteChildren {
   AdminFeesRoute: typeof AdminFeesRoute
   AdminOrdersRoute: typeof AdminOrdersRoute
   AdminOrganizersRoute: typeof AdminOrganizersRoute
+  AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminRegionsRoute: typeof AdminRegionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVenuesRoute: typeof AdminVenuesRoute
@@ -718,6 +757,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminFeesRoute: AdminFeesRoute,
   AdminOrdersRoute: AdminOrdersRoute,
   AdminOrganizersRoute: AdminOrganizersRoute,
+  AdminPaymentsRoute: AdminPaymentsRoute,
   AdminRegionsRoute: AdminRegionsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminVenuesRoute: AdminVenuesRoute,
@@ -751,6 +791,7 @@ const OrganizerEventsEventIdRouteRouteWithChildren =
 interface OrganizerRouteRouteChildren {
   OrganizerOrdersRoute: typeof OrganizerOrdersRoute
   OrganizerPaymentsRoute: typeof OrganizerPaymentsRoute
+  OrganizerSettingsRoute: typeof OrganizerSettingsRoute
   OrganizerIndexRoute: typeof OrganizerIndexRoute
   OrganizerEventsEventIdRouteRoute: typeof OrganizerEventsEventIdRouteRouteWithChildren
   OrganizerEventsIndexRoute: typeof OrganizerEventsIndexRoute
@@ -759,6 +800,7 @@ interface OrganizerRouteRouteChildren {
 const OrganizerRouteRouteChildren: OrganizerRouteRouteChildren = {
   OrganizerOrdersRoute: OrganizerOrdersRoute,
   OrganizerPaymentsRoute: OrganizerPaymentsRoute,
+  OrganizerSettingsRoute: OrganizerSettingsRoute,
   OrganizerIndexRoute: OrganizerIndexRoute,
   OrganizerEventsEventIdRouteRoute:
     OrganizerEventsEventIdRouteRouteWithChildren,

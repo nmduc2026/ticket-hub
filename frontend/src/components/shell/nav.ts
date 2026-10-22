@@ -1,5 +1,5 @@
 import type { FileRouteTypes } from '@/routeTree.gen'
-import { BadgePercent, CalendarDays, CreditCard, FileClock, Landmark, LayoutDashboard, MapPin, type LucideIcon, Receipt, UserCheck, Users } from 'lucide-react'
+import { BadgePercent, CalendarDays, CreditCard, FileClock, Settings, Landmark, LayoutDashboard, MapPin, type LucideIcon, Receipt, UserCheck, Users } from 'lucide-react'
 
 export type ShellVariant = 'admin' | 'organizer'
 
@@ -45,6 +45,7 @@ export const SHELL_CONFIG: Record<ShellVariant, ShellConfig> = {
           { to: '/admin/fees', labelKey: 'shell.admin.fees', icon: BadgePercent },
           { to: '/admin/venues', labelKey: 'shell.admin.venues', icon: Landmark },
           { to: '/admin/regions', labelKey: 'shell.admin.regions', icon: MapPin },
+          { to: '/admin/payments', labelKey: 'shell.admin.payments', icon: CreditCard },
           { to: '/admin/audit-logs', labelKey: 'shell.admin.auditLogs', icon: FileClock },
         ],
       },
@@ -63,6 +64,7 @@ export const SHELL_CONFIG: Record<ShellVariant, ShellConfig> = {
           { to: '/organizer/events', labelKey: 'shell.organizer.events', icon: CalendarDays },
           { to: '/organizer/orders', labelKey: 'shell.organizer.orders', icon: Receipt },
           { to: '/organizer/payments', labelKey: 'shell.organizer.payments', icon: CreditCard },
+          { to: '/organizer/settings', labelKey: 'shell.organizer.settings', icon: Settings },
         ],
       },
     ],
