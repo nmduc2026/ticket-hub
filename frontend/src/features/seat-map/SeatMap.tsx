@@ -10,7 +10,7 @@ import { useThemeStore } from '@/features/theme/theme-store'
 import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
 
-import { elementRect, fitView, type Rect as Bounds, SEAT_SIZE, seatsRect, sectionRect, type View, viewForRect, zoomAt } from './seatGeometry'
+import { elementRect, fitView, type Rect as Bounds, SEAT_SIZE, seatsRect, sectionFrame, sectionRect, type View, viewForRect, zoomAt } from './seatGeometry'
 import { firstSeat, NAV_KEYS, type NavKey, nextSeat } from './seatNavigation'
 import { readSeatPalette, TIER_COLOR_COUNT } from './seatPalette'
 
@@ -86,8 +86,8 @@ export function SeatMap({ snapshot, selectedIds, maxSelect, onSelectionChange, o
   const sectionBounds = useMemo(
     () =>
       snapshot.sections.flatMap((section) => {
-        const rect =
-          sectionRect(section.shape) ?? seatsRect(snapshot.seats.filter((seat) => seat.sectionCode === section.code))
+        // Vùng bao của ghế thật: đúng với khu xoay, hàng cong và khu IMPORTED; khu chưa có ghế mới dùng khung lưới.
+        const rect = seatsRect(snapshot.seats.filter((seat) => seat.sectionCode === section.code)) ?? sectionRect(section.shape)
         return rect ? [{ code: section.code, name: section.name, rect }] : []
       }),
     [snapshot.sections, snapshot.seats],
@@ -274,13 +274,17 @@ export function SeatMap({ snapshot, selectedIds, maxSelect, onSelectionChange, o
                   )
                 })}
                 {snapshot.sections.map((section) => {
-                  const rect = sectionRect(section.shape)
-                  if (!rect) return null
+                  const bounds = sectionBounds.find((item) => item.code === section.code)
+                  const frame = sectionFrame(section.shape) ?? (bounds ? { x: 0, y: 0, rotation: 0, rect: bounds.rect } : null)
+                  if (!frame || !bounds) return null
+                  const rect = bounds.rect
                   const forSale = Boolean(section.tierId)
                   return (
                     <Group key={section.code}>
                       {!forSale && (
-                        <Rect {...rect} cornerRadius={8} fill={palette.unavailable} opacity={0.55} />
+                        <Group x={frame.x} y={frame.y} rotation={frame.rotation}>
+                          <Rect {...frame.rect} cornerRadius={8} fill={palette.unavailable} opacity={0.55} />
+                        </Group>
                       )}
                       <Text
                         x={rect.x}

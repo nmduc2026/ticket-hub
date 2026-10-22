@@ -1,4 +1,4 @@
-import { elementRect, fitView, MAX_SCALE, MIN_SCALE, SEAT_SIZE, sectionRect, seatsRect, viewForRect, zoomAt } from './seatGeometry'
+import { elementRect, fitView, MAX_SCALE, MIN_SCALE, SEAT_SIZE, sectionFrame, sectionRect, seatsRect, viewForRect, zoomAt } from './seatGeometry'
 
 describe('sectionRect', () => {
   it('khung khu GRID bao quanh mọi ghế của lưới với phần đệm', () => {
@@ -15,6 +15,21 @@ describe('sectionRect', () => {
     expect(sectionRect({ kind: 'IMPORTED' })).toBeNull()
     expect(sectionRect(null)).toBeNull()
     expect(sectionRect({})).toBeNull()
+  })
+})
+
+describe('sectionFrame', () => {
+  it('giữ góc xoay và vị trí ghế đầu; khung nới theo độ cong của hàng', () => {
+    const frame = sectionFrame({ kind: 'GRID', x: 60, y: 160, rows: 2, seatsPerRow: 5, rowGap: 26, seatGap: 24, rotation: 30, curve: 8 })
+    const pad = SEAT_SIZE / 2 + 14
+    expect(frame).toEqual({ x: 60, y: 160, rotation: 30, rect: { x: -pad, y: -pad - 8, width: 4 * 24 + 2 * pad, height: 26 + 2 * pad + 8 } })
+  })
+
+  it('hàng cong xuống (curve âm) nới phía dưới, khu IMPORTED không có khung', () => {
+    const frame = sectionFrame({ kind: 'GRID', x: 0, y: 0, rows: 1, seatsPerRow: 3, rowGap: 20, seatGap: 20, curve: -6 })
+    expect(frame?.rect.y).toBe(-(SEAT_SIZE / 2 + 14))
+    expect(frame?.rect.height).toBe(2 * (SEAT_SIZE / 2 + 14) + 6)
+    expect(sectionFrame({ kind: 'IMPORTED' })).toBeNull()
   })
 })
 

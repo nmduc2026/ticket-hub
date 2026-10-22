@@ -17,6 +17,8 @@ const gridShapeSchema = z.object({
   seatsPerRow: z.number().int().positive(),
   rowGap: z.number().positive(),
   seatGap: z.number().positive(),
+  rotation: z.number().default(0),
+  curve: z.number().default(0),
 })
 
 const elementShapeSchema = z.object({
@@ -44,6 +46,34 @@ export function sectionRect(shape: unknown): Rect | null {
     y: y - SEAT_SIZE / 2 - SECTION_PADDING,
     width: (seatsPerRow - 1) * seatGap + SEAT_SIZE + 2 * SECTION_PADDING,
     height: (rows - 1) * rowGap + SEAT_SIZE + 2 * SECTION_PADDING,
+  }
+}
+
+/** Khung của khu: vẽ trong nhóm đặt tại `(x, y)` (ghế đầu tiên) và xoay `rotation` độ, đúng như `generateSeats`. */
+export interface SectionFrame {
+  x: number
+  y: number
+  rotation: number
+  /** Toạ độ cục bộ của nhóm, đã nới theo độ cong của hàng. */
+  rect: Rect
+}
+
+/** Khung khu `GRID` kể cả xoay và hàng cong; `null` với khu `IMPORTED` hoặc shape lạ (dùng {@link seatsRect}). */
+export function sectionFrame(shape: unknown): SectionFrame | null {
+  const parsed = gridShapeSchema.safeParse(shape)
+  if (!parsed.success) return null
+  const { x, y, rows, seatsPerRow, rowGap, seatGap, rotation, curve } = parsed.data
+  const pad = SEAT_SIZE / 2 + SECTION_PADDING
+  return {
+    x,
+    y,
+    rotation,
+    rect: {
+      x: -pad,
+      y: -pad - Math.max(curve, 0),
+      width: (seatsPerRow - 1) * seatGap + 2 * pad,
+      height: (rows - 1) * rowGap + 2 * pad + Math.abs(curve),
+    },
   }
 }
 
