@@ -1,5 +1,8 @@
 package com.ndz.catalog.service.impl;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ndz.catalog.api.CatalogApi;
+import com.ndz.catalog.entity.enums.EventStatus;
+import com.ndz.catalog.entity.enums.OrganizerStatus;
 import com.ndz.catalog.repository.CatalogReadRepository;
 import com.ndz.catalog.repository.EventRepository;
 import com.ndz.catalog.repository.OrganizerRepository;
@@ -24,11 +29,14 @@ class CatalogApiImpl implements CatalogApi {
 	private final CatalogReadRepository catalog;
 	private final EventRepository events;
 	private final OrganizerRepository organizers;
+	private final Clock clock;
 
-	CatalogApiImpl(CatalogReadRepository catalog, EventRepository events, OrganizerRepository organizers) {
+	CatalogApiImpl(CatalogReadRepository catalog, EventRepository events, OrganizerRepository organizers,
+			Clock clock) {
 		this.catalog = catalog;
 		this.events = events;
 		this.organizers = organizers;
+		this.clock = clock;
 	}
 
 	@Override
@@ -84,6 +92,42 @@ class CatalogApiImpl implements CatalogApi {
 	@Transactional(readOnly = true)
 	public List<SellableSeat> sellableSeats(UUID eventId) {
 		return catalog.sellableSeats(eventId);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Map<UUID, String> organizerNames(Collection<UUID> organizerIds) {
+		return organizers.findAllById(organizerIds).stream()
+				.collect(Collectors.toMap(com.ndz.catalog.entity.Organizer::getId, com.ndz.catalog.entity.Organizer::getDisplayName));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public long countPendingOrganizers() {
+		return organizers.countByStatusAndSubmittedAtNotNull(OrganizerStatus.PENDING);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public long countSuspendedEvents() {
+		return events.countByStatus(EventStatus.SUSPENDED);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public long countEventsOnSale() {
+		return events.countByStatus(EventStatus.ON_SALE);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<OpeningSoonEvent> openingSoonEvents(int withinNextDays) {
+		Instant now = clock.instant();
+		return events.findTop10ByStatusAndSaleStartsAtBetweenOrderBySaleStartsAt(EventStatus.PUBLISHED, now,
+				now.plus(Duration.ofDays(withinNextDays))).stream()
+				.map(event -> new OpeningSoonEvent(event.getId(), event.getTitle(), event.getOrganizerId(),
+						event.getSaleStartsAt()))
+				.toList();
 	}
 
 }

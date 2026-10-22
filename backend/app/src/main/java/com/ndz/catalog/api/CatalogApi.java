@@ -61,6 +61,24 @@ public interface CatalogApi {
 	record OrganizerEvent(UUID eventId, String title, String status, Instant startsAt) {
 	}
 
+	/** Tên hiển thị của các organizer cho trước; organizer không có thì vắng mặt trong kết quả. */
+	Map<UUID, String> organizerNames(Collection<UUID> organizerIds);
+
+	/** Hồ sơ organizer đang chờ duyệt (Admin dashboard, §11.2). */
+	long countPendingOrganizers();
+
+	/** Sự kiện đang bị tạm dừng bán (BR-13; Admin dashboard). */
+	long countSuspendedEvents();
+
+	/** Sự kiện đang bán (trạng thái {@code ON_SALE}; Admin dashboard). */
+	long countEventsOnSale();
+
+	/** Sự kiện đã publish, sắp tới giờ mở bán trong {@code withinNextDays} ngày tới, tối đa 10 dòng. */
+	List<OpeningSoonEvent> openingSoonEvents(int withinNextDays);
+
+	record OpeningSoonEvent(UUID eventId, String title, UUID organizerId, Instant saleStartsAt) {
+	}
+
 	/** Sơ đồ ghế; {@code shapeJson} là JSON nguyên văn của hình học khu / phần tử. */
 	record SeatMapLayout(int width, int height, List<LayoutSection> sections, List<LayoutElement> elements,
 			List<LayoutSeat> seats) {

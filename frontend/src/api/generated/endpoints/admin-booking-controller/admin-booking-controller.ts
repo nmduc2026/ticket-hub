@@ -24,7 +24,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  AdminBooking,
+  AdminBookingPage,
   BookingRefund,
   ListAdminBookingsParams,
   ProblemDetail
@@ -131,10 +131,10 @@ export const useRetryBookingRefund = <TError = ProblemDetail | ProblemDetail,
       return useMutation(mutationOptions, queryClient);
     }
     /**
- * @summary Đơn theo trạng thái, vd. REFUND_FAILED cần hoàn thủ công
+ * @summary Đơn toàn hệ thống, lọc theo trạng thái / organizer / cần đối soát / từ khoá
  */
 export type listAdminBookingsResponse200 = {
-  data: AdminBooking[]
+  data: AdminBookingPage
   status: 200
 }
     
@@ -145,11 +145,19 @@ export type listAdminBookingsResponseSuccess = (listAdminBookingsResponse200) & 
 
 export type listAdminBookingsResponse = (listAdminBookingsResponseSuccess)
 
-export const getListAdminBookingsUrl = (params: ListAdminBookingsParams,) => {
+export const getListAdminBookingsUrl = (params?: ListAdminBookingsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-    
+    const explodeParameters = ["status"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : v.toString());
+      });
+      return;
+    }
+      
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : value.toString())
     }
@@ -160,7 +168,7 @@ export const getListAdminBookingsUrl = (params: ListAdminBookingsParams,) => {
   return stringifiedParams.length > 0 ? `/api/v1/admin/bookings?${stringifiedParams}` : `/api/v1/admin/bookings`
 }
 
-export const listAdminBookings = async (params: ListAdminBookingsParams, options?: RequestInit): Promise<listAdminBookingsResponse> => {
+export const listAdminBookings = async (params?: ListAdminBookingsParams, options?: RequestInit): Promise<listAdminBookingsResponse> => {
   
   return apiFetch<listAdminBookingsResponse>(getListAdminBookingsUrl(params),
   {      
@@ -182,7 +190,7 @@ export const getListAdminBookingsQueryKey = (params?: ListAdminBookingsParams,) 
     }
 
     
-export const getListAdminBookingsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminBookings>>, TError = unknown>(params: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>>, }
+export const getListAdminBookingsQueryOptions = <TData = Awaited<ReturnType<typeof listAdminBookings>>, TError = unknown>(params?: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -205,7 +213,7 @@ export type ListAdminBookingsQueryError = unknown
 
 
 export function useListAdminBookings<TData = Awaited<ReturnType<typeof listAdminBookings>>, TError = unknown>(
- params: ListAdminBookingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>> & Pick<
+ params: undefined |  ListAdminBookingsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof listAdminBookings>>,
           TError,
@@ -215,7 +223,7 @@ export function useListAdminBookings<TData = Awaited<ReturnType<typeof listAdmin
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListAdminBookings<TData = Awaited<ReturnType<typeof listAdminBookings>>, TError = unknown>(
- params: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>> & Pick<
+ params?: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof listAdminBookings>>,
           TError,
@@ -225,15 +233,15 @@ export function useListAdminBookings<TData = Awaited<ReturnType<typeof listAdmin
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 export function useListAdminBookings<TData = Awaited<ReturnType<typeof listAdminBookings>>, TError = unknown>(
- params: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>>, }
+ params?: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * @summary Đơn theo trạng thái, vd. REFUND_FAILED cần hoàn thủ công
+ * @summary Đơn toàn hệ thống, lọc theo trạng thái / organizer / cần đối soát / từ khoá
  */
 
 export function useListAdminBookings<TData = Awaited<ReturnType<typeof listAdminBookings>>, TError = unknown>(
- params: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>>, }
+ params?: ListAdminBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listAdminBookings>>, TError, TData>>, }
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

@@ -37,6 +37,18 @@ public class ConnectedAccountRepository {
 				organizerId).stream().findFirst();
 	}
 
+	/**
+	 * Số connected account ở state {@code restricted} (overview.md §7.6: chưa {@code charges_enabled}, đã nộp đủ hồ sơ,
+	 * không còn requirement chờ xử lý, và {@code disabled_reason} không phải đang chờ xác minh). Admin dashboard.
+	 */
+	public int countRestricted() {
+		return jdbc.queryForObject("""
+				SELECT count(*) FROM payment.connected_accounts
+				WHERE charges_enabled = false AND details_submitted = true AND requirements_due = '[]'::jsonb
+				  AND disabled_reason IS NOT NULL AND disabled_reason <> 'requirements.pending_verification'
+				""", Integer.class);
+	}
+
 	/** Lưu account vừa tạo; hai request đồng thời cùng tạo (cùng idempotency key) chỉ một dòng được ghi. */
 	public void insertIfAbsent(UUID organizerId, String stripeAccountId, Instant now) {
 		jdbc.update("""

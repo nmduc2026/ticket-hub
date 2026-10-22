@@ -4,10 +4,12 @@
  * Ticket Hub API
  * OpenAPI spec version: v1
  */
-import type { ListAdminBookingsStatus } from './listAdminBookingsStatus';
 
 export type ListAdminBookingsParams = {
-status: ListAdminBookingsStatus;
+status?: string[];
+organizerId?: string;
+needsReconcile?: boolean;
+q?: string;
 page?: number;
 size?: number;
 };

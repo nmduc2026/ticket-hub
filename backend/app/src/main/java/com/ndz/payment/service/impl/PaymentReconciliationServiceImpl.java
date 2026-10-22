@@ -13,12 +13,14 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.booking.api.BookingApi;
+import com.ndz.booking.event.PaymentReconcileFlagged;
 import com.ndz.payment.client.GatewayPaymentIntent;
 import com.ndz.payment.client.StripeGateway;
 import com.ndz.payment.client.StripeGatewayException;
@@ -28,6 +30,7 @@ import com.ndz.payment.entity.enums.PaymentStatus;
 import com.ndz.payment.repository.PaymentRepository;
 import com.ndz.payment.service.PaymentReconciliationService;
 import com.ndz.payment.service.PaymentSettlementService;
+import com.ndz.shared.util.Uuid7;
 
 /**
  * Gọi Stripe ngoài transaction, rồi khoá dòng payment và áp dụng kết quả trong một transaction ngắn: không giữ khoá DB
@@ -47,18 +50,21 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
 	private final BookingApi bookings;
 	private final PaymentProperties properties;
 	private final TransactionTemplate transaction;
+	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 	private final AtomicLong succeededUnsettled = new AtomicLong();
 
 	PaymentReconciliationServiceImpl(PaymentRepository payments, PaymentSettlementService settlement,
 			StripeGateway stripe, BookingApi bookings, PaymentProperties properties,
-			PlatformTransactionManager transactions, Clock clock, MeterRegistry metrics) {
+			PlatformTransactionManager transactions, ApplicationEventPublisher publisher, Clock clock,
+			MeterRegistry metrics) {
 		this.payments = payments;
 		this.settlement = settlement;
 		this.stripe = stripe;
 		this.bookings = bookings;
 		this.properties = properties;
 		this.transaction = new TransactionTemplate(transactions);
+		this.publisher = publisher;
 		this.clock = clock;
 		metrics.gauge("tickethub.payment.succeeded_unsettled", succeededUnsettled);
 	}
@@ -74,14 +80,25 @@ public class PaymentReconciliationServiceImpl implements PaymentReconciliationSe
 				if (reconcileOne(payment)) {
 					changed++;
 				}
+				else {
+					// Vẫn chưa chốt sau khi hỏi lại Stripe: cần Admin để ý (màn #29, overview.md §16.3).
+					flagReconcile(payment);
+				}
 			}
 			catch (StripeGatewayException e) {
 				log.warn("Đối soát payment {}: không hỏi được Stripe (mã {}), thử lại ở lượt sau", payment.getId(),
 						e.code());
+				flagReconcile(payment);
 			}
 		}
 		refreshUnsettledMetric();
 		return changed;
+	}
+
+	/** Publish trong một transaction riêng: Modulith chỉ ghi {@code event_publication} khi có transaction đang mở. */
+	private void flagReconcile(Payment payment) {
+		transaction.executeWithoutResult(status -> publisher.publishEvent(
+				new PaymentReconcileFlagged(Uuid7.next(clock), clock.instant(), payment.getBookingId(), true)));
 	}
 
 	private boolean reconcileOne(Payment payment) {

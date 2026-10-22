@@ -25,7 +25,9 @@ import org.jooq.Record;
 import org.jooq.Table;
 import org.springframework.stereotype.Repository;
 
+import com.ndz.booking.dto.request.AdminBookingFilter;
 import com.ndz.booking.dto.request.OrganizerBookingFilter;
+import com.ndz.booking.dto.response.BookingViews.AdminBookingRow;
 import com.ndz.booking.dto.response.SalesResponses.DaySales;
 import com.ndz.booking.dto.response.SalesResponses.OrganizerBooking;
 import com.ndz.booking.dto.response.SalesResponses.TierSales;
@@ -146,6 +148,92 @@ public class OrganizerSalesQueries {
 				.where(field(name("e", "organizer_id"), UUID.class).eq(organizerId)).fetch(0, UUID.class);
 	}
 
+	/** Như {@link #totals}, nhưng của mọi organizer (Admin dashboard, §11.2). */
+	public Totals adminTotals(Instant from, Instant to) {
+		Field<Long> total = field(name("b", "total_minor"), Long.class);
+		Field<Long> fee = field("floor({0} * {1} / 10000)", Long.class, total, field(name("e", "platform_fee_bps")));
+		Condition refunded = field(name("b", "status"), String.class).eq("REFUNDED");
+		Field<Integer> tickets = field(selectCount().from(ITEMS)
+				.where(field(name("bi", "booking_id")).eq(field(name("b", "id")))));
+		Record row = dsl.select(sum(total).as("gross"), sum(fee).as("fee"),
+				sum(when(refunded, total).otherwise(0L)).as("refunded"),
+				sum(when(refunded, fee).otherwise(0L)).as("refunded_fee"),
+				sum(when(refunded, 0).otherwise(tickets)).as("tickets"))
+				.from(BOOKINGS).join(SNAPSHOTS).on(field(name("e", "event_id")).eq(field(name("b", "event_id"))))
+				.where(confirmedBetween(from, to))
+				.fetchOne();
+		return new Totals(asLong(row.get("gross")), asLong(row.get("fee")), asLong(row.get("refunded")),
+				asLong(row.get("refunded_fee")), (int) asLong(row.get("tickets")));
+	}
+
+	/** Số đơn đang cần đối soát (Payment phát hiện lệch, cờ {@code needs_reconcile}; Admin dashboard). */
+	public long countNeedsReconcile() {
+		return dsl.selectCount().from(BOOKINGS).where(field(name("b", "needs_reconcile"), Boolean.class).isTrue())
+				.fetchOne(0, Long.class);
+	}
+
+	/** Số đơn theo trạng thái, không giới hạn organizer (Admin dashboard). */
+	public long countByStatus(String status) {
+		return dsl.selectCount().from(BOOKINGS).where(field(name("b", "status"), String.class).eq(status))
+				.fetchOne(0, Long.class);
+	}
+
+	/** Đơn toàn hệ thống theo bộ lọc của Admin (màn #29), mới tạo trước. */
+	public List<AdminBookingRow> adminBookings(AdminBookingFilter filter, int offset, int limit) {
+		Field<UUID> organizerId = field(name("e", "organizer_id"), UUID.class);
+		return dsl.select(field(name("b", "id"), UUID.class), field(name("b", "event_id"), UUID.class),
+				field(name("e", "title"), String.class), organizerId,
+				field(name("b", "status"), String.class),
+				field(selectCount().from(ITEMS).where(field(name("bi", "booking_id")).eq(field(name("b", "id")))))
+						.as("ticket_count"),
+				field(name("b", "total_minor"), Long.class), field(name("b", "currency"), String.class),
+				field(name("b", "contact_email"), String.class),
+				field(name("b", "needs_reconcile"), Boolean.class),
+				field(name("b", "confirmed_at"), OffsetDateTime.class), field(name("b", "created_at"), OffsetDateTime.class))
+				.from(BOOKINGS).join(SNAPSHOTS).on(field(name("e", "event_id")).eq(field(name("b", "event_id"))))
+				.where(adminMatches(filter))
+				.orderBy(field(name("b", "created_at")).desc(), field(name("b", "id")).desc())
+				.offset(offset).limit(limit)
+				.fetch(row -> new AdminBookingRow(row.value1(), row.value2(), row.value3(), row.value4(), null,
+						row.value5(), row.get("ticket_count", Integer.class), row.value7(), row.value8(),
+						row.value9(), Boolean.TRUE.equals(row.get("needs_reconcile", Boolean.class)),
+						row.get("confirmed_at", OffsetDateTime.class) == null ? null
+								: row.get("confirmed_at", OffsetDateTime.class).toInstant(),
+						row.get("created_at", OffsetDateTime.class).toInstant()));
+	}
+
+	public long countAdminBookings(AdminBookingFilter filter) {
+		return dsl.selectCount().from(BOOKINGS).join(SNAPSHOTS)
+				.on(field(name("e", "event_id")).eq(field(name("b", "event_id")))).where(adminMatches(filter))
+				.fetchOne(0, Long.class);
+	}
+
+	/** Đánh dấu / bỏ đánh dấu một đơn cần đối soát; Payment gọi khi phát hiện / hết lệch (overview.md §6.5). */
+	public void setNeedsReconcile(UUID bookingId, boolean flagged) {
+		dsl.update(table(name("booking", "bookings"))).set(field(name("needs_reconcile"), Boolean.class), flagged)
+				.where(field(name("id"), UUID.class).eq(bookingId)).execute();
+	}
+
+	private static Condition adminMatches(AdminBookingFilter filter) {
+		Condition condition = noCondition();
+		if (filter.statuses() != null && !filter.statuses().isEmpty()) {
+			condition = condition.and(field(name("b", "status"), String.class).in(filter.statuses()));
+		}
+		if (filter.organizerId() != null) {
+			condition = condition.and(field(name("e", "organizer_id"), UUID.class).eq(filter.organizerId()));
+		}
+		if (filter.needsReconcile() != null) {
+			condition = filter.needsReconcile()
+					? condition.and(field(name("b", "needs_reconcile"), Boolean.class).isTrue())
+					: condition.and(field(name("b", "needs_reconcile"), Boolean.class).isFalse());
+		}
+		if (filter.q() != null && !filter.q().isBlank()) {
+			String q = filter.q().strip().toLowerCase();
+			condition = condition.and(field(name("b", "contact_email"), String.class).lower().contains(q)
+					.or(field("{0}::text", String.class, field(name("b", "id"))).startsWith(q)));
+		}
+		return condition;
+	}
 
 	public record Totals(long grossMinor, long feeMinor, long refundedMinor, long refundedFeeMinor, int tickets) {
 	}

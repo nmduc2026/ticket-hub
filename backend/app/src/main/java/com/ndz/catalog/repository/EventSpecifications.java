@@ -1,5 +1,6 @@
 package com.ndz.catalog.repository;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -26,6 +27,18 @@ public final class EventSpecifications {
 
 	public static Specification<Event> atVenue(UUID venueId) {
 		return (root, query, builder) -> builder.equal(root.get("venueId"), venueId);
+	}
+
+	public static Specification<Event> hasStatus(EventStatus status) {
+		return (root, query, builder) -> builder.equal(root.get("status"), status);
+	}
+
+	public static Specification<Event> startsAtFrom(Instant from) {
+		return (root, query, builder) -> builder.greaterThanOrEqualTo(root.get("startsAt"), from);
+	}
+
+	public static Specification<Event> startsAtTo(Instant to) {
+		return (root, query, builder) -> builder.lessThan(root.get("startsAt"), to);
 	}
 
 	/** Tìm theo một đoạn của tiêu đề, không phân biệt hoa thường; ký tự đặc biệt của LIKE được coi là chữ thường. */

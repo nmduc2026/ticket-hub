@@ -16,12 +16,15 @@ export const retryBookingRefundParams = zod.object({
 })
 
 /**
- * @summary Đơn theo trạng thái, vd. REFUND_FAILED cần hoàn thủ công
+ * @summary Đơn toàn hệ thống, lọc theo trạng thái / organizer / cần đối soát / từ khoá
  */
 export const listAdminBookingsQueryPageDefault = 0;export const listAdminBookingsQuerySizeDefault = 20;
 
 export const listAdminBookingsQueryParams = zod.object({
-  "status": zod.enum(['PENDING_PAYMENT', 'CONFIRMED', 'EXPIRED', 'CANCELLED', 'REFUND_REQUESTED', 'REFUNDED', 'REFUND_FAILED']),
+  "status": zod.array(zod.string()).optional(),
+  "organizerId": zod.uuid().optional(),
+  "needsReconcile": zod.boolean().optional(),
+  "q": zod.string().optional(),
   "page": zod.number().optional(),
   "size": zod.number().default(listAdminBookingsQuerySizeDefault)
 })

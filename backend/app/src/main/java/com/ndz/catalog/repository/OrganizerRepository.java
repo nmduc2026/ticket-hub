@@ -33,4 +33,7 @@ public interface OrganizerRepository extends JpaRepository<Organizer, UUID> {
 			""")
 	Page<Organizer> findApplications(@Param("status") OrganizerStatus status, Pageable pageable);
 
+	/** Hồ sơ chờ duyệt, cho Admin dashboard (§11.2). */
+	long countByStatusAndSubmittedAtNotNull(OrganizerStatus status);
+
 }

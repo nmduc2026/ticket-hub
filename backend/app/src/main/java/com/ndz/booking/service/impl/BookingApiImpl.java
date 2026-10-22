@@ -18,6 +18,7 @@ import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.PaymentInfo;
 import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.repository.BookingRepository;
+import com.ndz.booking.repository.OrganizerSalesQueries;
 import com.ndz.booking.service.SeatHoldService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
@@ -29,13 +30,15 @@ public class BookingApiImpl implements BookingApi {
 	private final BookingRepository bookings;
 	private final SeatHoldService seatHolds;
 	private final BookingProperties properties;
+	private final OrganizerSalesQueries salesQueries;
 	private final Clock clock;
 
 	BookingApiImpl(BookingRepository bookings, SeatHoldService seatHolds, BookingProperties properties,
-			Clock clock) {
+			OrganizerSalesQueries salesQueries, Clock clock) {
 		this.bookings = bookings;
 		this.seatHolds = seatHolds;
 		this.properties = properties;
+		this.salesQueries = salesQueries;
 		this.clock = clock;
 	}
 
@@ -86,6 +89,25 @@ public class BookingApiImpl implements BookingApi {
 		}
 		Set<UUID> confirmed = bookings.findConfirmed(bookingIds);
 		return bookingIds.stream().filter(id -> !confirmed.contains(id)).collect(Collectors.toSet());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public AdminTotals adminTotals(Instant from, Instant to) {
+		OrganizerSalesQueries.Totals totals = salesQueries.adminTotals(from, to);
+		return new AdminTotals(totals.grossMinor(), totals.feeMinor(), totals.tickets());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public long countNeedsReconcile() {
+		return salesQueries.countNeedsReconcile();
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public long countRefundFailed() {
+		return salesQueries.countByStatus(BookingStatus.REFUND_FAILED.name());
 	}
 
 	private static BusinessException holdExpiring() {

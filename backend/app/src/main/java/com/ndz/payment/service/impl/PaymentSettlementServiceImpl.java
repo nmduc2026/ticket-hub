@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.ndz.booking.event.PaymentReconcileFlagged;
 import com.ndz.booking.event.PaymentSucceeded;
 import com.ndz.payment.entity.Payment;
 import com.ndz.payment.entity.enums.PaymentStatus;
@@ -37,6 +38,7 @@ public class PaymentSettlementServiceImpl implements PaymentSettlementService {
 		}
 		publisher.publishEvent(new PaymentSucceeded(Uuid7.next(clock), now, payment.getId(), payment.getBookingId(),
 				payment.getAmountMinor(), payment.getCurrency()));
+		unflagReconcile(payment, now);
 		log.info("Thanh toán {} của booking {} thành công", payment.getId(), payment.getBookingId());
 		return true;
 	}
@@ -48,7 +50,16 @@ public class PaymentSettlementServiceImpl implements PaymentSettlementService {
 
 	@Override
 	public boolean markCanceled(Payment payment, Instant now) {
-		return move(payment, PaymentStatus.CANCELED, now);
+		if (!move(payment, PaymentStatus.CANCELED, now)) {
+			return false;
+		}
+		unflagReconcile(payment, now);
+		return true;
+	}
+
+	/** Payment ra khỏi tình trạng chưa chốt: nếu từng bị đánh dấu cần đối soát thì bỏ cờ (không hại gì nếu chưa có). */
+	private void unflagReconcile(Payment payment, Instant now) {
+		publisher.publishEvent(new PaymentReconcileFlagged(Uuid7.next(clock), now, payment.getBookingId(), false));
 	}
 
 	private boolean move(Payment payment, PaymentStatus next, Instant now) {

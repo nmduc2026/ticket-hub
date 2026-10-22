@@ -31,4 +31,11 @@ public interface EventRepository extends JpaRepository<Event, UUID>, JpaSpecific
 	List<Event> findTop100ByStatusInAndEndsAtLessThanEqualOrderByEndsAt(Collection<EventStatus> statuses,
 			Instant now);
 
+	/** Đếm sự kiện theo trạng thái, cho Admin dashboard (§11.2). */
+	long countByStatus(EventStatus status);
+
+	/** Sự kiện đã publish, sắp tới giờ mở bán, cho Admin dashboard ("sự kiện sắp mở bán"). */
+	List<Event> findTop10ByStatusAndSaleStartsAtBetweenOrderBySaleStartsAt(EventStatus status, Instant from,
+			Instant to);
+
 }

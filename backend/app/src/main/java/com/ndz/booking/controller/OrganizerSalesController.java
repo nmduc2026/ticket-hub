@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -64,6 +65,7 @@ class OrganizerSalesController {
 	@Operation(operationId = "exportOrganizerBookings", summary = "Xuất CSV đơn hàng theo bộ lọc (tối đa 10.000 dòng)")
 	@ApiResponse(responseCode = "422", description = "EXPORT_TOO_LARGE",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@Hidden
 	@GetMapping(path = "/bookings", produces = CsvExporter.MEDIA_TYPE)
 	String exportBookings(@RequestParam(required = false) UUID eventId,
 			@RequestParam(required = false) List<String> status, @RequestParam(required = false) Instant from,

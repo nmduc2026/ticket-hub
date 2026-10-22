@@ -1,9 +1,9 @@
 package com.ndz.booking.controller;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -20,10 +20,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ndz.booking.dto.request.AdminBookingFilter;
+import com.ndz.booking.dto.response.AdminBookingResponses.AdminBookingPage;
 import com.ndz.booking.dto.response.BookingResponses.RefundResponse;
-import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.mapper.BookingMapper;
 import com.ndz.booking.service.BookingAdminService;
+import com.ndz.shared.export.CsvExporter;
 import com.ndz.shared.util.CurrentUser;
 
 /** Admin tìm đơn và hoàn thủ công đơn hoàn thất bại (overview.md §7.4, §11.2). */
@@ -40,25 +42,25 @@ class AdminBookingController {
 		this.mapper = mapper;
 	}
 
-	@Schema(name = "AdminBooking")
-	record AdminBookingResponse(
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID bookingId,
-			@Schema(description = "Email liên hệ lúc đặt vé", requiredMode = Schema.RequiredMode.REQUIRED) String userEmail,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String eventTitle,
-			@Schema(description = "Tổng tiền, đơn vị nhỏ nhất của tiền tệ",
-					requiredMode = Schema.RequiredMode.REQUIRED) long totalMinor,
-			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String currency,
-			@Schema(description = "Lần hoàn thất bại gần nhất; vắng mặt nếu đơn chưa từng hoàn thất bại",
-					nullable = true) Instant failedAt) {
+	@Operation(operationId = "listAdminBookings",
+			summary = "Đơn toàn hệ thống, lọc theo trạng thái / organizer / cần đối soát / từ khoá")
+	@GetMapping
+	AdminBookingPage list(@RequestParam(required = false) List<String> status,
+			@RequestParam(required = false) UUID organizerId, @RequestParam(required = false) Boolean needsReconcile,
+			@RequestParam(required = false) String q, @RequestParam(defaultValue = "0") int page,
+			@RequestParam(defaultValue = "20") int size) {
+		return service.list(new AdminBookingFilter(status, organizerId, needsReconcile, q), page, size);
 	}
 
-	@Operation(operationId = "listAdminBookings", summary = "Đơn theo trạng thái, vd. REFUND_FAILED cần hoàn thủ công")
-	@GetMapping
-	List<AdminBookingResponse> list(@RequestParam BookingStatus status, @RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "20") int size) {
-		return service.listByStatus(status, page, size).stream().map(booking -> new AdminBookingResponse(
-				booking.bookingId(), booking.userEmail(), booking.eventTitle(), booking.totalMinor(),
-				booking.currency(), booking.failedAt())).toList();
+	@Operation(operationId = "exportAdminBookings", summary = "Xuất CSV đơn theo cùng bộ lọc (tối đa 10.000 dòng)")
+	@ApiResponse(responseCode = "422", description = "EXPORT_TOO_LARGE",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@Hidden
+	@GetMapping(produces = CsvExporter.MEDIA_TYPE)
+	String export(@RequestParam(required = false) List<String> status,
+			@RequestParam(required = false) UUID organizerId, @RequestParam(required = false) Boolean needsReconcile,
+			@RequestParam(required = false) String q) {
+		return service.export(CurrentUser.require().id(), new AdminBookingFilter(status, organizerId, needsReconcile, q));
 	}
 
 	@Operation(operationId = "retryBookingRefund", summary = "Hoàn thủ công đơn REFUND_FAILED bằng lần hoàn mới",

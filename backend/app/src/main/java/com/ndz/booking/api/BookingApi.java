@@ -31,6 +31,18 @@ public interface BookingApi {
 	/** Đơn của một người dùng, mới tạo trước, tối đa {@code limit} dòng (Admin xem chi tiết người dùng). */
 	List<UserBooking> bookingsOf(UUID userId, int limit);
 
+	/** Doanh thu gộp, phí và số vé của mọi organizer trong khoảng, cho Admin dashboard (§11.2). */
+	AdminTotals adminTotals(Instant from, Instant to);
+
+	/** Số đơn đang cần đối soát (cờ {@code needs_reconcile}, Payment đặt khi phát hiện lệch). */
+	long countNeedsReconcile();
+
+	/** Số đơn ở trạng thái {@code REFUND_FAILED} (cần Admin hoàn thủ công). */
+	long countRefundFailed();
+
+	record AdminTotals(long grossMinor, long feeMinor, int ticketsSold) {
+	}
+
 	/**
 	 * Một đơn trong danh sách của người dùng; {@code refundStatus} là {@code REQUESTED}, {@code REFUNDED},
 	 * {@code FAILED} khi đơn đã qua bước yêu cầu hoàn, ngược lại null.

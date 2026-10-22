@@ -71,6 +71,12 @@ public final class BookingViews {
 			String currency, Instant failedAt) {
 	}
 
+	/** Một dòng trong danh sách đơn toàn hệ thống của Admin (màn #29, overview.md §11.2). */
+	public record AdminBookingRow(UUID bookingId, UUID eventId, String eventTitle, UUID organizerId,
+			String organizerName, String status, int ticketCount, long totalMinor, String currency,
+			String contactEmail, boolean needsReconcile, Instant confirmedAt, Instant createdAt) {
+	}
+
 	/** Lý do và số tiền hoàn đã chốt lúc yêu cầu hoàn, để Admin gửi lại lần hoàn mới đúng như cũ. */
 	public record RefundContext(String reason, long amountMinor) {
 	}

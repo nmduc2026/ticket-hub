@@ -29,8 +29,10 @@ import type {
   BulkApproveOrganizersResult,
   ListAdminOrganizersParams,
   OrganizerReviewResult,
+  OrganizerSuspension,
   ProblemDetail,
-  RejectOrganizerRequest
+  RejectOrganizerRequest,
+  SuspendRequest
 } from '../../model';
 
 import { apiFetch } from '../../../../lib/api-client';
@@ -39,6 +41,97 @@ import { apiFetch } from '../../../../lib/api-client';
 
 
 /**
+ * @summary Đình chỉ organizer, tạm dừng mọi sự kiện đang bán của họ (BR-13)
+ */
+export type suspendOrganizerResponse200 = {
+  data: OrganizerSuspension
+  status: 200
+}
+
+export type suspendOrganizerResponse409 = {
+  data: ProblemDetail
+  status: 409
+}
+    
+export type suspendOrganizerResponseSuccess = (suspendOrganizerResponse200) & {
+  headers: Headers;
+};
+export type suspendOrganizerResponseError = (suspendOrganizerResponse409) & {
+  headers: Headers;
+};
+
+export type suspendOrganizerResponse = (suspendOrganizerResponseSuccess | suspendOrganizerResponseError)
+
+export const getSuspendOrganizerUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/admin/organizers/${id}/suspend`
+}
+
+export const suspendOrganizer = async (id: string,
+    suspendRequest: SuspendRequest, options?: RequestInit): Promise<suspendOrganizerResponse> => {
+  
+  return apiFetch<suspendOrganizerResponse>(getSuspendOrganizerUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      suspendRequest,)
+  }
+);}
+
+
+
+
+export const getSuspendOrganizerMutationOptions = <TError = ProblemDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendOrganizer>>, TError,{id: string;data: SuspendRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof suspendOrganizer>>, TError,{id: string;data: SuspendRequest}, TContext> => {
+
+const mutationKey = ['suspendOrganizer'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof suspendOrganizer>>, {id: string;data: SuspendRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  suspendOrganizer(id,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SuspendOrganizerMutationResult = NonNullable<Awaited<ReturnType<typeof suspendOrganizer>>>
+    export type SuspendOrganizerMutationBody = SuspendRequest
+    export type SuspendOrganizerMutationError = ProblemDetail
+
+    /**
+ * @summary Đình chỉ organizer, tạm dừng mọi sự kiện đang bán của họ (BR-13)
+ */
+export const useSuspendOrganizer = <TError = ProblemDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof suspendOrganizer>>, TError,{id: string;data: SuspendRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof suspendOrganizer>>,
+        TError,
+        {id: string;data: SuspendRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getSuspendOrganizerMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * @summary Từ chối hồ sơ organizer, kèm lý do
  */
 export type rejectOrganizerResponse200 = {
@@ -126,6 +219,97 @@ export const useRejectOrganizer = <TError = ProblemDetail,
       > => {
 
       const mutationOptions = getRejectOrganizerMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * @summary Khôi phục organizer bị đình chỉ; sự kiện vẫn tạm dừng tới khi mở lại từng cái (BR-13)
+ */
+export type reinstateOrganizerResponse200 = {
+  data: OrganizerSuspension
+  status: 200
+}
+
+export type reinstateOrganizerResponse409 = {
+  data: ProblemDetail
+  status: 409
+}
+    
+export type reinstateOrganizerResponseSuccess = (reinstateOrganizerResponse200) & {
+  headers: Headers;
+};
+export type reinstateOrganizerResponseError = (reinstateOrganizerResponse409) & {
+  headers: Headers;
+};
+
+export type reinstateOrganizerResponse = (reinstateOrganizerResponseSuccess | reinstateOrganizerResponseError)
+
+export const getReinstateOrganizerUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/admin/organizers/${id}/reinstate`
+}
+
+export const reinstateOrganizer = async (id: string,
+    suspendRequest: SuspendRequest, options?: RequestInit): Promise<reinstateOrganizerResponse> => {
+  
+  return apiFetch<reinstateOrganizerResponse>(getReinstateOrganizerUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      suspendRequest,)
+  }
+);}
+
+
+
+
+export const getReinstateOrganizerMutationOptions = <TError = ProblemDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reinstateOrganizer>>, TError,{id: string;data: SuspendRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reinstateOrganizer>>, TError,{id: string;data: SuspendRequest}, TContext> => {
+
+const mutationKey = ['reinstateOrganizer'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reinstateOrganizer>>, {id: string;data: SuspendRequest}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reinstateOrganizer(id,data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReinstateOrganizerMutationResult = NonNullable<Awaited<ReturnType<typeof reinstateOrganizer>>>
+    export type ReinstateOrganizerMutationBody = SuspendRequest
+    export type ReinstateOrganizerMutationError = ProblemDetail
+
+    /**
+ * @summary Khôi phục organizer bị đình chỉ; sự kiện vẫn tạm dừng tới khi mở lại từng cái (BR-13)
+ */
+export const useReinstateOrganizer = <TError = ProblemDetail,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reinstateOrganizer>>, TError,{id: string;data: SuspendRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reinstateOrganizer>>,
+        TError,
+        {id: string;data: SuspendRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getReinstateOrganizerMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

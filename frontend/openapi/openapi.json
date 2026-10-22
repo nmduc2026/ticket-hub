@@ -351,7 +351,7 @@
             }
           },
           "409" : {
-            "description" : "HOLD_EXPIRING (còn dưới 90 giây), BOOKING_NOT_PAYABLE hoặc PAYMENT_ALREADY_SUCCEEDED (đơn đã trả tiền, đang chờ xác nhận)",
+            "description" : "HOLD_EXPIRING (còn dưới 90 giây), BOOKING_NOT_PAYABLE, PAYMENT_ALREADY_SUCCEEDED (đơn đã trả tiền, đang chờ xác nhận) hoặc ORGANIZER_PAYOUT_NOT_READY (Stripe Connect của organizer chưa charges_enabled)",
             "content" : {
               "application/problem+json" : {
                 "schema" : {
@@ -1469,6 +1469,54 @@
         }
       }
     },
+    "/api/v1/admin/events/{id}/cancel" : {
+      "post" : {
+        "tags" : [ "admin-event-controller" ],
+        "summary" : "Huỷ sự kiện, hoàn 100% mọi đơn đã thanh toán qua hàng đợi (BR-08)",
+        "operationId" : "cancelEvent",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SuspendRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "Đã huỷ",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EventStatusResult"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "INVALID_EVENT_TRANSITION (đã kết thúc / đã huỷ)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/events/bulk-suspend" : {
       "post" : {
         "tags" : [ "admin-event-controller" ],
@@ -1752,12 +1800,12 @@
           }
         } ],
         "responses" : {
-          "422" : {
-            "description" : "EXPORT_TOO_LARGE",
+          "200" : {
+            "description" : "OK",
             "content" : {
-              "application/problem+json" : {
+              "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ProblemDetail"
+                  "$ref" : "#/components/schemas/OrganizerBookingPage"
                 }
               }
             }
@@ -2464,18 +2512,49 @@
         }
       }
     },
-    "/api/v1/admin/bookings" : {
+    "/api/v1/admin/events" : {
       "get" : {
-        "tags" : [ "admin-booking-controller" ],
-        "summary" : "Đơn theo trạng thái, vd. REFUND_FAILED cần hoàn thủ công",
-        "operationId" : "listAdminBookings",
+        "tags" : [ "admin-event-controller" ],
+        "summary" : "Sự kiện mọi organizer, lọc theo trạng thái / organizer / thời gian / từ khoá",
+        "operationId" : "listAdminEvents",
         "parameters" : [ {
           "name" : "status",
           "in" : "query",
-          "required" : true,
+          "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "PENDING_PAYMENT", "CONFIRMED", "EXPIRED", "CANCELLED", "REFUND_REQUESTED", "REFUNDED", "REFUND_FAILED" ]
+            "enum" : [ "DRAFT", "PUBLISHED", "ON_SALE", "SUSPENDED", "ENDED", "CANCELLED" ]
+          }
+        }, {
+          "name" : "organizerId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
           }
         }, {
           "name" : "page",
@@ -2502,10 +2581,134 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "type" : "array",
-                  "items" : {
-                    "$ref" : "#/components/schemas/AdminBooking"
-                  }
+                  "$ref" : "#/components/schemas/AdminEventPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/events/{eventId}/refund-progress" : {
+      "get" : {
+        "tags" : [ "admin-event-refund-controller" ],
+        "summary" : "Tiến độ hoàn tiền của sự kiện bị huỷ",
+        "operationId" : "getEventRefundProgress",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RefundProgress"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dashboard" : {
+      "get" : {
+        "tags" : [ "admin-dashboard-controller" ],
+        "summary" : "Doanh thu gộp, phí, vé bán, sự kiện đang bán và danh sách cần xử lý",
+        "operationId" : "getAdminDashboard",
+        "parameters" : [ {
+          "name" : "range",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 30
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminDashboard"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/bookings" : {
+      "get" : {
+        "tags" : [ "admin-booking-controller" ],
+        "summary" : "Đơn toàn hệ thống, lọc theo trạng thái / organizer / cần đối soát / từ khoá",
+        "operationId" : "listAdminBookings",
+        "parameters" : [ {
+          "name" : "status",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }, {
+          "name" : "organizerId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "needsReconcile",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "q",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminBookingPage"
                 }
               }
             }
@@ -3749,6 +3952,30 @@
         },
         "required" : [ "byDay", "currency", "feeMinor", "from", "grossMinor", "netMinor", "recentBookings", "refundedMinor", "ticketsSold", "to" ]
       },
+      "OrganizerBookingPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/OrganizerBooking"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
       "OrganizerApplication" : {
         "type" : "object",
         "properties" : {
@@ -4738,35 +4965,233 @@
         },
         "required" : [ "items", "page", "size", "total" ]
       },
-      "AdminBooking" : {
+      "AdminEventPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminEventSummary"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "AdminEventSummary" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "DRAFT", "PUBLISHED", "ON_SALE", "SUSPENDED", "ENDED", "CANCELLED" ]
+          },
+          "organizerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "organizerName" : {
+            "type" : "string"
+          },
+          "startsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "saleStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "id", "organizerId", "organizerName", "status", "title" ]
+      },
+      "RefundProgress" : {
+        "type" : "object",
+        "description" : "Tiến độ hoàn tiền khi huỷ sự kiện (BR-08)",
+        "properties" : {
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "refunded" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pending" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "failed" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "failed", "pending", "refunded", "total" ]
+      },
+      "AdminDashboard" : {
+        "type" : "object",
+        "properties" : {
+          "grossMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "feeMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ticketsSold" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "eventsOnSale" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "todo" : {
+            "$ref" : "#/components/schemas/AdminDashboardTodo"
+          },
+          "openingSoon" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminDashboardOpeningSoonEvent"
+            }
+          }
+        }
+      },
+      "AdminDashboardOpeningSoonEvent" : {
+        "type" : "object",
+        "properties" : {
+          "eventId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "organizerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "saleStartsAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }
+      },
+      "AdminDashboardTodo" : {
+        "type" : "object",
+        "properties" : {
+          "pendingOrganizers" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "reconcile" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "refundFailed" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "suspendedEvents" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "stripeRestricted" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "AdminBookingPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminBookingRow"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "AdminBookingRow" : {
         "type" : "object",
         "properties" : {
           "bookingId" : {
             "type" : "string",
             "format" : "uuid"
           },
-          "userEmail" : {
+          "eventId" : {
             "type" : "string",
-            "description" : "Email liên hệ lúc đặt vé"
+            "format" : "uuid"
           },
           "eventTitle" : {
             "type" : "string"
           },
+          "organizerId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "organizerName" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "ticketCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "totalMinor" : {
             "type" : "integer",
-            "format" : "int64",
-            "description" : "Tổng tiền, đơn vị nhỏ nhất của tiền tệ"
+            "format" : "int64"
           },
           "currency" : {
             "type" : "string"
           },
-          "failedAt" : {
-            "type" : [ "string", "null" ],
-            "format" : "date-time",
-            "description" : "Lần hoàn thất bại gần nhất; vắng mặt nếu đơn chưa từng hoàn thất bại"
+          "contactEmail" : {
+            "type" : "string"
+          },
+          "needsReconcile" : {
+            "type" : "boolean"
+          },
+          "confirmedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         },
-        "required" : [ "bookingId", "currency", "eventTitle", "totalMinor", "userEmail" ]
+        "required" : [ "bookingId", "eventId", "eventTitle", "organizerId", "organizerName", "status" ]
       },
       "DeleteAccountRequest" : {
         "type" : "object",

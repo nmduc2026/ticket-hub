@@ -8,6 +8,20 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Đình chỉ organizer, tạm dừng mọi sự kiện đang bán của họ (BR-13)
+ */
+export const suspendOrganizerParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const suspendOrganizerBodyReasonMin = 0;
+export const suspendOrganizerBodyReasonMax = 500;
+
+export const suspendOrganizerBody = zod.object({
+  "reason": zod.string().min(suspendOrganizerBodyReasonMin).max(suspendOrganizerBodyReasonMax)
+})
+
+/**
  * @summary Từ chối hồ sơ organizer, kèm lý do
  */
 export const rejectOrganizerParams = zod.object({
@@ -19,6 +33,20 @@ export const rejectOrganizerBodyReasonMax = 1000;
 
 export const rejectOrganizerBody = zod.object({
   "reason": zod.string().min(rejectOrganizerBodyReasonMin).max(rejectOrganizerBodyReasonMax)
+})
+
+/**
+ * @summary Khôi phục organizer bị đình chỉ; sự kiện vẫn tạm dừng tới khi mở lại từng cái (BR-13)
+ */
+export const reinstateOrganizerParams = zod.object({
+  "id": zod.uuid()
+})
+
+export const reinstateOrganizerBodyReasonMin = 0;
+export const reinstateOrganizerBodyReasonMax = 500;
+
+export const reinstateOrganizerBody = zod.object({
+  "reason": zod.string().min(reinstateOrganizerBodyReasonMin).max(reinstateOrganizerBodyReasonMax)
 })
 
 /**
