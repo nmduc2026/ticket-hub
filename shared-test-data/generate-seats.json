@@ -1,0 +1,653 @@
+{
+ "description": "Bộ dữ liệu chung cho generateSeats (ADR 0030): Vitest và JUnit cùng đọc file này",
+ "cases": [
+  {
+   "name": "lưới 2 hàng x 3 ghế, không xoay",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 0,
+    "rows": 2,
+    "seatsPerRow": 3,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 0,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 2,
+     "x": 124.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 148.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 80.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 2,
+     "x": 124.0,
+     "y": 80.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 3,
+     "x": 148.0,
+     "y": 80.0
+    }
+   ]
+  },
+  {
+   "name": "đánh số từ phải sang trái",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 0,
+    "rows": 2,
+    "seatsPerRow": 3,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 0,
+    "numbering": "RTL",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 2,
+     "x": 124.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 148.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 3,
+     "x": 100.0,
+     "y": 80.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 2,
+     "x": 124.0,
+     "y": 80.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 148.0,
+     "y": 80.0
+    }
+   ]
+  },
+  {
+   "name": "xoay 90 độ",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 90,
+    "rows": 2,
+    "seatsPerRow": 3,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 0,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 2,
+     "x": 100.0,
+     "y": 74.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 100.0,
+     "y": 98.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 70.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 2,
+     "x": 70.0,
+     "y": 74.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 3,
+     "x": 70.0,
+     "y": 98.0
+    }
+   ]
+  },
+  {
+   "name": "xoay 15 độ",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 15,
+    "rows": 2,
+    "seatsPerRow": 4,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 0,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 2,
+     "x": 123.18,
+     "y": 56.21
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 146.36,
+     "y": 62.42
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 4,
+     "x": 169.55,
+     "y": 68.63
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 92.24,
+     "y": 78.98
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 2,
+     "x": 115.42,
+     "y": 85.19
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 3,
+     "x": 138.6,
+     "y": 91.4
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 4,
+     "x": 161.78,
+     "y": 97.61
+    }
+   ]
+  },
+  {
+   "name": "hàng cong",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 0,
+    "rows": 1,
+    "seatsPerRow": 5,
+    "rowGap": 30,
+    "seatGap": 20,
+    "curve": 10,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 2,
+     "x": 120.0,
+     "y": 42.5
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 140.0,
+     "y": 40.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 4,
+     "x": 160.0,
+     "y": 42.5
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 5,
+     "x": 180.0,
+     "y": 50.0
+    }
+   ]
+  },
+  {
+   "name": "cong và xoay 30 độ",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 30,
+    "rows": 3,
+    "seatsPerRow": 6,
+    "rowGap": 28,
+    "seatGap": 22,
+    "curve": 8,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 2,
+     "x": 121.61,
+     "y": 56.57
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 141.95,
+     "y": 65.35
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 4,
+     "x": 161.0,
+     "y": 76.35
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 5,
+     "x": 178.77,
+     "y": 89.57
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 6,
+     "x": 195.26,
+     "y": 105.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 86.0,
+     "y": 74.25
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 2,
+     "x": 107.61,
+     "y": 80.81
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 3,
+     "x": 127.95,
+     "y": 89.6
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 4,
+     "x": 147.0,
+     "y": 100.6
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 5,
+     "x": 164.77,
+     "y": 113.81
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 6,
+     "x": 181.26,
+     "y": 129.25
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 1,
+     "x": 72.0,
+     "y": 98.5
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 2,
+     "x": 93.61,
+     "y": 105.06
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 3,
+     "x": 113.95,
+     "y": 113.85
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 4,
+     "x": 133.0,
+     "y": 124.85
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 5,
+     "x": 150.77,
+     "y": 138.06
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 6,
+     "x": 167.26,
+     "y": 153.5
+    }
+   ]
+  },
+  {
+   "name": "ẩn ghế giữ nguyên số của ghế còn lại",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 0,
+    "rows": 2,
+    "seatsPerRow": 3,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 0,
+    "numbering": "LTR",
+    "hiddenSeats": [
+     "A2",
+     "B1"
+    ]
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "A",
+     "seatNumber": 3,
+     "x": 148.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 2,
+     "x": 124.0,
+     "y": 80.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 3,
+     "x": 148.0,
+     "y": 80.0
+    }
+   ]
+  },
+  {
+   "name": "hàng thứ 27 gắn nhãn AA",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 0,
+    "rows": 27,
+    "seatsPerRow": 1,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 0,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 50.0
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 80.0
+    },
+    {
+     "rowLabel": "C",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 110.0
+    },
+    {
+     "rowLabel": "D",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 140.0
+    },
+    {
+     "rowLabel": "E",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 170.0
+    },
+    {
+     "rowLabel": "F",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 200.0
+    },
+    {
+     "rowLabel": "G",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 230.0
+    },
+    {
+     "rowLabel": "H",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 260.0
+    },
+    {
+     "rowLabel": "I",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 290.0
+    },
+    {
+     "rowLabel": "J",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 320.0
+    },
+    {
+     "rowLabel": "K",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 350.0
+    },
+    {
+     "rowLabel": "L",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 380.0
+    },
+    {
+     "rowLabel": "M",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 410.0
+    },
+    {
+     "rowLabel": "N",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 440.0
+    },
+    {
+     "rowLabel": "O",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 470.0
+    },
+    {
+     "rowLabel": "P",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 500.0
+    },
+    {
+     "rowLabel": "Q",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 530.0
+    },
+    {
+     "rowLabel": "R",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 560.0
+    },
+    {
+     "rowLabel": "S",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 590.0
+    },
+    {
+     "rowLabel": "T",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 620.0
+    },
+    {
+     "rowLabel": "U",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 650.0
+    },
+    {
+     "rowLabel": "V",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 680.0
+    },
+    {
+     "rowLabel": "W",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 710.0
+    },
+    {
+     "rowLabel": "X",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 740.0
+    },
+    {
+     "rowLabel": "Y",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 770.0
+    },
+    {
+     "rowLabel": "Z",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 800.0
+    },
+    {
+     "rowLabel": "AA",
+     "seatNumber": 1,
+     "x": 100.0,
+     "y": 830.0
+    }
+   ]
+  },
+  {
+   "name": "một ghế mỗi hàng không chia cho 0",
+   "params": {
+    "x": 100,
+    "y": 50,
+    "rotation": 45,
+    "rows": 2,
+    "seatsPerRow": 1,
+    "rowGap": 30,
+    "seatGap": 24,
+    "curve": 5,
+    "numbering": "LTR",
+    "hiddenSeats": []
+   },
+   "expected": [
+    {
+     "rowLabel": "A",
+     "seatNumber": 1,
+     "x": 103.54,
+     "y": 46.46
+    },
+    {
+     "rowLabel": "B",
+     "seatNumber": 1,
+     "x": 82.32,
+     "y": 67.68
+    }
+   ]
+  }
+ ]
+}
