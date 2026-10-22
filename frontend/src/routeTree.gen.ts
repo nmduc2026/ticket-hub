@@ -46,6 +46,8 @@ import { Route as OrganizerEventsEventIdIndexRouteImport } from './routes/organi
 import { Route as OrganizerEventsEventIdDashboardRouteImport } from './routes/organizer/events/$eventId/dashboard'
 import { Route as OrganizerEventsEventIdEditRouteImport } from './routes/organizer/events/$eventId/edit'
 import { Route as OrganizerEventsEventIdTiersRouteImport } from './routes/organizer/events/$eventId/tiers'
+import { Route as AdminVenuesVenueIdSeatMapsIndexRouteImport } from './routes/admin/venues_.$venueId.seat-maps.index'
+import { Route as AdminVenuesVenueIdSeatMapsMapIdRouteImport } from './routes/admin/venues_.$venueId.seat-maps.$mapId'
 
 const GuestRoute = GuestRouteImport.update({
   id: '/_guest',
@@ -238,6 +240,18 @@ const OrganizerEventsEventIdTiersRoute =
     path: '/tiers',
     getParentRoute: () => OrganizerEventsEventIdRouteRoute,
   } as any)
+const AdminVenuesVenueIdSeatMapsIndexRoute =
+  AdminVenuesVenueIdSeatMapsIndexRouteImport.update({
+    id: '/venues_/$venueId/seat-maps/',
+    path: '/venues/$venueId/seat-maps/',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminVenuesVenueIdSeatMapsMapIdRoute =
+  AdminVenuesVenueIdSeatMapsMapIdRouteImport.update({
+    id: '/venues_/$venueId/seat-maps/$mapId',
+    path: '/venues/$venueId/seat-maps/$mapId',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteRouteWithChildren
@@ -276,6 +290,8 @@ export interface FileRoutesByFullPath {
   '/events/$eventId/': typeof GuestEventsEventIdIndexRoute
   '/me/tickets/': typeof GuestMeTicketsIndexRoute
   '/organizer/events/$eventId/': typeof OrganizerEventsEventIdIndexRoute
+  '/admin/venues/$venueId/seat-maps/$mapId': typeof AdminVenuesVenueIdSeatMapsMapIdRoute
+  '/admin/venues/$venueId/seat-maps/': typeof AdminVenuesVenueIdSeatMapsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forbidden': typeof GuestForbiddenRoute
@@ -311,6 +327,8 @@ export interface FileRoutesByTo {
   '/events/$eventId': typeof GuestEventsEventIdIndexRoute
   '/me/tickets': typeof GuestMeTicketsIndexRoute
   '/organizer/events/$eventId': typeof OrganizerEventsEventIdIndexRoute
+  '/admin/venues/$venueId/seat-maps/$mapId': typeof AdminVenuesVenueIdSeatMapsMapIdRoute
+  '/admin/venues/$venueId/seat-maps': typeof AdminVenuesVenueIdSeatMapsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -351,6 +369,8 @@ export interface FileRoutesById {
   '/_guest/events/$eventId/': typeof GuestEventsEventIdIndexRoute
   '/_guest/me/tickets/': typeof GuestMeTicketsIndexRoute
   '/organizer/events/$eventId/': typeof OrganizerEventsEventIdIndexRoute
+  '/admin/venues_/$venueId/seat-maps/$mapId': typeof AdminVenuesVenueIdSeatMapsMapIdRoute
+  '/admin/venues_/$venueId/seat-maps/': typeof AdminVenuesVenueIdSeatMapsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -391,6 +411,8 @@ export interface FileRouteTypes {
     | '/events/$eventId/'
     | '/me/tickets/'
     | '/organizer/events/$eventId/'
+    | '/admin/venues/$venueId/seat-maps/$mapId'
+    | '/admin/venues/$venueId/seat-maps/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forbidden'
@@ -426,6 +448,8 @@ export interface FileRouteTypes {
     | '/events/$eventId'
     | '/me/tickets'
     | '/organizer/events/$eventId'
+    | '/admin/venues/$venueId/seat-maps/$mapId'
+    | '/admin/venues/$venueId/seat-maps'
   id:
     | '__root__'
     | '/admin'
@@ -465,6 +489,8 @@ export interface FileRouteTypes {
     | '/_guest/events/$eventId/'
     | '/_guest/me/tickets/'
     | '/organizer/events/$eventId/'
+    | '/admin/venues_/$venueId/seat-maps/$mapId'
+    | '/admin/venues_/$venueId/seat-maps/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -735,6 +761,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizerEventsEventIdTiersRouteImport
       parentRoute: typeof OrganizerEventsEventIdRouteRoute
     }
+    '/admin/venues_/$venueId/seat-maps/': {
+      id: '/admin/venues_/$venueId/seat-maps/'
+      path: '/venues/$venueId/seat-maps'
+      fullPath: '/admin/venues/$venueId/seat-maps/'
+      preLoaderRoute: typeof AdminVenuesVenueIdSeatMapsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/venues_/$venueId/seat-maps/$mapId': {
+      id: '/admin/venues_/$venueId/seat-maps/$mapId'
+      path: '/venues/$venueId/seat-maps/$mapId'
+      fullPath: '/admin/venues/$venueId/seat-maps/$mapId'
+      preLoaderRoute: typeof AdminVenuesVenueIdSeatMapsMapIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
@@ -749,6 +789,8 @@ interface AdminRouteRouteChildren {
   AdminUsersRoute: typeof AdminUsersRoute
   AdminVenuesRoute: typeof AdminVenuesRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminVenuesVenueIdSeatMapsMapIdRoute: typeof AdminVenuesVenueIdSeatMapsMapIdRoute
+  AdminVenuesVenueIdSeatMapsIndexRoute: typeof AdminVenuesVenueIdSeatMapsIndexRoute
 }
 
 const AdminRouteRouteChildren: AdminRouteRouteChildren = {
@@ -762,6 +804,8 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminUsersRoute: AdminUsersRoute,
   AdminVenuesRoute: AdminVenuesRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminVenuesVenueIdSeatMapsMapIdRoute: AdminVenuesVenueIdSeatMapsMapIdRoute,
+  AdminVenuesVenueIdSeatMapsIndexRoute: AdminVenuesVenueIdSeatMapsIndexRoute,
 }
 
 const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(

@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 import type { SeatMap, SeatMapRequest } from '@/api/generated/model'
 import { type GridParams, generateSeats } from '@/features/seat-map/generateSeats'
+import type { SeatMapSnapshot } from '@/features/seat-map'
 
 /**
  * Mô hình trạng thái của editor sơ đồ ghế (ADR 0030): hàm thuần trên một bản sao của sơ đồ, không đụng React hay konva,
@@ -280,4 +281,35 @@ export function redo<T>(history: History<T>): History<T> {
   const [next, ...rest] = history.future
   if (next === undefined) return history
   return { past: [...history.past, history.present], present: next, future: rest }
+}
+
+/** Dữ liệu cho chế độ "Xem như khách": mọi khu `GRID` gán một hạng vé giả, mọi ghế còn trống. Khu IMPORTED chưa có ghế nên bỏ qua. */
+export function toGuestSnapshot(state: EditorState): SeatMapSnapshot {
+  const tierId = 'preview'
+  const grids = state.sections.filter((section): section is GridSection => section.kind === 'GRID')
+  return {
+    width: state.width,
+    height: state.height,
+    tiers: [{ id: tierId, name: 'Hạng vé', priceMinor: 0, currency: 'VND', available: 0 }],
+    sections: grids.map((section) => {
+      const { key: _key, code, name, ...shape } = section
+      return { code, name, shape: { ...shape }, tierId }
+    }),
+    elements: state.elements.map((element) => ({
+      type: element.type,
+      label: element.label,
+      shape: { x: element.x, y: element.y, w: element.w, h: element.h, rotation: element.rotation },
+    })),
+    seats: grids.flatMap((section) =>
+      generateSeats(section).map((seat) => ({
+        id: `${section.code}-${seat.rowLabel}${seat.seatNumber}`,
+        sectionCode: section.code,
+        row: seat.rowLabel,
+        number: seat.seatNumber,
+        x: seat.x,
+        y: seat.y,
+        status: 'AVAILABLE',
+      })),
+    ),
+  }
 }

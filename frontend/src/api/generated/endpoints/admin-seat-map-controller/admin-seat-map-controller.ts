@@ -39,17 +39,24 @@ import { apiFetch } from '../../../../lib/api-client';
 /**
  * @summary Chi tiết sơ đồ: khu (tham số), phần tử không bán
  */
+export type getAdminSeatMapResponse200 = {
+  data: SeatMap
+  status: 200
+}
+
 export type getAdminSeatMapResponse404 = {
   data: ProblemDetail
   status: 404
 }
     
-;
+export type getAdminSeatMapResponseSuccess = (getAdminSeatMapResponse200) & {
+  headers: Headers;
+};
 export type getAdminSeatMapResponseError = (getAdminSeatMapResponse404) & {
   headers: Headers;
 };
 
-export type getAdminSeatMapResponse = (getAdminSeatMapResponseError)
+export type getAdminSeatMapResponse = (getAdminSeatMapResponseSuccess | getAdminSeatMapResponseError)
 
 export const getGetAdminSeatMapUrl = (id: string,) => {
 
@@ -150,17 +157,24 @@ export function useGetAdminSeatMap<TData = Awaited<ReturnType<typeof getAdminSea
 /**
  * @summary Lưu sơ đồ: thay khu và phần tử, sinh lại ghế
  */
+export type updateAdminSeatMapResponse200 = {
+  data: SeatMap
+  status: 200
+}
+
 export type updateAdminSeatMapResponse409 = {
   data: ProblemDetail
   status: 409
 }
     
-;
+export type updateAdminSeatMapResponseSuccess = (updateAdminSeatMapResponse200) & {
+  headers: Headers;
+};
 export type updateAdminSeatMapResponseError = (updateAdminSeatMapResponse409) & {
   headers: Headers;
 };
 
-export type updateAdminSeatMapResponse = (updateAdminSeatMapResponseError)
+export type updateAdminSeatMapResponse = (updateAdminSeatMapResponseSuccess | updateAdminSeatMapResponseError)
 
 export const getUpdateAdminSeatMapUrl = (id: string,) => {
 

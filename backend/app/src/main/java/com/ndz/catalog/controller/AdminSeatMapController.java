@@ -49,6 +49,7 @@ class AdminSeatMapController {
 	}
 
 	@Operation(operationId = "getAdminSeatMap", summary = "Chi tiết sơ đồ: khu (tham số), phần tử không bán")
+	@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = SeatMapResponse.class)))
 	@ApiResponse(responseCode = "404", description = "SEAT_MAP_NOT_FOUND",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@GetMapping("/{id}")
@@ -66,6 +67,7 @@ class AdminSeatMapController {
 	}
 
 	@Operation(operationId = "updateAdminSeatMap", summary = "Lưu sơ đồ: thay khu và phần tử, sinh lại ghế")
+	@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = SeatMapResponse.class)))
 	@ApiResponse(responseCode = "409", description = "SEAT_MAP_LOCKED, SEAT_MAP_BEING_EDITED, SECTION_IN_USE",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PutMapping("/{id}")

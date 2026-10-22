@@ -17,6 +17,7 @@ import {
   snap,
   toggleHiddenSeat,
   toRequest,
+  toGuestSnapshot,
   totalSeats,
   undo,
   type GridSection,
@@ -106,6 +107,15 @@ describe('editorModel', () => {
     const { state: next, key } = addElement(state, 'STAGE', 'e-new')
     expect(next.elements.find((element) => element.key === key)).toMatchObject({ type: 'STAGE', y: 40, label: 'Sân khấu' })
     expect(removeSection(next, 's1').sections.map((section) => section.key)).toEqual(['s2'])
+  })
+
+  it('xem như khách: mỗi khu GRID gán hạng vé giả, ghế sinh đúng số lượng và còn trống, bỏ khu IMPORTED', () => {
+    const snapshot = toGuestSnapshot(fromApi(API_MAP))
+    expect(snapshot.sections).toEqual([expect.objectContaining({ code: 'A', tierId: 'preview' })])
+    expect(snapshot.seats).toHaveLength(29)
+    expect(snapshot.seats.every((seat) => seat.status === 'AVAILABLE' && seat.sectionCode === 'A')).toBe(true)
+    expect(snapshot.seats.some((seat) => seat.row === 'A' && seat.number === 2)).toBe(false)
+    expect(snapshot.elements[0]).toMatchObject({ type: 'STAGE', shape: { w: 400 } })
   })
 
   it('undo / redo giữ đúng thứ tự; thao tác mới sau undo xoá nhánh redo; không đổi gì thì không thêm lịch sử', () => {

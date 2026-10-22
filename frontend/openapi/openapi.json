@@ -413,6 +413,16 @@
           }
         } ],
         "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SeatMap"
+                }
+              }
+            }
+          },
           "404" : {
             "description" : "SEAT_MAP_NOT_FOUND",
             "content" : {
@@ -449,6 +459,16 @@
           "required" : true
         },
         "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SeatMap"
+                }
+              }
+            }
+          },
           "409" : {
             "description" : "SEAT_MAP_LOCKED, SEAT_MAP_BEING_EDITED, SECTION_IN_USE",
             "content" : {
@@ -4106,6 +4126,92 @@
         },
         "required" : [ "code", "name", "shape" ]
       },
+      "SeatMap" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "locked" : {
+            "type" : "boolean",
+            "description" : "true khi đã có sự kiện publish dùng: bất biến"
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapSection"
+            }
+          },
+          "elements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapElement"
+            }
+          }
+        },
+        "required" : [ "elements", "height", "id", "locked", "name", "sections", "version", "width" ]
+      },
+      "SeatMapElement" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "STAGE, AISLE, LABEL hoặc AREA"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "shape" : {
+            "type" : "object"
+          }
+        },
+        "required" : [ "id", "shape", "type" ]
+      },
+      "SeatMapSection" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "seatCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số ghế của khu"
+          },
+          "shape" : {
+            "type" : "object",
+            "description" : "Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json"
+          }
+        },
+        "required" : [ "code", "id", "name", "seatCount", "shape" ]
+      },
       "AdminUnitRequest" : {
         "type" : "object",
         "properties" : {
@@ -4421,92 +4527,6 @@
           }
         },
         "required" : [ "id", "processed" ]
-      },
-      "SeatMap" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "version" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "width" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "height" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "locked" : {
-            "type" : "boolean",
-            "description" : "true khi đã có sự kiện publish dùng: bất biến"
-          },
-          "sections" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/SeatMapSection"
-            }
-          },
-          "elements" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/SeatMapElement"
-            }
-          }
-        },
-        "required" : [ "elements", "height", "id", "locked", "name", "sections", "version", "width" ]
-      },
-      "SeatMapElement" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "type" : {
-            "type" : "string",
-            "description" : "STAGE, AISLE, LABEL hoặc AREA"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "shape" : {
-            "type" : "object"
-          }
-        },
-        "required" : [ "id", "shape", "type" ]
-      },
-      "SeatMapSection" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "code" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "seatCount" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Số ghế của khu"
-          },
-          "shape" : {
-            "type" : "object",
-            "description" : "Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json"
-          }
-        },
-        "required" : [ "code", "id", "name", "seatCount", "shape" ]
       },
       "PlatformFeeRequest" : {
         "type" : "object",

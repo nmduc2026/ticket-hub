@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { MoreHorizontal, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -110,6 +111,11 @@ export function AdminVenuesPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => { setEditing(row); setDialogOpen(true) }}>{t('adminVenues.edit')}</DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/admin/venues/$venueId/seat-maps" params={{ venueId: row.id }}>
+                  {t('adminVenues.seatMaps')}
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
