@@ -15,9 +15,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.ndz.catalog.client.SeatMapLock;
 import com.ndz.catalog.constant.ImportLimits;
 import com.ndz.catalog.dto.response.CatalogViews.SeatMapRow;
+import com.ndz.catalog.dto.response.ImportResponses.ImportContext;
+import com.ndz.catalog.dto.response.ImportResponses.ImportOutcome;
 import com.ndz.catalog.dto.response.ImportResponses.RowError;
 import com.ndz.catalog.entity.enums.DuplicateMode;
 import com.ndz.catalog.entity.enums.ImportType;
+import com.ndz.catalog.service.ImportHandler;
 import com.ndz.catalog.repository.SeatMapAdminRepository;
 import com.ndz.catalog.repository.SeatMapAdminRepository.SeatRow;
 import com.ndz.catalog.repository.SeatMapAdminRepository.StoredSection;
@@ -32,7 +35,7 @@ import com.ndz.shared.util.Uuid7;
  * ghế liền nhau của một hàng; khoá ghế là {@code ma_khu + hang + số ghế}. Khu đã có kiểu {@code GRID} không bị nhập đè.
  */
 @Component
-class SeatMapImportHandler implements ImportHandler {
+class SeatMapImportHandlerImpl implements ImportHandler {
 
 	private static final List<String> COLUMNS = List.of("ma_khu", "ten_khu", "hang", "ghe_tu", "ghe_den", "x", "y");
 	private static final String IMPORTED_SHAPE = "{\"kind\":\"IMPORTED\"}";
@@ -51,7 +54,7 @@ class SeatMapImportHandler implements ImportHandler {
 	private final SeatMapLock lock;
 	private final TransactionTemplate tx;
 
-	SeatMapImportHandler(SeatMapAdminRepository maps, SeatMapLock lock, TransactionTemplate tx) {
+	SeatMapImportHandlerImpl(SeatMapAdminRepository maps, SeatMapLock lock, TransactionTemplate tx) {
 		this.maps = maps;
 		this.lock = lock;
 		this.tx = tx;
@@ -89,7 +92,7 @@ class SeatMapImportHandler implements ImportHandler {
 	}
 
 	@Override
-	public void prepare(Context context) {
+	public void prepare(ImportContext context) {
 		if (context.seatMapId() == null) {
 			throw new BusinessException(ErrorCode.SEAT_MAP_REQUIRED, "Cần chọn sơ đồ ghế để import vào");
 		}
@@ -102,7 +105,7 @@ class SeatMapImportHandler implements ImportHandler {
 	}
 
 	@Override
-	public Outcome run(List<ImportRow> rows, Context context) {
+	public ImportOutcome run(List<ImportRow> rows, ImportContext context) {
 		List<RowError> errors = new ArrayList<>();
 		List<Segment> segments = validate(rows, errors);
 		if (context.dryRun()) {
@@ -218,7 +221,7 @@ class SeatMapImportHandler implements ImportHandler {
 	}
 
 	/** Trả {tạo mới, cập nhật, bỏ qua} tính theo dòng; ghi khi không phải dry-run. */
-	private int[] apply(List<Segment> segments, Context context, List<RowError> errors) {
+	private int[] apply(List<Segment> segments, ImportContext context, List<RowError> errors) {
 		Map<String, StoredSection> existing = maps.sectionsByCode(context.seatMapId());
 		Map<String, List<Segment>> byFileSection = new LinkedHashMap<>();
 		for (Segment segment : segments) {
@@ -288,8 +291,8 @@ class SeatMapImportHandler implements ImportHandler {
 		return new int[] { created, updated, skipped };
 	}
 
-	private static Outcome outcome(int[] counts, List<RowError> errors) {
-		return new Outcome(counts[0], counts[1], counts[2], errors);
+	private static ImportOutcome outcome(int[] counts, List<RowError> errors) {
+		return new ImportOutcome(counts[0], counts[1], counts[2], errors);
 	}
 
 	/** Cột x / y tuỳ chọn: trống là null; sai định dạng ghi lỗi và trả {@code Integer.MIN_VALUE}. */

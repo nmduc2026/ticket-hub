@@ -15,11 +15,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.ndz.catalog.dto.response.ImportResponses.ImportContext;
+import com.ndz.catalog.dto.response.ImportResponses.ImportOutcome;
 import com.ndz.catalog.dto.response.ImportResponses.RowError;
 import com.ndz.catalog.entity.AdministrativeUnit;
 import com.ndz.catalog.entity.enums.AdministrativeUnitType;
 import com.ndz.catalog.entity.enums.DuplicateMode;
 import com.ndz.catalog.entity.enums.ImportType;
+import com.ndz.catalog.service.ImportHandler;
 import com.ndz.catalog.repository.AdministrativeUnitRepository;
 import com.ndz.catalog.util.AdministrativeUnitCache;
 import com.ndz.catalog.util.ExcelFiles.GuideLine;
@@ -28,7 +31,7 @@ import com.ndz.shared.util.Uuid7;
 
 /** Import đơn vị hành chính, khớp theo {@code ma} (docs/design/README.md §7). */
 @Component
-class UnitImportHandler implements ImportHandler {
+class UnitImportHandlerImpl implements ImportHandler {
 
 	private static final List<String> COLUMNS = List.of("ma", "ten", "loai", "ma_cha", "hieu_luc_tu");
 
@@ -42,7 +45,7 @@ class UnitImportHandler implements ImportHandler {
 	private final TransactionTemplate tx;
 	private final Clock clock;
 
-	UnitImportHandler(AdministrativeUnitRepository units, AdministrativeUnitCache cache, TransactionTemplate tx,
+	UnitImportHandlerImpl(AdministrativeUnitRepository units, AdministrativeUnitCache cache, TransactionTemplate tx,
 			Clock clock) {
 		this.units = units;
 		this.cache = cache;
@@ -82,14 +85,14 @@ class UnitImportHandler implements ImportHandler {
 	}
 
 	@Override
-	public Outcome run(List<ImportRow> rows, Context context) {
+	public ImportOutcome run(List<ImportRow> rows, ImportContext context) {
 		List<RowError> errors = new ArrayList<>();
 		List<Planned> planned = validate(rows, errors);
 		int[] counts = tx.execute(status -> apply(planned, context, errors));
 		if (!context.dryRun()) {
 			cache.evictAfterCommit();
 		}
-		return new Outcome(counts[0], counts[1], counts[2], errors);
+		return new ImportOutcome(counts[0], counts[1], counts[2], errors);
 	}
 
 	private List<Planned> validate(List<ImportRow> rows, List<RowError> errors) {
@@ -151,7 +154,7 @@ class UnitImportHandler implements ImportHandler {
 	}
 
 	/** Ghi (hoặc chỉ đếm khi dry-run) theo thứ tự cấp 1 trước cấp 2; trả {tạo mới, cập nhật, bỏ qua}. */
-	private int[] apply(List<Planned> planned, Context context, List<RowError> errors) {
+	private int[] apply(List<Planned> planned, ImportContext context, List<RowError> errors) {
 		Map<String, UUID> idByCode = new HashMap<>();
 		Map<String, Short> levelByCode = new HashMap<>();
 		for (Planned item : planned) {

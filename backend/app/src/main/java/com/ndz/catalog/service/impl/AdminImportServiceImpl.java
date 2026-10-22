@@ -20,8 +20,9 @@ import com.ndz.catalog.entity.enums.ImportStatus;
 import com.ndz.catalog.entity.enums.ImportType;
 import com.ndz.catalog.repository.ImportJobRepository;
 import com.ndz.catalog.service.AdminImportService;
-import com.ndz.catalog.service.impl.ImportHandler.Context;
-import com.ndz.catalog.service.impl.ImportHandler.Outcome;
+import com.ndz.catalog.service.ImportHandler;
+import com.ndz.catalog.dto.response.ImportResponses.ImportContext;
+import com.ndz.catalog.dto.response.ImportResponses.ImportOutcome;
 import com.ndz.catalog.util.ExcelFiles;
 import com.ndz.catalog.util.ExcelFiles.ImportRow;
 import com.ndz.shared.audit.AuditAction;
@@ -67,7 +68,7 @@ class AdminImportServiceImpl implements AdminImportService {
 			throw new BusinessException(ErrorCode.IMPORT_FILE_TOO_LARGE, "File quá 5 MB");
 		}
 		ImportHandler handler = handlers.get(type);
-		Context context = new Context(dryRun, onDuplicate, seatMapId);
+		ImportContext context = new ImportContext(dryRun, onDuplicate, seatMapId);
 		handler.prepare(context);
 		List<ImportRow> rows = ExcelFiles.read(file, handler.columns());
 
@@ -76,7 +77,7 @@ class AdminImportServiceImpl implements AdminImportService {
 		storage.put(fileKey, file, ExcelFiles.CONTENT_TYPE);
 		ImportJob job = new ImportJob(id, type, fileKey, dryRun, adminId, clock.instant());
 
-		Outcome outcome;
+		ImportOutcome outcome;
 		try {
 			outcome = handler.run(rows, context);
 		}

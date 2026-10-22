@@ -1,11 +1,10 @@
-package com.ndz.catalog.service.impl;
+package com.ndz.catalog.service;
 
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
-import com.ndz.catalog.dto.response.ImportResponses.RowError;
-import com.ndz.catalog.entity.enums.DuplicateMode;
+import com.ndz.catalog.dto.response.ImportResponses.ImportContext;
+import com.ndz.catalog.dto.response.ImportResponses.ImportOutcome;
 import com.ndz.catalog.entity.enums.ImportType;
 import com.ndz.catalog.util.ExcelFiles.GuideLine;
 import com.ndz.catalog.util.ExcelFiles.ImportRow;
@@ -14,7 +13,7 @@ import com.ndz.catalog.util.ExcelFiles.ImportRow;
  * Một loại import Excel: khai báo cột, file mẫu và cách kiểm / ghi từng dòng. {@code run} dùng chung đường kiểm cho cả
  * dry-run và import thật; dry-run không ghi gì. Dòng lỗi không chặn dòng hợp lệ.
  */
-interface ImportHandler {
+public interface ImportHandler {
 
 	ImportType type();
 
@@ -28,20 +27,9 @@ interface ImportHandler {
 	List<GuideLine> guide();
 
 	/** Kiểm điều kiện đầu vào (vd. sơ đồ đích) trước khi tạo bản ghi import; vi phạm thì ném BusinessException. */
-	default void prepare(Context context) {
+	default void prepare(ImportContext context) {
 	}
 
-	Outcome run(List<ImportRow> rows, Context context);
-
-	record Context(boolean dryRun, DuplicateMode onDuplicate, UUID seatMapId) {
-	}
-
-	/** {@code created + updated + skipped} là số dòng hợp lệ. */
-	record Outcome(int created, int updated, int skipped, List<RowError> errors) {
-
-		int validRows() {
-			return created + updated + skipped;
-		}
-	}
+	ImportOutcome run(List<ImportRow> rows, ImportContext context);
 
 }

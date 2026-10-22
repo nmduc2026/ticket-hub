@@ -11,11 +11,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.ndz.catalog.dto.response.ImportResponses.ImportContext;
+import com.ndz.catalog.dto.response.ImportResponses.ImportOutcome;
 import com.ndz.catalog.dto.response.ImportResponses.RowError;
 import com.ndz.catalog.entity.AdministrativeUnit;
 import com.ndz.catalog.entity.Venue;
 import com.ndz.catalog.entity.enums.DuplicateMode;
 import com.ndz.catalog.entity.enums.ImportType;
+import com.ndz.catalog.service.ImportHandler;
 import com.ndz.catalog.repository.AdministrativeUnitRepository;
 import com.ndz.catalog.repository.VenueRepository;
 import com.ndz.catalog.util.ExcelFiles.GuideLine;
@@ -24,7 +27,7 @@ import com.ndz.shared.util.Uuid7;
 
 /** Import địa điểm, khớp theo {@code ma} khi có (docs/design/README.md §7); dòng không có mã luôn là địa điểm mới. */
 @Component
-class VenueImportHandler implements ImportHandler {
+class VenueImportHandlerImpl implements ImportHandler {
 
 	private static final List<String> COLUMNS = List.of("ma", "ten", "dia_chi", "ma_xa", "suc_chua");
 
@@ -32,7 +35,7 @@ class VenueImportHandler implements ImportHandler {
 	private final AdministrativeUnitRepository units;
 	private final TransactionTemplate tx;
 
-	VenueImportHandler(VenueRepository venues, AdministrativeUnitRepository units, TransactionTemplate tx) {
+	VenueImportHandlerImpl(VenueRepository venues, AdministrativeUnitRepository units, TransactionTemplate tx) {
 		this.venues = venues;
 		this.units = units;
 		this.tx = tx;
@@ -70,7 +73,7 @@ class VenueImportHandler implements ImportHandler {
 	}
 
 	@Override
-	public Outcome run(List<ImportRow> rows, Context context) {
+	public ImportOutcome run(List<ImportRow> rows, ImportContext context) {
 		List<RowError> errors = new ArrayList<>();
 		Map<String, Integer> seenCodes = new HashMap<>();
 		Map<String, Optional<AdministrativeUnit>> wards = new HashMap<>();
@@ -144,7 +147,7 @@ class VenueImportHandler implements ImportHandler {
 			}
 			return new int[] { created, updated, skipped };
 		});
-		return new Outcome(counts[0], counts[1], counts[2], errors);
+		return new ImportOutcome(counts[0], counts[1], counts[2], errors);
 	}
 
 	/** Trả 0 khi không phải số nguyên dương nhỏ hơn 2 tỷ, để chỗ gọi báo lỗi chung. */
