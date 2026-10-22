@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.sql.Timestamp;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.ndz.IntegrationTest;
+import com.ndz.MutableClock;
 import com.ndz.TestTokens;
 
 /**
@@ -39,6 +41,9 @@ class PublicEventApiTests {
 	@Autowired
 	JdbcTemplate jdbc;
 
+	@Autowired
+	MutableClock clock;
+
 	@BeforeEach
 	void prepare() {
 		cleanUp();
@@ -46,6 +51,7 @@ class PublicEventApiTests {
 
 	@AfterEach
 	void cleanUp() {
+		clock.reset();
 		jdbc.update("delete from booking.booking_items");
 		jdbc.update("delete from booking.seat_inventory");
 		jdbc.update("delete from booking.bookings");
@@ -155,6 +161,9 @@ class PublicEventApiTests {
 		mockMvc.perform(get("/api/v1/events/" + event)).andExpect(jsonPath("$.soldOut").value(true));
 
 		jdbc.update("update booking.seat_inventory set status = 'AVAILABLE', booking_id = null where event_id = ?", event);
+		// Chi tiết sự kiện được cache 5 phút (overview.md §9): hết cache mới thấy ghế trống lại; sơ đồ ghế luôn chính xác.
+		mockMvc.perform(get("/api/v1/events/" + event)).andExpect(jsonPath("$.soldOut").value(true));
+		clock.setInstant(Instant.now().plus(Duration.ofMinutes(6)));
 		mockMvc.perform(get("/api/v1/events/" + event)).andExpect(jsonPath("$.soldOut").value(false));
 	}
 

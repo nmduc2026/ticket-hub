@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
+import com.ndz.booking.client.RedisEventDetailCache;
 import com.ndz.booking.dto.response.BookingViews.AffectedBooking;
 import com.ndz.booking.event.BookingSalePaused;
 import com.ndz.booking.repository.BookingRepository;
@@ -43,17 +44,19 @@ public class EventProjectionServiceImpl implements EventProjectionService {
 	private final SeatInventoryRepository inventory;
 	private final EventSnapshotRepository snapshots;
 	private final ApplicationEventPublisher publisher;
+	private final RedisEventDetailCache detailCache;
 	private final Clock clock;
 
 	EventProjectionServiceImpl(ProcessedEventRepository processed, BookingRepository bookings, CatalogApi catalog,
 			SeatInventoryRepository inventory, EventSnapshotRepository snapshots, ApplicationEventPublisher publisher,
-			Clock clock) {
+			RedisEventDetailCache detailCache, Clock clock) {
 		this.processed = processed;
 		this.bookings = bookings;
 		this.catalog = catalog;
 		this.inventory = inventory;
 		this.snapshots = snapshots;
 		this.publisher = publisher;
+		this.detailCache = detailCache;
 		this.clock = clock;
 	}
 
@@ -66,6 +69,7 @@ public class EventProjectionServiceImpl implements EventProjectionService {
 		if (!snapshots.upsertPublished(event)) {
 			log.info("EventPublished cũ hơn bản sao hiện có, giữ nguyên bản sao, sự kiện {}", event.eventId());
 		}
+		detailCache.evictAfterCommit(event.eventId());
 		List<SellableSeat> seats = catalog.sellableSeats(event.eventId());
 		int added = inventory.insertAll(event.eventId(), seats);
 		log.info("Tồn kho sự kiện {}: {} ghế đang bán, thêm mới {}", event.eventId(), seats.size(), added);
@@ -140,6 +144,8 @@ public class EventProjectionServiceImpl implements EventProjectionService {
 	 */
 	private void apply(UUID eventId, Instant occurredAt, boolean applied, String type) {
 		if (applied) {
+			// Bản sao đổi thì chi tiết sự kiện đang cache đã cũ (trạng thái, thông tin hiển thị).
+			detailCache.evictAfterCommit(eventId);
 			return;
 		}
 		if (!snapshots.exists(eventId)) {

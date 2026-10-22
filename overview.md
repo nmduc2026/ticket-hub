@@ -679,7 +679,7 @@ Tới sale_starts_at    → job chuyển ON_SALE (chỉ khi inventory_ready)
 | `spring:session:*` | HASH | 30 phút | Session của Gateway |
 | channel `seat-updates:{eventId}` | Pub/Sub | — | Broadcast trạng thái ghế tới mọi pod đang giữ kết nối SSE |
 
-**Chống cache stampede**: TTL có jitter ngẫu nhiên + chỉ 1 request được rebuild cache (lock), các request khác trả dữ liệu cũ.
+**Chống cache stampede**: TTL có jitter ngẫu nhiên + chỉ 1 request được rebuild cache (lock `lock:event-cache:{eventId}`), các request khác trả dữ liệu cũ; cache trống thì các request khác chờ request đó rebuild xong rồi đọc cache. Mỗi bản cache mang giờ "còn mới" riêng và Redis giữ nó thêm 1 phút sau đó để có bản cũ mà trả. Cache chứa cả hạng vé và `soldOut` nên số vé còn có thể cũ tới hết TTL; sơ đồ ghế luôn đọc thẳng DB. Cache bị xoá sau commit khi bản sao sự kiện đổi (`EventPublished`, `EventUpdated`, `EventOnSale`, `EventEnded`, `EventSuspended`, `EventResumed`, `EventCancelled`). Redis lỗi thì đọc thẳng DB.
 
 ---
 

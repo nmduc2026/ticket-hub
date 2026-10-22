@@ -18,6 +18,7 @@ import com.ndz.booking.entity.enums.BookingStatus;
 import com.ndz.booking.event.BookingCancelled;
 import com.ndz.booking.event.RefundRequested;
 import com.ndz.booking.repository.BookingRepository;
+import com.ndz.booking.client.RedisEventDetailCache;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
 import com.ndz.booking.service.EventCancellationService;
@@ -37,16 +38,18 @@ public class EventCancellationServiceImpl implements EventCancellationService {
 	private final ProcessedEventRepository processed;
 	private final SeatHoldService seatHolds;
 	private final ApplicationEventPublisher publisher;
+	private final RedisEventDetailCache detailCache;
 	private final Clock clock;
 
 	EventCancellationServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots,
 			ProcessedEventRepository processed, SeatHoldService seatHolds, ApplicationEventPublisher publisher,
-			Clock clock) {
+			RedisEventDetailCache detailCache, Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.processed = processed;
 		this.seatHolds = seatHolds;
 		this.publisher = publisher;
+		this.detailCache = detailCache;
 		this.clock = clock;
 	}
 
@@ -59,6 +62,7 @@ public class EventCancellationServiceImpl implements EventCancellationService {
 		if (!snapshots.updateStatus(event.eventId(), "CANCELLED", event.occurredAt()) && !snapshots.exists(event.eventId())) {
 			throw new IllegalStateException("EventCancelled đến trước EventPublished của sự kiện " + event.eventId());
 		}
+		detailCache.evictAfterCommit(event.eventId());
 		Instant now = clock.instant();
 		List<AffectedBooking> affected = bookings.affectedBySalePause(event.eventId());
 		int cancelled = 0;
