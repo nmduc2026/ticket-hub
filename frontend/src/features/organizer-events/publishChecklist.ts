@@ -10,7 +10,7 @@ export type PublishItem =
   | 'TICKET_TIERS'
   | 'TIER_SECTIONS'
 
-export type EditTab = 'info' | 'sales' | 'tiers'
+export type EditTab = 'dashboard' | 'info' | 'sales' | 'tiers'
 
 export interface ChecklistEntry {
   item: PublishItem

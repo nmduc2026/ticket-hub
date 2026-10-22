@@ -1,4 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
+import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -27,12 +28,14 @@ export function PublishButton({ event, checklist }: { event: OrganizerEventDetai
   const queryClient = useQueryClient()
   const [step, setStep] = useState<Step>('closed')
   const [blockedReasons, setBlockedReasons] = useState<string[]>([])
+  const [payoutNotReady, setPayoutNotReady] = useState(false)
   const publish = usePublishOrganizerEvent()
   const seatMap = useEventSeatMap(event)
 
   const open = () => {
     const missing = checklist.filter((entry) => !entry.done).map((entry) => t(`organizerEvents.publish.missing.${entry.item}`))
     setBlockedReasons(missing)
+    setPayoutNotReady(false)
     setStep(missing.length > 0 ? 'blocked' : 'confirm')
   }
   const close = () => {
@@ -52,7 +55,9 @@ export function PublishButton({ event, checklist }: { event: OrganizerEventDetai
         onError: (error) => {
           const code = error instanceof ApiError ? error.code : undefined
           if (code === 'PUBLISH_NOT_ALLOWED') {
-            setBlockedReasons(problemList(error, 'reasons').map((reason) => t(`organizerEvents.publish.reasons.${reason}`, { defaultValue: reason })))
+            const reasons = problemList(error, 'reasons')
+            setBlockedReasons(reasons.map((reason) => t(`organizerEvents.publish.reasons.${reason}`, { defaultValue: reason })))
+            setPayoutNotReady(reasons.includes('PAYOUT_NOT_READY'))
             setStep('blocked')
           } else if (code === 'PUBLISH_INCOMPLETE') {
             setBlockedReasons(problemList(error, 'missing').map((item) => t(`organizerEvents.publish.missing.${item}`, { defaultValue: item })))
@@ -119,6 +124,13 @@ export function PublishButton({ event, checklist }: { event: OrganizerEventDetai
             ))}
           </ul>
           <DialogFooter>
+            {payoutNotReady && (
+              <Button variant="outline" asChild>
+                <Link to="/organizer/payments" onClick={close}>
+                  {t('organizerEvents.publish.connectStripe')}
+                </Link>
+              </Button>
+            )}
             <Button onClick={close}>{t('organizerEvents.publish.understood')}</Button>
           </DialogFooter>
         </DialogContent>

@@ -22,11 +22,13 @@ export function EventEditLayout({ eventId }: { eventId: string }) {
   const { t } = useTranslation()
   const { event, isLoading, notFound, refetch } = useOrganizerEvent(eventId)
   const location = useRouterState({ select: (state) => state.location })
-  const activeTab: EditTab = location.pathname.endsWith('/tiers')
-    ? 'tiers'
-    : (location.search as { tab?: string }).tab === 'sales'
-      ? 'sales'
-      : 'info'
+  const activeTab: EditTab = location.pathname.endsWith('/dashboard')
+    ? 'dashboard'
+    : location.pathname.endsWith('/tiers')
+      ? 'tiers'
+      : (location.search as { tab?: string }).tab === 'sales'
+        ? 'sales'
+        : 'info'
   // Breadcrumb 4 cấp: Trang chủ › Sự kiện › <tên> › <tab> (docs/design/README.md §3).
   useBreadcrumbTrail(event ? [{ label: event.title }, { label: t(`organizerEvents.edit.${activeTab}`) }] : [])
 
@@ -90,6 +92,11 @@ export function EventEditLayout({ eventId }: { eventId: string }) {
       </header>
 
       <nav aria-label={t('organizerEvents.edit.tabs')} className="flex gap-1 overflow-x-auto border-b">
+        {!isDraft && (
+          <Link to="/organizer/events/$eventId/dashboard" params={params} aria-current={activeTab === 'dashboard' ? 'page' : undefined} className={tabClass('dashboard')}>
+            {t('organizerEvents.edit.dashboard')}
+          </Link>
+        )}
         <Link to="/organizer/events/$eventId/edit" params={params} search={{}} aria-current={activeTab === 'info' ? 'page' : undefined} className={tabClass('info')}>
           {t('organizerEvents.edit.info')}
         </Link>
