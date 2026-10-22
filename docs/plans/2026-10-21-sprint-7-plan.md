@@ -72,3 +72,34 @@ Commit / push / PR / merge; `kubectl` / `helm` lên k3d (KEDA, cấu hình Gatew
 - `high_demand` khoá sau publish (BR-14); cần bật gấp sau publish thì dùng feature flag Unleash ở Sprint 8 (BR-04).
 - Phòng chờ đóng khi sự kiện tạm dừng / huỷ / kết thúc; hết vé thì vẫn mở và vẫn gọi người.
 - `max_active` và tốc độ gọi là cấu hình chung của hệ thống; organizer chỉ bật `high_demand` ở #24.
+
+## Tình trạng đợt code Sprint 7 (nhánh `feature/sprint-7`, 22/10/2026)
+
+Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi hạng mục một commit, chưa push. Mỗi hạng mục có test tích hợp với Redis và Postgres thật; mới chạy các test liên quan (queue, booking giữ ghế / cache / projection, `ModularityTests`, `ArchitectureTests`, `OpenApiContractTests`), chưa chạy `./mvnw verify` toàn bộ.
+
+| Hạng mục | Kết quả | Còn lại |
+|---|---|---|
+| 1 Module `queue` | `join` / `status`, score ngẫu nhiên trước giờ mở bán, `ZADD NX`, lấy lại meta qua `CatalogApi.queueInfo`, đóng phòng chờ khi sự kiện tạm dừng / huỷ / kết thúc; 11 test + 2 test listener | SSE `closed {reason}` khi đóng phòng chờ (hạng mục 4); Redis lỗi lúc `join` hiện trả 500, chưa có mã 503 riêng |
+| 2 Điều tiết | Lua gọi người vào, job ShedLock mỗi giây, `max_active` 200, 20 người / giây; 8 test | Chưa đo thực tế (hạng mục 11) |
+| 3 Booking kiểm lượt vào | `403 ADMISSION_REQUIRED`, một lượt một booking, ghế bận thì giữ lượt; 4 test | – |
+| 6 Cache chi tiết sự kiện | Cache + khoá rebuild + bản cũ, xoá sau commit; 6 test | – |
+| 4, 5, 7, 8, 9 | Chưa làm | Xem "Việc treo" |
+
+### Quyết định / thoả hiệp khi làm (chưa hỏi trước, cần duyệt)
+
+- **Booking gọi Queue, Queue không nghe event của Booking.** Plan ghi Queue nghe `BookingCreated` / `Confirmed` / `Expired` / `Cancelled`, nhưng Booking đã phải phụ thuộc Queue (kiểm lượt vào, hạng mục 3) nên Queue nghe lại Booking sẽ tạo vòng phụ thuộc mà Modulith `verify()` từ chối. Listener nằm ở Booking và gọi `QueueApi.bookingPending` / `bookingSettled`; sửa `overview.md` §7.1.
+- Thêm key `queue:open-events` (SET) để scheduler biết sự kiện nào có phòng chờ; ghi vào `overview.md` §9.
+- Cache chi tiết sự kiện chứa cả hạng vé và `soldOut`, nên số vé còn / "hết vé" có thể cũ tới 5 phút (sơ đồ ghế vẫn chính xác). Nếu chỉ cache phần tĩnh thì không giảm được truy vấn đếm ghế, là phần nặng nhất. Đã sửa test `PublicEventApiTests` về `soldOut` theo TTL.
+- Đóng phòng chờ xoá cả `pending`; sự kiện được mở lại thì các booking đang chờ thanh toán không được đếm tới khi hết hạn, nên có thể gọi dư người trong thời gian ngắn (Booking vẫn là nơi chặn bán trùng).
+- Lượt vào chỉ bị xoá sau khi booking commit; xoá lỗi (Redis) chỉ ghi log vì booking đã tạo, lượt vào còn sót tự hết hạn.
+- `IntegrationTest` đặt `tickethub.queue.admit-interval=24h` để job không chạy nền trong test; test gọi `QueueAdmissionService.admitWaiting()` với đồng hồ test.
+
+## Việc treo của Sprint 7
+
+| # | Việc | Bị chặn bởi | Làm gì khi được gỡ |
+|---|---|---|---|
+| S7-1 | Hạng mục 4, 5, 7, 8, 9 (code) | Không bị chặn, chưa làm | Làm tiếp theo thứ tự: 5 → 4 → 7 → FE 8, 9 (mock MSW / SSE) |
+| S7-2 | Hạng mục 4 và 7 phần hạ tầng (Gateway SSE không buffer, Envoy HTTP/2, `preStop`, `terminationGracePeriodSeconds`), hạng mục 10 (KEDA, PDB, probe) | B3, hạng mục 13, 14 dọn dẹp | Viết manifest trước, chạy trên k3d khi có cụm |
+| S7-3 | Hạng mục 11 (load test có phòng chờ, chaos C5), 12 (verify) | B3, S5-1 (baseline chưa đo), JMeter | Viết kịch bản JMeter với `GET /queue/{eventId}/status`, chạy trên staging |
+| S7-4 | Test Playwright hai trình duyệt (hạng mục 9), SSE đa pod (AC-6) | Hạng mục 11 dọn dẹp (E2E stack thật) | Chuyển sang chạy với `app` + `gateway` thật |
+| S7-5 | Review độc lập `queue` và lượt vào bằng subagent (hạng mục 13), `./mvnw verify` toàn bộ | Để cuối sprint theo quyết định của bạn | Gọi subagent review theo skill `code-review` |
