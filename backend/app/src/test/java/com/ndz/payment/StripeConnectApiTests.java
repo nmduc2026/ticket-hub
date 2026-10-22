@@ -79,6 +79,8 @@ class StripeConnectApiTests {
 		jdbc.update("delete from payment.connected_accounts");
 		jdbc.update("delete from payment.stripe_events where stripe_event_id like 'evt_connect_%'");
 		jdbc.update("delete from catalog.processed_events");
+		jdbc.update("delete from account.user_profiles where email = 'admin@connect.test'");
+		jdbc.update("delete from notification.notifications where type = 'STRIPE_RESTRICTED'");
 		jdbc.update("delete from catalog.events where title = ?", TITLE);
 		jdbc.update("update catalog.organizers set status = 'APPROVED', payout_ready = true where id = ?",
 				TestTokens.ORGANIZER_ID);
@@ -154,6 +156,27 @@ class StripeConnectApiTests {
 	}
 
 	@Test
+	@DisplayName("S6-6: tài khoản chuyển sang restricted thì Admin nhận thông báo một lần; event restricted tiếp theo không báo lại")
+	void restrictedNotifiesAdminOnce() throws Exception {
+		jdbc.update("delete from notification.notifications where type = 'STRIPE_RESTRICTED'");
+		jdbc.update("""
+				insert into account.user_profiles (user_id, email, full_name, username, roles, enabled, created_at,
+				                                   updated_at)
+				values (?, 'admin@connect.test', 'Admin', 'admin-connect', array['CUSTOMER', 'ADMIN'], true, now(), now())
+				""", UUID.randomUUID());
+		connect();
+		signed(accountUpdated("evt_connect_r0", true, true, true, "[]", null)).andExpect(status().isOk());
+
+		signed(accountUpdated("evt_connect_r1", false, false, true, "[]", "rejected.fraud")).andExpect(status().isOk());
+		await().atMost(Duration.ofSeconds(15)).until(() -> restrictedNotifications() > 0);
+		int first = restrictedNotifications();
+
+		signed(accountUpdated("evt_connect_r2", false, false, true, "[]", "rejected.other")).andExpect(status().isOk());
+		call(get("/api/v1/organizer/stripe/account")).andExpect(jsonPath("$.state").value("restricted"));
+		assertThat(restrictedNotifications()).isEqualTo(first);
+	}
+
+	@Test
 	@DisplayName("Payload account.updated mẫu cho ra đủ trạng thái incomplete / pending / restricted / active")
 	void accountStates() throws Exception {
 		connect();
@@ -174,6 +197,11 @@ class StripeConnectApiTests {
 
 	private void connect() throws Exception {
 		call(post("/api/v1/organizer/stripe/onboarding-link")).andExpect(status().isOk());
+	}
+
+	private int restrictedNotifications() {
+		return jdbc.queryForObject("select count(*) from notification.notifications where type = 'STRIPE_RESTRICTED'",
+				Integer.class);
 	}
 
 	private boolean payoutReady() {

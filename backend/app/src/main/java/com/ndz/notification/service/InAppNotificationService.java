@@ -16,6 +16,7 @@ import com.ndz.notification.dto.request.UpdatePreferencesRequest;
 import com.ndz.notification.dto.response.NotificationResponses.NotificationPage;
 import com.ndz.notification.dto.response.NotificationResponses.PreferenceItem;
 import com.ndz.notification.entity.enums.NotificationType;
+import com.ndz.payment.event.StripeAccountRestricted;
 import com.ndz.ticket.event.TicketIssued;
 
 /** Hộp thư thông báo trong app (overview.md §6.5, §11.2): tạo từ event, xem và đánh dấu đã đọc, cài đặt. */
@@ -43,6 +44,9 @@ public interface InAppNotificationService {
 
 	/** Organizer của sự kiện; Admin thêm khi tạm dừng tự động (organizer bị đình chỉ / mất charges_enabled). */
 	void onEventSuspended(EventSuspended event);
+
+	/** Stripe của organizer bị hạn chế: báo Admin (overview.md §7.6), mỗi Admin một thông báo. */
+	void onStripeAccountRestricted(StripeAccountRestricted event);
 
 	/** Đã hoàn tiền xong; hoàn tự động không có người nhận thì bỏ qua. */
 	void onRefundCompleted(RefundCompleted event);

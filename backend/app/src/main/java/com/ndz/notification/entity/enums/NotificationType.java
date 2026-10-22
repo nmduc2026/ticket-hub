@@ -13,6 +13,7 @@ public enum NotificationType {
 	EVENT_CANCELLED("Sự kiện bị huỷ", true),
 	SALE_PAUSED("Tạm dừng bán", false),
 	EVENT_AUTO_SUSPENDED("Sự kiện tự tạm dừng", false),
+	STRIPE_RESTRICTED("Stripe của organizer bị hạn chế", false),
 	HOLD_EXPIRING("Sắp hết giờ giữ ghế", false),
 	CUSTOMER_REFUND_REQUESTED("Khách yêu cầu hoàn vé", false),
 	ORGANIZER_APPLICATION_PENDING("Hồ sơ organizer chờ duyệt", false),

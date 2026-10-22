@@ -99,14 +99,17 @@ public class ConnectedAccountRepository {
 	public Optional<Change> applyUpdate(String stripeAccountId, boolean chargesEnabled, boolean payoutsEnabled,
 			boolean detailsSubmitted, List<String> requirementsDue, String disabledReason, Instant now) {
 		return jdbc.query("""
-				WITH old AS (SELECT organizer_id, charges_enabled FROM payment.connected_accounts
-				             WHERE stripe_account_id = ? FOR UPDATE)
+				WITH old AS (SELECT organizer_id, charges_enabled, details_submitted, requirements_due, disabled_reason
+				             FROM payment.connected_accounts WHERE stripe_account_id = ? FOR UPDATE)
 				UPDATE payment.connected_accounts c
 				SET charges_enabled = ?, payouts_enabled = ?, details_submitted = ?, requirements_due = ?::jsonb,
 				    disabled_reason = ?, updated_at = ?, version = c.version + 1
 				FROM old WHERE c.organizer_id = old.organizer_id
-				RETURNING c.organizer_id, old.charges_enabled
-				""", (rs, i) -> new Change(rs.getObject(1, UUID.class), rs.getBoolean(2)), stripeAccountId,
+				RETURNING c.organizer_id, old.charges_enabled,
+				          (NOT old.charges_enabled AND old.details_submitted AND old.requirements_due = '[]'::jsonb
+				           AND old.disabled_reason IS NOT NULL
+				           AND old.disabled_reason <> 'requirements.pending_verification')
+				""", (rs, i) -> new Change(rs.getObject(1, UUID.class), rs.getBoolean(2), rs.getBoolean(3)), stripeAccountId,
 				chargesEnabled, payoutsEnabled, detailsSubmitted, json.writeValueAsString(requirementsDue),
 				disabledReason, Timestamp.from(now)).stream().findFirst();
 	}
@@ -115,7 +118,8 @@ public class ConnectedAccountRepository {
 			boolean payoutsEnabled, boolean detailsSubmitted, List<String> requirementsDue, String disabledReason) {
 	}
 
-	public record Change(UUID organizerId, boolean chargesEnabledBefore) {
+	/** {@code restrictedBefore}: trước khi ghi, account đã ở state {@code restricted} (cùng điều kiện {@link #countRestricted}). */
+	public record Change(UUID organizerId, boolean chargesEnabledBefore, boolean restrictedBefore) {
 	}
 
 }

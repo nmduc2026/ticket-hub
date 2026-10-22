@@ -22,6 +22,7 @@ import com.ndz.payment.config.StripeProperties;
 import com.ndz.payment.dto.response.StripeAccountResponses.StripeAccountResponse;
 import com.ndz.payment.dto.response.StripeAccountResponses.StripeLinkResponse;
 import com.ndz.payment.repository.ConnectedAccountRepository;
+import com.ndz.payment.event.StripeAccountRestricted;
 import com.ndz.payment.repository.ConnectedAccountRepository.ConnectedAccount;
 import com.ndz.payment.repository.StripeEventRepository;
 import com.ndz.payment.service.OrganizerStripeService;
@@ -107,7 +108,23 @@ public class OrganizerStripeServiceImpl implements OrganizerStripeService {
 								change.organizerId(), update.chargesEnabled()));
 						log.info("Organizer {}: charges_enabled → {}", change.organizerId(), update.chargesEnabled());
 					}
+					if (!change.restrictedBefore() && isRestricted(update)) {
+						publisher.publishEvent(new StripeAccountRestricted(Uuid7.next(clock), clock.instant(),
+								change.organizerId(), organizerName(change.organizerId()), update.disabledReason()));
+						log.warn("Organizer {}: tài khoản Stripe bị hạn chế ({})", change.organizerId(),
+								update.disabledReason());
+					}
 				}, () -> log.warn("account.updated cho account lạ {}", update.accountId()));
+	}
+
+	private String organizerName(UUID organizerId) {
+		return catalog.organizerNames(List.of(organizerId)).getOrDefault(organizerId, "Một organizer");
+	}
+
+	/** Cùng điều kiện state {@code restricted} ở {@link #toResponse} (overview.md §7.6). */
+	private static boolean isRestricted(AccountUpdate update) {
+		return !update.chargesEnabled() && update.detailsSubmitted() && update.requirementsDue().isEmpty()
+				&& update.disabledReason() != null && !"requirements.pending_verification".equals(update.disabledReason());
 	}
 
 	/** Gọi Stripe ngoài transaction; idempotency key cố định theo organizer nên tạo lặp vẫn ra cùng account. */

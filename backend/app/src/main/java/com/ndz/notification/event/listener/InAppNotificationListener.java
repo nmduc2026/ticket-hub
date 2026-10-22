@@ -13,6 +13,7 @@ import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.notification.service.InAppNotificationService;
+import com.ndz.payment.event.StripeAccountRestricted;
 import com.ndz.ticket.event.TicketIssued;
 
 /**
@@ -51,6 +52,11 @@ class InAppNotificationListener {
 	@ApplicationModuleListener
 	void on(EventSuspended event) {
 		notifications.onEventSuspended(event);
+	}
+
+	@ApplicationModuleListener
+	void on(StripeAccountRestricted event) {
+		notifications.onStripeAccountRestricted(event);
 	}
 
 	@ApplicationModuleListener

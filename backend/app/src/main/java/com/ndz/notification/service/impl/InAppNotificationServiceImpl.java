@@ -21,6 +21,7 @@ import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.OrganizerApplied;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
+import com.ndz.payment.event.StripeAccountRestricted;
 import com.ndz.notification.config.NotificationProperties;
 import com.ndz.notification.dto.request.UpdatePreferencesRequest;
 import com.ndz.notification.dto.response.NotificationResponses.NotificationItem;
@@ -134,6 +135,16 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 		for (AccountApi.UserContact admin : accounts.usersWithRole("ADMIN")) {
 			notify(admin.userId(), NotificationType.EVENT_AUTO_SUSPENDED, "Sự kiện tự tạm dừng",
 					event.eventTitle() + ": " + event.reason(), "/admin/events", event.messageId());
+		}
+	}
+
+	@Override
+	@Transactional
+	public void onStripeAccountRestricted(StripeAccountRestricted event) {
+		for (AccountApi.UserContact admin : accounts.usersWithRole("ADMIN")) {
+			notify(admin.userId(), NotificationType.STRIPE_RESTRICTED, "Stripe của organizer bị hạn chế",
+					event.organizerName() + ": tài khoản Stripe bị hạn chế (" + event.disabledReason() + ").", "/admin/payments",
+					event.messageId());
 		}
 	}
 
