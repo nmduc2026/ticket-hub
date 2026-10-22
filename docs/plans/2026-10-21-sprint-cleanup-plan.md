@@ -236,7 +236,16 @@ Hạng mục 1–6 đã commit từ trước (`9072c33`, `27fb3c1`, `776b15b`, `
 | 15 Địa điểm, đơn vị hành chính | CRUD `/admin/venues` (+ `bulk-delete`), `/admin/administrative-units`; màn #16, #33 | `GET /administrative-units` công khai có cache chưa làm |
 | 20 Cấu hình thanh toán | `GET /admin/payment-config`, `stripe-events`, `reprocess`, `webhook-check`; màn #36 | – |
 | 21 Organizer | `duplicate`, `bulk-duplicate`, `GET/PUT /organizer/profile`, `bulk-resend-tickets`; màn #27 (hồ sơ, thông báo) | FE nút nhân bản và gửi lại vé hàng loạt (#12, #14) |
-| 16–19 | Chưa làm | – |
+| 16 Spike `generateSeats` | Xong: `generateSeats.ts` và `SeatGenerator.java` ra cùng toạ độ trên bộ dữ liệu chung `shared-test-data/generate-seats.json` (9 ca, 82 ghế; kỳ vọng tính độc lập bằng Python); không cần lùi về "form + lưới" | – |
+| 17 Sơ đồ ghế BE | `GET/POST/PUT/DELETE /admin/seat-maps`, `POST /{id}/copy`; lưu thì sinh lại ghế, khu giữ `id` theo `code`; `SEAT_MAP_LOCKED`, `SEAT_MAP_BEING_EDITED`, `SECTION_IN_USE`; 5 test tích hợp | Quyết định chờ duyệt bên dưới |
+| 18, 19 | Chưa làm (19 cần thư viện đọc Excel chưa có trong repo) | – |
+
+### Quyết định khi làm sơ đồ ghế (chưa hỏi trước, cần duyệt)
+
+- **Khoá `lock:seatmap:{id}` dùng Lettuce (`SET NX PX` + compare-and-delete), không dùng Redisson** như §9: repo chưa có Redisson và không cài được ở đây. Khoá TTL 60 giây, không tự gia hạn vì một lần lưu có giới hạn kích thước (tối đa 50.000 ghế). Nếu muốn đúng Redisson thì thêm dependency rồi thay `SeatMapLock`, giao diện không đổi.
+- **`seats.x, y` là INTEGER nên toạ độ sinh ra được làm tròn** khi lưu; editor vẽ bằng `generateSeats` (2 chữ số thập phân), lệch tối đa 0,5 đơn vị so với toạ độ đã lưu.
+- Khu `IMPORTED` chỉ đổi được tên và `shape` khi lưu, ghế giữ nguyên; tạo khu `IMPORTED` chỉ qua import Excel (hạng mục 19).
+- Độ cong của hàng là parabola (`curve` = độ nhô ở giữa hàng, đơn vị toạ độ), không phải cung tròn thật.
 
 ## Việc treo của Sprint 6
 
