@@ -8,6 +8,7 @@ import com.ndz.catalog.event.EventEnded;
 import com.ndz.catalog.event.EventPublished;
 import com.ndz.catalog.event.EventSuspended;
 import com.ndz.queue.service.QueueService;
+import com.ndz.queue.service.QueueService.CloseReason;
 
 /**
  * Nghe event của Catalog để giữ {@code queue:{eventId}:meta} và đóng phòng chờ (overview.md §7.1). Ghi / xoá key Redis
@@ -29,17 +30,17 @@ class CatalogEventListener {
 
 	@ApplicationModuleListener
 	void on(EventSuspended event) {
-		queue.close(event.eventId());
+		queue.close(event.eventId(), CloseReason.SUSPENDED);
 	}
 
 	@ApplicationModuleListener
 	void on(EventCancelled event) {
-		queue.close(event.eventId());
+		queue.close(event.eventId(), CloseReason.CANCELLED);
 	}
 
 	@ApplicationModuleListener
 	void on(EventEnded event) {
-		queue.close(event.eventId());
+		queue.close(event.eventId(), CloseReason.ENDED);
 	}
 
 }

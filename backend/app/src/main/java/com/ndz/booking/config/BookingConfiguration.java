@@ -9,6 +9,8 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 import com.ndz.booking.client.RedisEventDetailCache;
 import com.ndz.booking.client.RedisSeatHolds;
+import com.ndz.booking.client.SeatUpdatePublisher;
+import com.ndz.shared.sse.SseBroadcaster;
 
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties({ BookingProperties.class, SeatHoldProperties.class, EventCacheProperties.class })
@@ -17,6 +19,11 @@ class BookingConfiguration {
 	@Bean
 	RedisSeatHolds redisSeatHolds(StringRedisTemplate redis) {
 		return new RedisSeatHolds(redis);
+	}
+
+	@Bean
+	SeatUpdatePublisher seatUpdatePublisher(SseBroadcaster broadcaster) {
+		return new SeatUpdatePublisher(broadcaster);
 	}
 
 	@Bean

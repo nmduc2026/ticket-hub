@@ -37,7 +37,7 @@ class ResourceServerConfiguration {
 						// Hợp đồng API (OpenAPI) là nguồn sinh client cho frontend; không chứa dữ liệu.
 						.requestMatchers("/v3/api-docs/**").permitAll()
 						// API công khai cho khách chưa đăng nhập: xem sự kiện, sơ đồ ghế, danh mục tỉnh / xã.
-						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats",
+						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats", "/api/v1/events/*/seats/stream",
 								"/api/v1/administrative-units")
 						.permitAll()
 						// Webhook của Stripe không có token: xác thực bằng chữ ký trên raw body (overview.md §13.4).

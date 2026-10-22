@@ -46,7 +46,7 @@ class SecurityConfiguration {
 						// Webhook xác thực bằng chữ ký Stripe, không cần session.
 						.requestMatchers(WEBHOOKS).permitAll()
 						// API công khai cho khách chưa đăng nhập; vẫn đi qua Gateway nhưng không có Bearer.
-						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats",
+						.requestMatchers(HttpMethod.GET, "/api/v1/events", "/api/v1/events/*", "/api/v1/events/*/seats", "/api/v1/events/*/seats/stream",
 								"/api/v1/administrative-units")
 						.permitAll()
 						.requestMatchers("/api/**").authenticated()

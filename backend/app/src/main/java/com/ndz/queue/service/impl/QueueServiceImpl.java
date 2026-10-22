@@ -2,6 +2,7 @@ package com.ndz.queue.service.impl;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -18,6 +19,8 @@ import com.ndz.queue.dto.response.QueueStatusResponse.Phase;
 import com.ndz.queue.service.QueueService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
+import com.ndz.shared.sse.SseBroadcaster;
+import com.ndz.shared.sse.SseChannels;
 
 @Service
 class QueueServiceImpl implements QueueService {
@@ -27,12 +30,15 @@ class QueueServiceImpl implements QueueService {
 	private final RedisWaitingRoom room;
 	private final CatalogApi catalog;
 	private final QueueProperties properties;
+	private final SseBroadcaster broadcaster;
 	private final Clock clock;
 
-	QueueServiceImpl(RedisWaitingRoom room, CatalogApi catalog, QueueProperties properties, Clock clock) {
+	QueueServiceImpl(RedisWaitingRoom room, CatalogApi catalog, QueueProperties properties,
+			SseBroadcaster broadcaster, Clock clock) {
 		this.room = room;
 		this.catalog = catalog;
 		this.properties = properties;
+		this.broadcaster = broadcaster;
 		this.clock = clock;
 	}
 
@@ -67,7 +73,8 @@ class QueueServiceImpl implements QueueService {
 	}
 
 	@Override
-	public void close(UUID eventId) {
+	public void close(UUID eventId, CloseReason reason) {
+		broadcaster.publishLast(SseChannels.queue(eventId), "closed", Map.of("reason", reason.name()));
 		room.close(eventId);
 	}
 

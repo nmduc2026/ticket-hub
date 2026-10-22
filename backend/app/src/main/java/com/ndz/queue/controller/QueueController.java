@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,9 +17,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.ndz.queue.dto.response.QueueStatusResponse;
 import com.ndz.queue.service.QueueService;
+import com.ndz.queue.service.QueueStreamService;
 import com.ndz.shared.util.CurrentUser;
 
 /** Phòng chờ ảo của sự kiện nhu cầu cao (overview.md §7.1, BR-04). */
@@ -28,9 +31,11 @@ import com.ndz.shared.util.CurrentUser;
 class QueueController {
 
 	private final QueueService service;
+	private final QueueStreamService streams;
 
-	QueueController(QueueService service) {
+	QueueController(QueueService service, QueueStreamService streams) {
 		this.service = service;
+		this.streams = streams;
 	}
 
 	@Operation(operationId = "joinQueue", summary = "Vào phòng chờ",
@@ -58,6 +63,18 @@ class QueueController {
 	@GetMapping("/status")
 	QueueStatusResponse status(@PathVariable UUID eventId) {
 		return service.status(eventId, CurrentUser.require().id());
+	}
+
+	@Operation(operationId = "streamQueue", summary = "Luồng SSE của phòng chờ",
+			description = "event: position {position, estimatedWaitSeconds, phase}, event: admitted {admissionExpiresAt}, "
+					+ "event: closed {reason: SUSPENDED | CANCELLED | ENDED}; heartbeat 15 giây. Gửi ngay trạng thái hiện tại khi nối.")
+	@ApiResponse(responseCode = "404", description = "QUEUE_NOT_JOINED, QUEUE_NOT_ENABLED hoặc EVENT_NOT_FOUND",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "409", description = "QUEUE_CLOSED",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	SseEmitter stream(@PathVariable UUID eventId) {
+		return streams.open(eventId, CurrentUser.require().id());
 	}
 
 }

@@ -59,7 +59,7 @@ spring:
               uri: ${tickethub.gateway.app-uri}
               predicates:
                 - Method=GET
-                - Path=/api/v1/events,/api/v1/events/*,/api/v1/events/*/seats,/api/v1/administrative-units
+                - Path=/api/v1/events,/api/v1/events/*,/api/v1/events/*/seats,/api/v1/events/*/seats/stream,/api/v1/administrative-units
               filters:
                 - RemoveRequestHeader=Cookie
             - id: api

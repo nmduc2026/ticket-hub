@@ -19,6 +19,7 @@ import com.ndz.booking.event.BookingConfirmationFailed;
 import com.ndz.booking.event.BookingConfirmed;
 import com.ndz.booking.event.PaymentSucceeded;
 import com.ndz.booking.repository.BookingRepository;
+import com.ndz.booking.client.SeatUpdatePublisher;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
 import com.ndz.booking.repository.SalesRepository;
@@ -37,17 +38,19 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 	private final EventSnapshotRepository snapshots;
 	private final ProcessedEventRepository processed;
 	private final SeatHoldService seatHolds;
+	private final SeatUpdatePublisher seatUpdates;
 	private final ApplicationEventPublisher publisher;
 	private final SalesRepository sales;
 	private final Clock clock;
 
 	BookingConfirmationServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots,
-			ProcessedEventRepository processed, SeatHoldService seatHolds, ApplicationEventPublisher publisher,
-			SalesRepository sales, Clock clock) {
+			ProcessedEventRepository processed, SeatHoldService seatHolds, SeatUpdatePublisher seatUpdates,
+			ApplicationEventPublisher publisher, SalesRepository sales, Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.processed = processed;
 		this.seatHolds = seatHolds;
+		this.seatUpdates = seatUpdates;
 		this.publisher = publisher;
 		this.sales = sales;
 		this.clock = clock;
@@ -90,6 +93,7 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 		// Ghế đã SOLD trong Postgres: nhả key Redis để key không chặn ghế khi vé được hoàn và ghế về AVAILABLE.
 		seatHolds.releaseAfterCommit(data.eventId(), data.items().stream().map(BookingItemView::seatId).toList(),
 				booking.id());
+		seatUpdates.recordAfterCommit(data.eventId(), data.items().stream().map(BookingItemView::seatId).toList(), "SOLD");
 		sales.recordConfirmed(booking.id(), clock.instant());
 		publishConfirmed(data);
 		log.info("Booking {} đã xác nhận, {} ghế đã bán", booking.id(), sold);
@@ -118,6 +122,7 @@ public class BookingConfirmationServiceImpl implements BookingConfirmationServic
 			// Đã khoá ghế và booking nên không thể xảy ra; nếu xảy ra thì hoàn tác để người xem.
 			throw new IllegalStateException("Không giữ lại được ghế của booking " + booking.id() + " dù đã khoá");
 		}
+		seatUpdates.recordAfterCommit(booking.eventId(), seatIds, "SOLD");
 		sales.recordConfirmed(booking.id(), clock.instant());
 		publishConfirmed(data);
 		log.info("Thanh toán đến muộn: booking {} ({}) đã xác nhận lại {} ghế", booking.id(), booking.status(),

@@ -1,6 +1,7 @@
 package com.ndz.notification.service.impl;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,8 @@ import com.ndz.notification.service.InAppNotificationService;
 import com.ndz.notification.util.MoneyFormat;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
+import com.ndz.shared.sse.SseBroadcaster;
+import com.ndz.shared.sse.SseChannels;
 import com.ndz.shared.util.Uuid7;
 import com.ndz.ticket.event.TicketIssued;
 
@@ -50,14 +53,16 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 	private final NotificationPreferenceRepository preferences;
 	private final NotificationProperties properties;
 	private final AccountApi accounts;
+	private final SseBroadcaster broadcaster;
 	private final Clock clock;
 
 	InAppNotificationServiceImpl(InAppNotificationRepository inbox, NotificationPreferenceRepository preferences,
-			NotificationProperties properties, AccountApi accounts, Clock clock) {
+			NotificationProperties properties, AccountApi accounts, SseBroadcaster broadcaster, Clock clock) {
 		this.inbox = inbox;
 		this.preferences = preferences;
 		this.properties = properties;
 		this.accounts = accounts;
+		this.broadcaster = broadcaster;
 		this.clock = clock;
 	}
 
@@ -69,12 +74,19 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 			log.debug("Người dùng {} đã tắt thông báo {}", userId, type);
 			return false;
 		}
-		boolean created = inbox.insertIfAbsent(Uuid7.next(clock), userId, type.name(), title, body, link,
-				sourceEventId, clock.instant());
+		UUID id = Uuid7.next(clock);
+		Instant createdAt = clock.instant();
+		boolean created = inbox.insertIfAbsent(id, userId, type.name(), title, body, link, sourceEventId, createdAt);
 		if (!created) {
 			log.info("Bỏ qua thông báo {} đã có cho event {}", type, sourceEventId);
+			return false;
 		}
-		return created;
+		// Đẩy realtime sau khi commit (đến chuông không cần tải lại trang); số chưa đọc đã tính cả thông báo này.
+		String channel = SseChannels.userNotify(userId);
+		broadcaster.publishAfterCommit(channel, "notification",
+				new NotificationItem(id, type.name(), title, body, link, createdAt, null));
+		broadcaster.publishAfterCommit(channel, "unread", Map.of("count", inbox.unreadCount(userId)));
+		return true;
 	}
 
 	@Override

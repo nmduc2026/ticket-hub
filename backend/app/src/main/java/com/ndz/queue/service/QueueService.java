@@ -16,7 +16,14 @@ public interface QueueService {
 	/** Ghi lại thông tin sự kiện khi publish (từ event của Catalog). */
 	void registerEvent(UUID eventId, boolean highDemand, Instant saleStartsAt);
 
-	/** Đóng phòng chờ khi sự kiện bị tạm dừng, huỷ hoặc kết thúc. */
-	void close(UUID eventId);
+	/**
+	 * Đóng phòng chờ khi sự kiện bị tạm dừng, huỷ hoặc kết thúc: báo {@code closed {reason}} cho mọi người đang nghe
+	 * SSE rồi xoá các key {@code queue:{eventId}:*}.
+	 */
+	void close(UUID eventId, CloseReason reason);
+
+	enum CloseReason {
+		SUSPENDED, CANCELLED, ENDED
+	}
 
 }

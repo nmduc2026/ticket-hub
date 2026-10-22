@@ -29,6 +29,7 @@ import com.ndz.MutableClock;
 import com.ndz.TestTokens;
 import com.ndz.queue.client.RedisWaitingRoom;
 import com.ndz.queue.service.QueueService;
+import com.ndz.queue.service.QueueService.CloseReason;
 import com.ndz.shared.util.Uuid7;
 
 /**
@@ -202,7 +203,7 @@ class QueueJoinTests {
 		redis.opsForZSet().add(RedisWaitingRoom.pendingKey(event), UUID.randomUUID().toString(), 1);
 		jdbc.update("update catalog.events set status = 'SUSPENDED' where id = ?", event);
 
-		queue.close(event);
+		queue.close(event, CloseReason.SUSPENDED);
 
 		assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty();
 		join(Uuid7.next(), event).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("QUEUE_CLOSED"));
@@ -216,7 +217,7 @@ class QueueJoinTests {
 		join(Uuid7.next(), event);
 		jdbc.update("update catalog.events set status = 'ENDED' where id = ?", event);
 
-		queue.close(event);
+		queue.close(event, CloseReason.ENDED);
 
 		assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty();
 		join(Uuid7.next(), event).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("QUEUE_CLOSED"));

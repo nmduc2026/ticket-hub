@@ -19,6 +19,7 @@ import com.ndz.booking.event.BookingCancelled;
 import com.ndz.booking.event.RefundRequested;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.client.RedisEventDetailCache;
+import com.ndz.booking.client.SeatUpdatePublisher;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
 import com.ndz.booking.service.EventCancellationService;
@@ -37,17 +38,20 @@ public class EventCancellationServiceImpl implements EventCancellationService {
 	private final EventSnapshotRepository snapshots;
 	private final ProcessedEventRepository processed;
 	private final SeatHoldService seatHolds;
+	private final SeatUpdatePublisher seatUpdates;
 	private final ApplicationEventPublisher publisher;
 	private final RedisEventDetailCache detailCache;
 	private final Clock clock;
 
 	EventCancellationServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots,
-			ProcessedEventRepository processed, SeatHoldService seatHolds, ApplicationEventPublisher publisher,
+			ProcessedEventRepository processed, SeatHoldService seatHolds, SeatUpdatePublisher seatUpdates,
+			ApplicationEventPublisher publisher,
 			RedisEventDetailCache detailCache, Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.processed = processed;
 		this.seatHolds = seatHolds;
+		this.seatUpdates = seatUpdates;
 		this.publisher = publisher;
 		this.detailCache = detailCache;
 		this.clock = clock;
@@ -90,6 +94,7 @@ public class EventCancellationServiceImpl implements EventCancellationService {
 		}
 		List<UUID> seatIds = bookings.releaseSeats(booking.bookingId());
 		seatHolds.releaseAfterCommit(eventId, seatIds, booking.bookingId());
+		seatUpdates.recordAfterCommit(eventId, seatIds, "AVAILABLE");
 		// Payment huỷ PaymentIntent; tiền đến sau vẫn được hoàn 100% (§7.3 thanh toán đến muộn).
 		publisher.publishEvent(new BookingCancelled(Uuid7.next(clock), now, booking.bookingId(), booking.userId(),
 				eventId, seatIds));

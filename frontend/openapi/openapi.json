@@ -2431,6 +2431,45 @@
         }
       }
     },
+    "/api/v1/queue/{eventId}/stream" : {
+      "get" : {
+        "tags" : [ "queue-controller" ],
+        "summary" : "Luồng SSE của phòng chờ",
+        "description" : "event: position {position, estimatedWaitSeconds, phase}, event: admitted {admissionExpiresAt}, event: closed {reason: SUSPENDED | CANCELLED | ENDED}; heartbeat 15 giây. Gửi ngay trạng thái hiện tại khi nối.",
+        "operationId" : "streamQueue",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "QUEUE_NOT_JOINED, QUEUE_NOT_ENABLED hoặc EVENT_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "QUEUE_CLOSED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/queue/{eventId}/status" : {
       "get" : {
         "tags" : [ "queue-controller" ],
@@ -2871,6 +2910,26 @@
         }
       }
     },
+    "/api/v1/me/notifications/stream" : {
+      "get" : {
+        "tags" : [ "my-notification-controller" ],
+        "summary" : "Luồng SSE thông báo của tôi",
+        "description" : "event: notification {…} (thông báo mới), event: unread {count}; gửi unread ngay khi nối; heartbeat 15 giây. Rơi về polling 60 giây khi SSE lỗi.",
+        "operationId" : "streamMyNotifications",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/event-stream" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SseEmitter"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/bookings" : {
       "get" : {
         "tags" : [ "my-booking-controller" ],
@@ -3059,6 +3118,35 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/EventSeats"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/events/{eventId}/seats/stream" : {
+      "get" : {
+        "tags" : [ "seat-stream-controller" ],
+        "summary" : "Luồng SSE thay đổi trạng thái ghế",
+        "description" : "event: seats {changes: [{seatId, status}]} với status AVAILABLE | HELD | SOLD; heartbeat 15 giây. Chỉ mang thay đổi: tải snapshot GET /events/{id}/seats sau khi nối, và tải lại khi nối lại.",
+        "operationId" : "streamSeats",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "EVENT_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -5475,6 +5563,15 @@
           }
         },
         "required" : [ "count" ]
+      },
+      "SseEmitter" : {
+        "type" : "object",
+        "properties" : {
+          "timeout" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
       },
       "NotificationPreference" : {
         "type" : "object",

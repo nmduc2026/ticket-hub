@@ -28,6 +28,7 @@ import com.ndz.booking.dto.response.BookingViews.BookingView;
 import com.ndz.booking.dto.response.BookingViews.EventRules;
 import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
+import com.ndz.booking.client.SeatUpdatePublisher;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.EventSnapshotRepository;
 import com.ndz.queue.api.QueueApi;
@@ -57,18 +58,20 @@ public class BookingServiceImpl implements BookingService {
 	private final EventSnapshotRepository snapshots;
 	private final SeatHoldService seatHolds;
 	private final QueueApi queue;
+	private final SeatUpdatePublisher seatUpdates;
 	private final BookingProperties properties;
 	private final TransactionTemplate transaction;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	BookingServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots, SeatHoldService seatHolds,
-			QueueApi queue, BookingProperties properties, TransactionTemplate transaction, ApplicationEventPublisher publisher,
+			QueueApi queue, SeatUpdatePublisher seatUpdates, BookingProperties properties, TransactionTemplate transaction, ApplicationEventPublisher publisher,
 			Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.seatHolds = seatHolds;
 		this.queue = queue;
+		this.seatUpdates = seatUpdates;
 		this.properties = properties;
 		this.transaction = transaction;
 		this.publisher = publisher;
@@ -175,6 +178,7 @@ public class BookingServiceImpl implements BookingService {
 			}
 			List<UUID> seatIds = bookings.releaseSeats(bookingId);
 			seatHolds.releaseAfterCommit(booking.eventId(), seatIds, bookingId);
+			seatUpdates.recordAfterCommit(booking.eventId(), seatIds, "AVAILABLE");
 			publisher.publishEvent(new BookingCancelled(Uuid7.next(clock), clock.instant(), bookingId, userId,
 					booking.eventId(), seatIds));
 			log.info("Booking {} được khách huỷ, nhả {} ghế", bookingId, seatIds.size());
@@ -238,6 +242,7 @@ public class BookingServiceImpl implements BookingService {
 			// Bất biến BR-01: số dòng đổi được phải đúng bằng số ghế yêu cầu, nếu không hoàn tác toàn bộ.
 			throw seatUnavailable();
 		}
+		seatUpdates.recordAfterCommit(eventId, seatIds, "HELD");
 		publisher.publishEvent(new BookingCreated(Uuid7.next(clock), now, bookingId, userId, eventId, seatIds, total,
 				currency, expiresAt, contactEmail));
 		return bookings.findOwned(bookingId, userId).orElseThrow();

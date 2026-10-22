@@ -23,6 +23,7 @@ import com.ndz.booking.event.RefundFailed;
 import com.ndz.booking.event.RefundRequested;
 import com.ndz.booking.event.TicketIssuanceFailed;
 import com.ndz.booking.event.TicketRevoked;
+import com.ndz.booking.client.SeatUpdatePublisher;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.ProcessedEventRepository;
 import com.ndz.booking.repository.SalesRepository;
@@ -47,15 +48,18 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 	private final BookingProperties properties;
 	private final ApplicationEventPublisher publisher;
 	private final SalesRepository sales;
+	private final SeatUpdatePublisher seatUpdates;
 	private final Clock clock;
 
 	BookingRefundServiceImpl(BookingRepository bookings, ProcessedEventRepository processed,
-			BookingProperties properties, ApplicationEventPublisher publisher, SalesRepository sales, Clock clock) {
+			BookingProperties properties, ApplicationEventPublisher publisher, SalesRepository sales,
+			SeatUpdatePublisher seatUpdates, Clock clock) {
 		this.bookings = bookings;
 		this.processed = processed;
 		this.properties = properties;
 		this.publisher = publisher;
 		this.sales = sales;
+		this.seatUpdates = seatUpdates;
 		this.clock = clock;
 	}
 
@@ -191,7 +195,8 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 			return;
 		}
 		// Khoá booking để hai TicketRevoked đồng thời không cùng thấy "chưa đủ" rồi cùng bỏ lỡ lần nhả ghế.
-		if (bookings.lockBooking(event.bookingId()).isEmpty()) {
+		LockedBooking locked = bookings.lockBooking(event.bookingId()).orElse(null);
+		if (locked == null) {
 			log.error("TicketRevoked {} cho booking không tồn tại {}", event.ticketId(), event.bookingId());
 			return;
 		}
@@ -204,6 +209,7 @@ public class BookingRefundServiceImpl implements BookingRefundService {
 		}
 		// ADR 0026: chỉ nhả ghế khi mọi vé cũ đã thu hồi, để vé của người mua sau không vi phạm UNIQUE.
 		List<UUID> released = bookings.releaseSoldSeats(event.bookingId());
+		seatUpdates.recordAfterCommit(locked.eventId(), released, "AVAILABLE");
 		log.info("Booking {}: mọi vé đã thu hồi, nhả {} ghế", event.bookingId(), released.size());
 	}
 
