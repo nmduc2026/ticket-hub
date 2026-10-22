@@ -1,5 +1,6 @@
 package com.ndz.payment.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,8 @@ public interface RefundRepository extends JpaRepository<Refund, UUID> {
 	Optional<Refund> findFirstByPaymentIdAndReasonOrderByCreatedAtDesc(UUID paymentId, String reason);
 
 	Optional<Refund> findByStripeRefundId(String stripeRefundId);
+
+	List<Refund> findByPaymentIdOrderByCreatedAt(UUID paymentId);
 
 	/** Lần hoàn gần nhất của payment còn chờ Stripe; webhook không mang id hoàn thì dùng lần này. */
 	Optional<Refund> findFirstByPaymentIdAndStatusOrderByCreatedAtDesc(UUID paymentId, RefundStatus status);

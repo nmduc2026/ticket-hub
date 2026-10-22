@@ -3181,6 +3181,34 @@
         }
       }
     },
+    "/api/v1/admin/bookings/{bookingId}/payment" : {
+      "get" : {
+        "tags" : [ "admin-order-payment-controller" ],
+        "summary" : "Khoản thu, các lần hoàn và dòng thời gian Stripe của một đơn",
+        "operationId" : "getAdminOrderPayment",
+        "parameters" : [ {
+          "name" : "bookingId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminOrderPayment"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/audit-logs" : {
       "get" : {
         "tags" : [ "admin-audit-log-controller" ],
@@ -5957,6 +5985,91 @@
           }
         },
         "required" : [ "bookingId", "eventId", "eventTitle", "organizerId", "organizerName", "status" ]
+      },
+      "AdminOrderPayment" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string"
+          },
+          "amountMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "applicationFeeMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "currency" : {
+            "type" : "string"
+          },
+          "stripePaymentIntentId" : {
+            "type" : "string"
+          },
+          "destinationAccountId" : {
+            "type" : "string",
+            "description" : "Tài khoản Connect nhận tiền; trống khi thu trên platform"
+          },
+          "refunds" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminOrderRefund"
+            }
+          },
+          "timeline" : {
+            "type" : "array",
+            "description" : "Cũ nhất trước",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminOrderTimelineEntry"
+            }
+          }
+        },
+        "required" : [ "amountMinor", "applicationFeeMinor", "currency", "refunds", "status", "stripePaymentIntentId", "timeline" ]
+      },
+      "AdminOrderRefund" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "amountMinor" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "failureReason" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "amountMinor", "createdAt", "reason", "status" ]
+      },
+      "AdminOrderTimelineEntry" : {
+        "type" : "object",
+        "properties" : {
+          "at" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "kind" : {
+            "type" : "string",
+            "enum" : [ "PAYMENT_CREATED", "STRIPE_EVENT", "REFUND" ]
+          },
+          "label" : {
+            "type" : "string",
+            "description" : "Loại event Stripe, lý do và trạng thái hoàn…"
+          },
+          "unprocessed" : {
+            "type" : "boolean",
+            "description" : "Với event Stripe: chưa xử lý xong thì true"
+          }
+        },
+        "required" : [ "at", "kind", "label", "unprocessed" ]
       },
       "AdminAuditLogPage" : {
         "type" : "object",

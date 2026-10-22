@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, MoreHorizontal } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -12,6 +12,7 @@ import { type Column, DataTable } from '@/components/list/DataTable'
 import { FacetFilter } from '@/components/list/FacetFilter'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ApiError } from '@/lib/api-client'
 import { downloadServerCsv } from '@/lib/csv'
 import { formatDate, formatTime } from '@/lib/date'
@@ -20,6 +21,7 @@ import { formatMoney } from '@/lib/money'
 import { cn } from '@/lib/utils'
 
 import type { AdminOrderSearch } from './adminOrderSearch'
+import { OrderPaymentSheet } from './OrderPaymentSheet'
 
 const DEFAULT_PAGE_SIZE = 20
 const STATUSES = ['PENDING_PAYMENT', 'CONFIRMED', 'EXPIRED', 'CANCELLED', 'REFUND_REQUESTED', 'REFUNDED', 'REFUND_FAILED']
@@ -30,6 +32,7 @@ export function AdminOrdersPage({ search }: { search: AdminOrderSearch }) {
   const navigate = useNavigate({ from: '/admin/orders' })
   const queryClient = useQueryClient()
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [viewing, setViewing] = useState<AdminBookingRow | undefined>()
 
   const page = search.page ?? 0
   const size = search.size ?? DEFAULT_PAGE_SIZE
@@ -128,6 +131,19 @@ export function AdminOrdersPage({ search }: { search: AdminOrderSearch }) {
         hasFilters={hasFilters}
         onResetFilters={resetFilters}
         emptyTitle={t('adminOrders.empty')}
+        actionsHeader={t('adminOrders.sheet.actionsHeader')}
+        rowActions={(row) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label={t('adminOrders.sheet.viewRow')}>
+                <MoreHorizontal aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => setViewing(row)}>{t('adminOrders.sheet.view')}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
         pagination={{
           page,
           size,
@@ -136,6 +152,7 @@ export function AdminOrdersPage({ search }: { search: AdminOrderSearch }) {
           onSizeChange: (next) => update({ size: next === DEFAULT_PAGE_SIZE ? undefined : next }),
         }}
       />
+      <OrderPaymentSheet row={viewing} onClose={() => setViewing(undefined)} />
     </div>
   )
 }

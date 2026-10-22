@@ -1,6 +1,7 @@
 package com.ndz.payment.repository;
 
 import java.time.Instant;
+import java.util.List;
 
 /** Phần của {@link StripeEventRepository} viết bằng SQL. */
 public interface StripeEventRepositoryCustom {
@@ -13,5 +14,11 @@ public interface StripeEventRepositoryCustom {
 	boolean insertIfAbsent(String stripeEventId, String type, String payload, Instant receivedAt);
 
 	void markProcessed(String stripeEventId, Instant processedAt);
+
+	/** Các webhook nói về một PaymentIntent (đối tượng là chính nó hoặc tham chiếu tới nó), cũ nhất trước. */
+	List<EventSummary> findByPaymentIntent(String paymentIntentId);
+
+	record EventSummary(String id, String type, Instant receivedAt, Instant processedAt) {
+	}
 
 }

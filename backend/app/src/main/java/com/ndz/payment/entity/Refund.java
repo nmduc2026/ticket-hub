@@ -163,4 +163,8 @@ public class Refund {
 		return status;
 	}
 
+	public Instant getCreatedAt() {
+		return createdAt;
+	}
+
 }
