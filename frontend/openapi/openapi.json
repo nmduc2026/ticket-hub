@@ -9,6 +9,52 @@
     "description" : "Generated server url"
   } ],
   "paths" : {
+    "/api/v1/organizer/profile" : {
+      "get" : {
+        "tags" : [ "organizer-profile-controller" ],
+        "summary" : "Hồ sơ công khai và pháp lý của tôi",
+        "operationId" : "getOrganizerProfile",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerApplication"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "organizer-profile-controller" ],
+        "summary" : "Sửa hồ sơ; đổi tên pháp lý / mã số / loại hình đưa về PENDING chờ Admin duyệt lại",
+        "operationId" : "updateOrganizerProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OrganizerApplyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "422" : {
+            "description" : "LEGAL_ID_INVALID, PHONE_INVALID hoặc WEBSITE_INVALID",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizer/events/{eventId}" : {
       "get" : {
         "tags" : [ "organizer-event-controller" ],
@@ -310,6 +356,111 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/venues/{id}" : {
+      "put" : {
+        "tags" : [ "admin-venue-controller" ],
+        "summary" : "Sửa địa điểm",
+        "operationId" : "updateVenue",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VenueRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "404" : {
+            "description" : "VENUE_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/administrative-units/{id}" : {
+      "put" : {
+        "tags" : [ "admin-administrative-unit-controller" ],
+        "summary" : "Sửa đơn vị hành chính",
+        "operationId" : "updateAdministrativeUnit",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminUnitRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "404" : {
+            "description" : "ADMIN_UNIT_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "admin-administrative-unit-controller" ],
+        "summary" : "Tắt đơn vị (không xoá cứng); chặn khi còn con hoạt động hoặc còn địa điểm",
+        "operationId" : "disableAdministrativeUnit",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "409" : {
+            "description" : "ADMIN_UNIT_IN_USE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
           }
         }
       }
@@ -649,6 +800,34 @@
         }
       }
     },
+    "/api/v1/organizer/events/{eventId}/duplicate" : {
+      "post" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Nhân bản thành bản nháp mới, không chép giờ mở bán",
+        "operationId" : "duplicateEvent",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OrganizerEventDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/organizer/events/{eventId}/banner" : {
       "post" : {
         "tags" : [ "organizer-event-controller" ],
@@ -697,6 +876,64 @@
               "application/problem+json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/events/bulk-duplicate" : {
+      "post" : {
+        "tags" : [ "organizer-event-controller" ],
+        "summary" : "Nhân bản nhiều sự kiện; kết quả theo từng id",
+        "operationId" : "bulkDuplicateEvents",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkIdsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/organizer/bookings/bulk-resend-tickets" : {
+      "post" : {
+        "tags" : [ "organizer-ticket-resend-controller" ],
+        "summary" : "Gửi lại email vé cho các đơn đã chọn; đơn không phải của mình bị bỏ qua kèm lý do",
+        "operationId" : "bulkResendTickets",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkResendRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResendTicketsResult"
                 }
               }
             }
@@ -1047,6 +1284,84 @@
         }
       }
     },
+    "/api/v1/admin/venues" : {
+      "get" : {
+        "tags" : [ "admin-venue-controller" ],
+        "summary" : "Danh sách địa điểm",
+        "operationId" : "listAdminVenues",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminVenue"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "admin-venue-controller" ],
+        "summary" : "Tạo địa điểm",
+        "operationId" : "createVenue",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/VenueRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "422" : {
+            "description" : "WARD_LEVEL_INVALID",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/venues/bulk-delete" : {
+      "post" : {
+        "tags" : [ "admin-venue-controller" ],
+        "summary" : "Xoá nhiều địa điểm; chỉ xoá được địa điểm chưa có sự kiện",
+        "operationId" : "bulkDeleteVenues",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/BulkIdsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/users/{id}/unlock" : {
       "post" : {
         "tags" : [ "admin-user-controller" ],
@@ -1106,6 +1421,52 @@
               "application/problem+json" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stripe/webhook-check" : {
+      "post" : {
+        "tags" : [ "admin-stripe-config-controller" ],
+        "summary" : "Tự gửi payload thử có chữ ký tới endpoint webhook, trả mã phản hồi thật",
+        "operationId" : "checkAdminStripeWebhook",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StripeWebhookCheckResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/stripe-events/{id}/reprocess" : {
+      "post" : {
+        "tags" : [ "admin-stripe-config-controller" ],
+        "summary" : "Lấy lại event từ Stripe và xử lý lại; event đã xử lý thì không đổi gì",
+        "operationId" : "reprocessAdminStripeEvent",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StripeReprocessResult"
                 }
               }
             }
@@ -1588,6 +1949,72 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/BookingRefund"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/administrative-units" : {
+      "get" : {
+        "tags" : [ "admin-administrative-unit-controller" ],
+        "summary" : "Mọi đơn vị hành chính, kể cả đã tắt",
+        "operationId" : "listAdminAdministrativeUnits",
+        "parameters" : [ {
+          "name" : "level",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }, {
+          "name" : "parentId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminAdministrativeUnit"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "admin-administrative-unit-controller" ],
+        "summary" : "Tạo đơn vị hành chính",
+        "operationId" : "createAdministrativeUnit",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AdminUnitRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "422" : {
+            "description" : "ADMIN_UNIT_PARENT_INVALID, ADMIN_UNIT_CODE_DUPLICATE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -2466,6 +2893,44 @@
         }
       }
     },
+    "/api/v1/admin/stripe-events" : {
+      "get" : {
+        "tags" : [ "admin-stripe-config-controller" ],
+        "summary" : "Event Stripe gửi webhook lỗi, chưa nhận được xác nhận",
+        "operationId" : "listAdminStripeEvents",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/StripeDeliveryFailurePage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/payment-config" : {
+      "get" : {
+        "tags" : [ "admin-stripe-config-controller" ],
+        "summary" : "Chế độ Stripe, phiên bản API, tỉ lệ webhook thành công 24 giờ, organizer theo trạng thái Connect",
+        "operationId" : "getAdminPaymentConfig",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminPaymentConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/organizers" : {
       "get" : {
         "tags" : [ "admin-organizer-controller" ],
@@ -2716,6 +3181,76 @@
         }
       }
     },
+    "/api/v1/admin/audit-logs" : {
+      "get" : {
+        "tags" : [ "admin-audit-log-controller" ],
+        "summary" : "Nhật ký thao tác quản trị, lọc theo người thao tác / hành động / thời gian",
+        "operationId" : "listAdminAuditLogs",
+        "parameters" : [ {
+          "name" : "actor",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        }, {
+          "name" : "action",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED" ]
+          }
+        }, {
+          "name" : "from",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "to",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        }, {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 0
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AdminAuditLogPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/sessions/{sessionId}" : {
       "delete" : {
         "tags" : [ "my-profile-controller" ],
@@ -2759,6 +3294,84 @@
   },
   "components" : {
     "schemas" : {
+      "OrganizerApplyRequest" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "INDIVIDUAL", "BUSINESS" ]
+          },
+          "displayName" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          },
+          "legalName" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "legalId" : {
+            "type" : "string",
+            "maxLength" : 30,
+            "minLength" : 0
+          },
+          "contactEmail" : {
+            "type" : "string",
+            "format" : "email",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "contactPhone" : {
+            "type" : "string",
+            "maxLength" : 20,
+            "minLength" : 0
+          },
+          "website" : {
+            "type" : "string",
+            "maxLength" : 300,
+            "minLength" : 0
+          },
+          "introduction" : {
+            "type" : "string",
+            "maxLength" : 2000,
+            "minLength" : 0
+          },
+          "eventScale" : {
+            "type" : "string",
+            "maxLength" : 50,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "contactEmail", "contactPhone", "displayName", "introduction", "legalId", "legalName", "type" ]
+      },
+      "ProblemDetail" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "detail" : {
+            "type" : "string"
+          },
+          "instance" : {
+            "type" : "string",
+            "format" : "uri"
+          },
+          "properties" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          }
+        }
+      },
       "EventRequest" : {
         "type" : "object",
         "properties" : {
@@ -2946,33 +3559,6 @@
         },
         "required" : [ "sectionId", "tierId" ]
       },
-      "ProblemDetail" : {
-        "type" : "object",
-        "properties" : {
-          "type" : {
-            "type" : "string",
-            "format" : "uri"
-          },
-          "title" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "detail" : {
-            "type" : "string"
-          },
-          "instance" : {
-            "type" : "string",
-            "format" : "uri"
-          },
-          "properties" : {
-            "type" : "object",
-            "additionalProperties" : { }
-          }
-        }
-      },
       "TierSectionAssignmentRequest" : {
         "type" : "object",
         "properties" : {
@@ -3109,6 +3695,55 @@
         },
         "required" : [ "preferences" ]
       },
+      "VenueRequest" : {
+        "type" : "object",
+        "properties" : {
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "address" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "wardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32",
+            "minimum" : 1
+          }
+        },
+        "required" : [ "address", "name", "wardId" ]
+      },
+      "AdminUnitRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "name" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "TINH", "THANH_PHO", "PHUONG", "XA", "DAC_KHU" ]
+          },
+          "parentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "code", "effectiveFrom", "name", "type" ]
+      },
       "CreatePaymentRequest" : {
         "type" : "object",
         "properties" : {
@@ -3160,56 +3795,90 @@
         },
         "required" : [ "url" ]
       },
-      "OrganizerApplyRequest" : {
+      "BulkIdsRequest" : {
         "type" : "object",
         "properties" : {
-          "type" : {
-            "type" : "string",
-            "enum" : [ "INDIVIDUAL", "BUSINESS" ]
-          },
-          "displayName" : {
-            "type" : "string",
-            "maxLength" : 120,
-            "minLength" : 0
-          },
-          "legalName" : {
-            "type" : "string",
-            "maxLength" : 200,
-            "minLength" : 0
-          },
-          "legalId" : {
-            "type" : "string",
-            "maxLength" : 30,
-            "minLength" : 0
-          },
-          "contactEmail" : {
-            "type" : "string",
-            "format" : "email",
-            "maxLength" : 200,
-            "minLength" : 0
-          },
-          "contactPhone" : {
-            "type" : "string",
-            "maxLength" : 20,
-            "minLength" : 0
-          },
-          "website" : {
-            "type" : "string",
-            "maxLength" : 300,
-            "minLength" : 0
-          },
-          "introduction" : {
-            "type" : "string",
-            "maxLength" : 2000,
-            "minLength" : 0
-          },
-          "eventScale" : {
-            "type" : "string",
-            "maxLength" : 50,
-            "minLength" : 0
+          "ids" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            },
+            "maxItems" : 100,
+            "minItems" : 0
           }
         },
-        "required" : [ "contactEmail", "contactPhone", "displayName", "introduction", "legalId", "legalName", "type" ]
+        "required" : [ "ids" ]
+      },
+      "BulkItem" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ok" : {
+            "type" : "boolean"
+          },
+          "code" : {
+            "type" : "string",
+            "description" : "Mã lỗi nghiệp vụ khi ok = false"
+          }
+        },
+        "required" : [ "id", "ok" ]
+      },
+      "BulkResult" : {
+        "type" : "object",
+        "properties" : {
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/BulkItem"
+            }
+          }
+        },
+        "required" : [ "results" ]
+      },
+      "BulkResendRequest" : {
+        "type" : "object",
+        "properties" : {
+          "bookingIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "uuid"
+            },
+            "maxItems" : 100,
+            "minItems" : 0
+          }
+        },
+        "required" : [ "bookingIds" ]
+      },
+      "ResendTicketsItem" : {
+        "type" : "object",
+        "properties" : {
+          "bookingId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "ok" : {
+            "type" : "boolean"
+          },
+          "code" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ResendTicketsResult" : {
+        "type" : "object",
+        "properties" : {
+          "results" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ResendTicketsItem"
+            }
+          }
+        }
       },
       "OrganizerApplyResult" : {
         "type" : "object",
@@ -3335,6 +4004,35 @@
           }
         },
         "required" : [ "enabled" ]
+      },
+      "StripeWebhookCheckResult" : {
+        "type" : "object",
+        "properties" : {
+          "statusCode" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "ok" : {
+            "type" : "boolean"
+          },
+          "error" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "ok", "statusCode" ]
+      },
+      "StripeReprocessResult" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "processed" : {
+            "type" : "boolean",
+            "description" : "false khi event này đã xử lý từ trước, không đổi gì thêm"
+          }
+        },
+        "required" : [ "id", "processed" ]
       },
       "PlatformFeeRequest" : {
         "type" : "object",
@@ -3508,35 +4206,6 @@
         },
         "required" : [ "ids", "reason" ]
       },
-      "BulkItem" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "ok" : {
-            "type" : "boolean"
-          },
-          "code" : {
-            "type" : "string",
-            "description" : "Mã lỗi nghiệp vụ khi ok = false"
-          }
-        },
-        "required" : [ "id", "ok" ]
-      },
-      "BulkResult" : {
-        "type" : "object",
-        "properties" : {
-          "results" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/BulkItem"
-            }
-          }
-        },
-        "required" : [ "results" ]
-      },
       "Venue" : {
         "type" : "object",
         "properties" : {
@@ -3680,6 +4349,51 @@
           }
         },
         "required" : [ "chargesEnabled", "currency", "payoutsEnabled", "requirements", "state" ]
+      },
+      "OrganizerApplication" : {
+        "type" : "object",
+        "properties" : {
+          "status" : {
+            "type" : "string",
+            "enum" : [ "PENDING", "APPROVED", "REJECTED", "SUSPENDED" ]
+          },
+          "submittedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "rejectionReason" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "INDIVIDUAL", "BUSINESS" ]
+          },
+          "displayName" : {
+            "type" : "string"
+          },
+          "legalName" : {
+            "type" : "string"
+          },
+          "legalId" : {
+            "type" : "string"
+          },
+          "contactEmail" : {
+            "type" : "string"
+          },
+          "contactPhone" : {
+            "type" : "string"
+          },
+          "website" : {
+            "type" : "string"
+          },
+          "introduction" : {
+            "type" : "string"
+          },
+          "eventScale" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "status", "submittedAt" ]
       },
       "OrganizerEventPage" : {
         "type" : "object",
@@ -3975,51 +4689,6 @@
           }
         },
         "required" : [ "items", "page", "size", "total" ]
-      },
-      "OrganizerApplication" : {
-        "type" : "object",
-        "properties" : {
-          "status" : {
-            "type" : "string",
-            "enum" : [ "PENDING", "APPROVED", "REJECTED", "SUSPENDED" ]
-          },
-          "submittedAt" : {
-            "type" : "string",
-            "format" : "date-time"
-          },
-          "rejectionReason" : {
-            "type" : "string"
-          },
-          "type" : {
-            "type" : "string",
-            "enum" : [ "INDIVIDUAL", "BUSINESS" ]
-          },
-          "displayName" : {
-            "type" : "string"
-          },
-          "legalName" : {
-            "type" : "string"
-          },
-          "legalId" : {
-            "type" : "string"
-          },
-          "contactEmail" : {
-            "type" : "string"
-          },
-          "contactPhone" : {
-            "type" : "string"
-          },
-          "website" : {
-            "type" : "string"
-          },
-          "introduction" : {
-            "type" : "string"
-          },
-          "eventScale" : {
-            "type" : "string"
-          }
-        },
-        "required" : [ "status", "submittedAt" ]
       },
       "MeResponse" : {
         "type" : "object",
@@ -4699,6 +5368,36 @@
         },
         "required" : [ "code", "id", "level", "name", "type" ]
       },
+      "AdminVenue" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "address" : {
+            "type" : "string"
+          },
+          "wardId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "wardName" : {
+            "type" : "string"
+          },
+          "cityName" : {
+            "type" : "string"
+          },
+          "capacity" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "address", "capacity", "cityName", "id", "name", "wardId", "wardName" ]
+      },
       "AdminUser" : {
         "type" : "object",
         "properties" : {
@@ -4891,6 +5590,72 @@
           }
         },
         "required" : [ "eventTitle", "seat", "startsAt", "status", "ticketId", "tierName", "venueName" ]
+      },
+      "StripeDeliveryFailure" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "pendingWebhooks" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "createdAt", "id", "pendingWebhooks", "type" ]
+      },
+      "StripeDeliveryFailurePage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/StripeDeliveryFailure"
+            }
+          }
+        }
+      },
+      "AdminPaymentConfig" : {
+        "type" : "object",
+        "properties" : {
+          "mode" : {
+            "type" : "string",
+            "description" : "test, live hoặc not_configured"
+          },
+          "secretKeyMasked" : {
+            "type" : "string"
+          },
+          "apiVersion" : {
+            "type" : "string"
+          },
+          "webhookEndpoint" : {
+            "type" : "string"
+          },
+          "connectWebhookEndpoint" : {
+            "type" : "string"
+          },
+          "successRate24h" : {
+            "type" : "number",
+            "format" : "double",
+            "description" : "Tỉ lệ webhook xử lý thành công trong 24 giờ qua, 0-100"
+          },
+          "organizersByState" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "integer",
+              "format" : "int32"
+            },
+            "description" : "Số organizer theo trạng thái Connect: none, incomplete, pending, active, restricted"
+          }
+        },
+        "required" : [ "apiVersion", "connectWebhookEndpoint", "mode", "organizersByState", "secretKeyMasked", "successRate24h", "webhookEndpoint" ]
       },
       "AdminOrganizer" : {
         "type" : "object",
@@ -5192,6 +5957,103 @@
           }
         },
         "required" : [ "bookingId", "eventId", "eventTitle", "organizerId", "organizerName", "status" ]
+      },
+      "AdminAuditLogPage" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AdminAuditLogRow"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "AdminAuditLogRow" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "actorId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "actorName" : {
+            "type" : "string"
+          },
+          "action" : {
+            "type" : "string",
+            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED" ]
+          },
+          "targetType" : {
+            "type" : "string"
+          },
+          "targetId" : {
+            "type" : "string"
+          },
+          "beforeState" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          },
+          "afterState" : {
+            "type" : "object",
+            "additionalProperties" : { }
+          },
+          "createdAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "action", "actorId", "actorName", "createdAt", "id", "targetId", "targetType" ]
+      },
+      "AdminAdministrativeUnit" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string",
+            "enum" : [ "TINH", "THANH_PHO", "PHUONG", "XA", "DAC_KHU" ]
+          },
+          "level" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "parentId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "active" : {
+            "type" : "boolean"
+          },
+          "effectiveFrom" : {
+            "type" : "string",
+            "format" : "date"
+          }
+        },
+        "required" : [ "active", "code", "effectiveFrom", "id", "level", "name", "type" ]
       },
       "DeleteAccountRequest" : {
         "type" : "object",

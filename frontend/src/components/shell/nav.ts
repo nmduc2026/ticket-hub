@@ -1,5 +1,5 @@
 import type { FileRouteTypes } from '@/routeTree.gen'
-import { BadgePercent, CalendarDays, CreditCard, LayoutDashboard, type LucideIcon, Receipt, UserCheck, Users } from 'lucide-react'
+import { BadgePercent, CalendarDays, CreditCard, FileClock, Landmark, LayoutDashboard, MapPin, type LucideIcon, Receipt, UserCheck, Users } from 'lucide-react'
 
 export type ShellVariant = 'admin' | 'organizer'
 
@@ -43,6 +43,9 @@ export const SHELL_CONFIG: Record<ShellVariant, ShellConfig> = {
           { to: '/admin/organizers', labelKey: 'shell.admin.organizers', icon: UserCheck },
           { to: '/admin/users', labelKey: 'shell.admin.users', icon: Users },
           { to: '/admin/fees', labelKey: 'shell.admin.fees', icon: BadgePercent },
+          { to: '/admin/venues', labelKey: 'shell.admin.venues', icon: Landmark },
+          { to: '/admin/regions', labelKey: 'shell.admin.regions', icon: MapPin },
+          { to: '/admin/audit-logs', labelKey: 'shell.admin.auditLogs', icon: FileClock },
         ],
       },
     ],
