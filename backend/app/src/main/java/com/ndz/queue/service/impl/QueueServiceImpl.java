@@ -43,6 +43,7 @@ class QueueServiceImpl implements QueueService {
 		if (now.isBefore(meta.saleStartsAt().minus(properties.openBefore()))) {
 			throw new BusinessException(ErrorCode.QUEUE_NOT_OPEN, "Phòng chờ chưa mở");
 		}
+		room.markOpen(eventId);
 		long rank = room.join(eventId, userId, score(meta, now));
 		if (rank == RedisWaitingRoom.ALREADY_ADMITTED) {
 			return admitted(eventId, userId);

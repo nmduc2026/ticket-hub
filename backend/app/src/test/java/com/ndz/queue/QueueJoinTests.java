@@ -1,7 +1,6 @@
 package com.ndz.queue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,20 +18,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.IntegrationTest;
 import com.ndz.MutableClock;
 import com.ndz.TestTokens;
-import com.ndz.catalog.event.EventEnded;
-import com.ndz.catalog.event.EventSuspended;
 import com.ndz.queue.client.RedisWaitingRoom;
+import com.ndz.queue.service.QueueService;
 import com.ndz.shared.util.Uuid7;
 
 /**
@@ -61,10 +57,7 @@ class QueueJoinTests {
 	RedisWaitingRoom room;
 
 	@Autowired
-	ApplicationEventPublisher publisher;
-
-	@Autowired
-	TransactionTemplate transactions;
+	QueueService queue;
 
 	@BeforeEach
 	void prepare() {
@@ -197,7 +190,7 @@ class QueueJoinTests {
 	}
 
 	@Test
-	@DisplayName("Sự kiện bị tạm dừng → xoá mọi key queue:{eventId}:*, join sau đó → 409 QUEUE_CLOSED")
+	@DisplayName("Đóng phòng chờ khi sự kiện bị tạm dừng → xoá mọi key queue:{eventId}:*, join sau đó → 409 QUEUE_CLOSED")
 	void suspendingTheEventClosesTheQueue() throws Exception {
 		UUID event = highDemandEvent();
 		UUID waiting = Uuid7.next();
@@ -209,23 +202,23 @@ class QueueJoinTests {
 		redis.opsForZSet().add(RedisWaitingRoom.pendingKey(event), UUID.randomUUID().toString(), 1);
 		jdbc.update("update catalog.events set status = 'SUSPENDED' where id = ?", event);
 
-		publish(new EventSuspended(Uuid7.next(), NOW, event, TestTokens.ORGANIZER_ID, "Phòng chờ thử", "thử", false));
+		queue.close(event);
 
-		await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty());
+		assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty();
 		join(Uuid7.next(), event).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("QUEUE_CLOSED"));
 		queueStatus(waiting, event).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("QUEUE_CLOSED"));
 	}
 
 	@Test
-	@DisplayName("Sự kiện kết thúc → phòng chờ đóng")
+	@DisplayName("Đóng phòng chờ khi sự kiện kết thúc → join sau đó → 409 QUEUE_CLOSED")
 	void endingTheEventClosesTheQueue() throws Exception {
 		UUID event = highDemandEvent();
 		join(Uuid7.next(), event);
 		jdbc.update("update catalog.events set status = 'ENDED' where id = ?", event);
 
-		publish(new EventEnded(Uuid7.next(), NOW, event));
+		queue.close(event);
 
-		await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty());
+		assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty();
 		join(Uuid7.next(), event).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("QUEUE_CLOSED"));
 	}
 
@@ -240,10 +233,6 @@ class QueueJoinTests {
 	}
 
 	// ---- Hỗ trợ ----
-
-	private void publish(Object event) {
-		transactions.executeWithoutResult(tx -> publisher.publishEvent(event));
-	}
 
 	private ResultActions join(UUID user, UUID event) throws Exception {
 		return mockMvc.perform(post("/api/v1/queue/" + event + "/join").header(HttpHeaders.AUTHORIZATION, bearer(user)));

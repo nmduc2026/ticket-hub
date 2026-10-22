@@ -1,6 +1,7 @@
 package com.ndz.queue.client;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -32,6 +34,33 @@ public class RedisWaitingRoom {
 			redis.call('ZADD', KEYS[2], 'NX', ARGV[2], ARGV[1])
 			return redis.call('ZRANK', KEYS[2], ARGV[1])
 			""", Long.class);
+
+	/**
+	 * Gọi người vào một lần trọn vẹn (pod chết giữa chừng không làm mất chỗ): bỏ phần tử quá hạn của {@code admitted} và
+	 * {@code pending}, tính chỗ trống dưới {@code max_active}, rồi với mỗi người lấy khỏi hàng thì đặt key lượt vào
+	 * (giá trị = giờ hết hạn, epoch millis) và ghi vào {@code admitted}. Trả danh sách userId vừa được gọi.
+	 * <p>
+	 * KEYS: waiting, admitted, pending. ARGV: bây giờ, max_active, số người tối đa, giờ hết hạn lượt vào, TTL (ms),
+	 * tiền tố key lượt vào.
+	 */
+	private static final RedisScript<List> ADMIT = new DefaultRedisScript<>("""
+			redis.call('ZREMRANGEBYSCORE', KEYS[2], '-inf', ARGV[1])
+			redis.call('ZREMRANGEBYSCORE', KEYS[3], '-inf', ARGV[1])
+			local active = redis.call('ZCARD', KEYS[2]) + redis.call('ZCARD', KEYS[3])
+			local count = math.min(tonumber(ARGV[2]) - active, tonumber(ARGV[3]))
+			local users = {}
+			if count <= 0 then return users end
+			local popped = redis.call('ZPOPMIN', KEYS[1], count)
+			for i = 1, #popped, 2 do
+			  redis.call('SET', ARGV[6] .. popped[i], ARGV[4], 'PX', ARGV[5])
+			  redis.call('ZADD', KEYS[2], ARGV[4], popped[i])
+			  users[#users + 1] = popped[i]
+			end
+			return users
+			""", List.class);
+
+	/** Tập sự kiện đang có phòng chờ để scheduler biết phải duyệt sự kiện nào; không cần cùng slot với key của sự kiện. */
+	static final String OPEN_EVENTS_KEY = "queue:open-events";
 
 	private static final String HIGH_DEMAND = "high_demand";
 	private static final String SALE_STARTS_AT = "sale_starts_at";
@@ -66,6 +95,43 @@ public class RedisWaitingRoom {
 				plain(score));
 	}
 
+	/** Đánh dấu sự kiện có phòng chờ để scheduler duyệt tới. */
+	public void markOpen(UUID eventId) {
+		redis.opsForSet().add(OPEN_EVENTS_KEY, eventId.toString());
+	}
+
+	public Set<UUID> openEvents() {
+		Set<String> members = redis.opsForSet().members(OPEN_EVENTS_KEY);
+		return members == null ? Set.of() : members.stream().map(UUID::fromString).collect(Collectors.toSet());
+	}
+
+	public void markClosed(UUID eventId) {
+		redis.opsForSet().remove(OPEN_EVENTS_KEY, eventId.toString());
+	}
+
+	/**
+	 * Gọi tối đa {@code batch} người từ đầu hàng chờ vào khi còn chỗ dưới {@code maxActive}.
+	 *
+	 * @return những người vừa được gọi, theo thứ tự trong hàng
+	 */
+	@SuppressWarnings("unchecked")
+	public List<UUID> admit(UUID eventId, long nowMillis, int maxActive, int batch, Duration ttl) {
+		List<String> users = redis.execute(ADMIT,
+				List.of(waitingKey(eventId), admittedKey(eventId), pendingKey(eventId)), Long.toString(nowMillis),
+				Integer.toString(maxActive), Integer.toString(batch), Long.toString(nowMillis + ttl.toMillis()),
+				Long.toString(ttl.toMillis()), "queue:{" + eventId + "}:admit:");
+		return users.stream().map(UUID::fromString).toList();
+	}
+
+	/** Booking chờ thanh toán, tính vào số người đang ở trong tới {@code countedUntil} (hạn dài nhất có thể). */
+	public void addPending(UUID eventId, UUID bookingId, Instant countedUntil) {
+		redis.opsForZSet().add(pendingKey(eventId), bookingId.toString(), countedUntil.toEpochMilli());
+	}
+
+	public void removePending(UUID eventId, UUID bookingId) {
+		redis.opsForZSet().remove(pendingKey(eventId), bookingId.toString());
+	}
+
 	/** Thứ hạng trong hàng chờ tính từ 0; rỗng nếu khách không ở trong hàng. */
 	public OptionalLong rank(UUID eventId, UUID userId) {
 		Long rank = redis.opsForZSet().rank(waitingKey(eventId), userId.toString());
@@ -85,6 +151,7 @@ public class RedisWaitingRoom {
 			redis.delete(admittedUsers.stream().map(user -> admitKey(eventId, UUID.fromString(user))).toList());
 		}
 		redis.delete(List.of(waitingKey(eventId), admittedKey(eventId), pendingKey(eventId), metaKey(eventId)));
+		markClosed(eventId);
 	}
 
 	public static String waitingKey(UUID eventId) {

@@ -20,7 +20,8 @@ import org.springframework.test.context.ActiveProfiles;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 // Job gửi lại event treo tắt trong test (interval dài): test tự gọi IncompleteEventPublications khi cần kiểm retry.
-@SpringBootTest(properties = "tickethub.events.republish-interval=24h")
+// Job điều tiết phòng chờ cũng tắt: test gọi QueueAdmissionService.admitWaiting() với đồng hồ test để kiểm từng nhịp.
+@SpringBootTest(properties = { "tickethub.events.republish-interval=24h", "tickethub.queue.admit-interval=24h" })
 @AutoConfigureMockMvc
 // Bật xuất metric (mặc định @SpringBootTest tắt): test kiểm /actuator/prometheus.
 @AutoConfigureMetrics
