@@ -15,6 +15,7 @@ import com.ndz.payment.client.StripeGatewayException;
 import com.ndz.payment.dto.response.PaymentResponse;
 import com.ndz.payment.entity.Payment;
 import com.ndz.payment.entity.enums.PaymentStatus;
+import com.ndz.payment.repository.ConnectedAccountRepository;
 import com.ndz.payment.repository.PaymentRepository;
 import com.ndz.payment.service.PaymentService;
 import com.ndz.shared.exception.BusinessException;
@@ -34,12 +35,15 @@ public class PaymentServiceImpl implements PaymentService {
 	private final BookingApi bookings;
 	private final StripeGateway stripe;
 	private final PaymentRepository payments;
+	private final ConnectedAccountRepository connectedAccounts;
 	private final Clock clock;
 
-	PaymentServiceImpl(BookingApi bookings, StripeGateway stripe, PaymentRepository payments, Clock clock) {
+	PaymentServiceImpl(BookingApi bookings, StripeGateway stripe, PaymentRepository payments,
+			ConnectedAccountRepository connectedAccounts, Clock clock) {
 		this.bookings = bookings;
 		this.stripe = stripe;
 		this.payments = payments;
+		this.connectedAccounts = connectedAccounts;
 		this.clock = clock;
 	}
 
@@ -60,10 +64,19 @@ public class PaymentServiceImpl implements PaymentService {
 			throw alreadySucceeded();
 		}
 		long feeMinor = PlatformFee.of(start.amountMinor(), start.platformFeeBps());
+		// §7.8: organizer có connected account → destination charge; chưa có (chỉ dữ liệu seed, BR-05 chặn organizer
+		// khác publish) → thu trên platform.
+		String destinationAccountId = connectedAccounts.findByOrganizer(start.organizerId()).map(account -> {
+			if (!account.chargesEnabled()) {
+				throw new BusinessException(ErrorCode.ORGANIZER_PAYOUT_NOT_READY,
+						"Organizer chưa thể nhận tiền, vui lòng thử lại sau");
+			}
+			return account.stripeAccountId();
+		}).orElse(null);
 
-		GatewayPaymentIntent intent = createIntent(start);
+		GatewayPaymentIntent intent = createIntent(start, destinationAccountId, feeMinor);
 		Payment candidate = new Payment(Uuid7.next(clock), bookingId, intent.id(), start.amountMinor(), feeMinor,
-				start.currency(), clock.instant());
+				destinationAccountId, start.currency(), clock.instant());
 		if (payments.insertIfAbsent(candidate)) {
 			log.info("Tạo thanh toán {} cho booking {}", candidate.getId(), bookingId);
 		}
@@ -77,10 +90,10 @@ public class PaymentServiceImpl implements PaymentService {
 		return new BusinessException(ErrorCode.PAYMENT_ALREADY_SUCCEEDED, "Đơn đã được thanh toán, đang chờ xác nhận");
 	}
 
-	private GatewayPaymentIntent createIntent(PaymentStart start) {
+	private GatewayPaymentIntent createIntent(PaymentStart start, String destinationAccountId, long feeMinor) {
 		try {
 			return stripe.createPaymentIntent(start.amountMinor(), start.currency(), start.bookingId(),
-					"booking-" + start.bookingId());
+					"booking-" + start.bookingId(), destinationAccountId, feeMinor);
 		}
 		catch (StripeGatewayException e) {
 			log.warn("Không tạo được PaymentIntent cho booking {} (mã Stripe: {})", start.bookingId(), e.code());

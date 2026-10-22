@@ -28,6 +28,16 @@ public interface PaymentRefundService {
 	 */
 	void onRefundSucceeded(UUID paymentId);
 
+	/** Xếp yêu cầu hoàn vì huỷ sự kiện vào hàng đợi (mỗi booking một dòng; gửi lại event không xếp thêm). */
+	void enqueueForCancelledEvent(RefundRequested event);
+
+	/**
+	 * Một lượt của job: nhận các dòng tới hạn, gọi Stripe theo giới hạn tốc độ; lỗi tạm thời thử lại có backoff.
+	 *
+	 * @return số dòng đã xử lý xong trong lượt
+	 */
+	int processRefundQueue();
+
 	/** Webhook {@code refund.failed}: lần hoàn đang chờ thất bại → {@code RefundFailed}. Lần đã chốt thì bỏ qua. */
 	void onRefundFailed(UUID paymentId, String stripeRefundId, String failureCode);
 

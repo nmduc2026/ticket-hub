@@ -64,7 +64,8 @@ public class BookingApiImpl implements BookingApi {
 			throw holdExpiring();
 		}
 		PaymentInfo info = bookings.paymentInfo(bookingId);
-		return new PaymentStart(bookingId, info.totalMinor(), info.currency(), info.platformFeeBps());
+		return new PaymentStart(bookingId, info.totalMinor(), info.currency(), info.platformFeeBps(),
+				info.organizerId());
 	}
 
 	@Override

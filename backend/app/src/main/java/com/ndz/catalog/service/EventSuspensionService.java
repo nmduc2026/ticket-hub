@@ -17,6 +17,12 @@ public interface EventSuspensionService {
 	/** {@code INVALID_EVENT_TRANSITION} nếu sự kiện không ở {@code PUBLISHED} / {@code ON_SALE}. */
 	EventStatusResult suspendEvent(UUID adminId, UUID eventId, String reason);
 
+	/**
+	 * Huỷ sự kiện (BR-08) từ {@code PUBLISHED} / {@code ON_SALE} / {@code SUSPENDED}; hoàn tiền do Booking và Payment
+	 * làm tiếp qua {@code EventCancelled}. {@code INVALID_EVENT_TRANSITION} nếu đã kết thúc / đã huỷ.
+	 */
+	EventStatusResult cancelEvent(UUID adminId, UUID eventId, String reason);
+
 	/** Mỗi id xử lý riêng; kết quả theo từng id. */
 	BulkResult bulkSuspend(UUID adminId, List<UUID> eventIds, String reason);
 

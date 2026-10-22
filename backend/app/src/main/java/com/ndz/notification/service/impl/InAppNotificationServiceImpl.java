@@ -86,6 +86,14 @@ public class InAppNotificationServiceImpl implements InAppNotificationService {
 	@Override
 	@Transactional
 	public void onRefundRequested(RefundRequested event) {
+		if (RefundRequested.EVENT_CANCELLED.equals(event.reason())) {
+			// BR-08: thông báo bắt buộc, không tắt được.
+			notify(event.userId(), NotificationType.EVENT_CANCELLED, "Sự kiện bị huỷ",
+					event.eventTitle() + ": sự kiện đã bị huỷ, vé bị thu hồi và bạn được hoàn toàn bộ "
+							+ MoneyFormat.format(event.refundAmountMinor(), event.currency()) + ".",
+					"/me/bookings", event.messageId());
+			return;
+		}
 		notify(event.userId(), NotificationType.REFUND_REQUESTED, "Đã nhận yêu cầu hoàn vé",
 				event.eventTitle() + ": vé đã bị thu hồi, bạn sẽ nhận lại "
 						+ MoneyFormat.format(event.refundAmountMinor(), event.currency()) + ".",

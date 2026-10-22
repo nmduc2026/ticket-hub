@@ -25,6 +25,12 @@ class TestcontainersConfiguration {
 		return new PostgreSQLContainer(DockerImageName.parse("postgres:17.6"));
 	}
 
+	/** Dư chút so với mặc định (10) cho request của test chạy song song với event bất đồng bộ (đã chặn ở application.yaml). */
+	@Bean
+	DynamicPropertyRegistrar datasourceProperties() {
+		return registry -> registry.add("spring.datasource.hikari.maximum-pool-size", () -> 50);
+	}
+
 	/** Adobe S3Mock cho test upload ảnh; bucket tạo sẵn lúc khởi động. */
 	@Bean
 	GenericContainer<?> s3MockContainer() {

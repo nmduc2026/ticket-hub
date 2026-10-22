@@ -16,6 +16,13 @@ spring:
   threads:
     virtual:
       enabled: true
+  task:
+    execution:
+      simple:
+        # Virtual thread không giới hạn số luồng; chặn ở đây để event bất đồng bộ (§4.2 P4, @ApplicationModuleListener)
+        # không giành connection với request đang chạy khi nhiều event nổ ra cùng lúc (vd. huỷ sự kiện hàng nghìn đơn,
+        # overview.md §12: giới hạn đồng thời thật nằm ở pool DB / bulkhead, không ở thread).
+        concurrency-limit: 40
   servlet:
     multipart:
       # Trần cứng bảo vệ server; giới hạn nghiệp vụ của banner (2 MB) kiểm ở service để trả 422 IMAGE_TOO_LARGE.

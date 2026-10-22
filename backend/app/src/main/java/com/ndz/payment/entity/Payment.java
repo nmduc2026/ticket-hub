@@ -18,7 +18,9 @@ import com.ndz.payment.entity.enums.PaymentStatus;
 
 /**
  * Một thanh toán của một booking (một PaymentIntent). Tiền là số nguyên đơn vị nhỏ nhất (BR-10);
- * {@code applicationFeeMinor} chỉ lưu, chưa gửi lên Stripe khi chưa có Connect (ADR 0022).
+ * {@code destinationAccountId} là connected account nhận tiền (destination charge, ADR 0022); {@code null} khi thu
+ * trên tài khoản platform (chỉ organizer dữ liệu seed, chưa có Connect) — khi đó {@code applicationFeeMinor} chỉ lưu
+ * để tính hoàn tiền, không gửi lên Stripe.
  */
 @Entity
 @Table(schema = "payment", name = "payments")
@@ -38,6 +40,9 @@ public class Payment {
 
 	@Column(name = "application_fee_minor", nullable = false, updatable = false)
 	private long applicationFeeMinor;
+
+	@Column(name = "destination_account_id", updatable = false)
+	private String destinationAccountId;
 
 	@JdbcTypeCode(SqlTypes.CHAR)
 	@Column(length = 3, nullable = false, updatable = false)
@@ -59,12 +64,13 @@ public class Payment {
 	}
 
 	public Payment(UUID id, UUID bookingId, String stripePaymentIntentId, long amountMinor, long applicationFeeMinor,
-			String currency, Instant now) {
+			String destinationAccountId, String currency, Instant now) {
 		this.id = id;
 		this.bookingId = bookingId;
 		this.stripePaymentIntentId = stripePaymentIntentId;
 		this.amountMinor = amountMinor;
 		this.applicationFeeMinor = applicationFeeMinor;
+		this.destinationAccountId = destinationAccountId;
 		this.currency = currency;
 		this.status = PaymentStatus.REQUIRES_PAYMENT;
 		this.createdAt = now;
@@ -103,6 +109,10 @@ public class Payment {
 
 	public long getApplicationFeeMinor() {
 		return applicationFeeMinor;
+	}
+
+	public String getDestinationAccountId() {
+		return destinationAccountId;
 	}
 
 	public String getCurrency() {

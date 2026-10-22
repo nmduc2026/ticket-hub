@@ -18,12 +18,13 @@ public class PaymentRepositoryImpl implements PaymentRepositoryCustom {
 	public boolean insertIfAbsent(Payment payment) {
 		return jdbc.update("""
 				INSERT INTO payment.payments (id, booking_id, stripe_payment_intent_id, amount_minor,
-				                              application_fee_minor, currency, status, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+				                              application_fee_minor, destination_account_id, currency, status,
+				                              created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT (booking_id) DO NOTHING
 				""", payment.getId(), payment.getBookingId(), payment.getStripePaymentIntentId(),
-				payment.getAmountMinor(), payment.getApplicationFeeMinor(), payment.getCurrency(),
-				payment.getStatus().name(), Timestamp.from(payment.getCreatedAt()),
+				payment.getAmountMinor(), payment.getApplicationFeeMinor(), payment.getDestinationAccountId(),
+				payment.getCurrency(), payment.getStatus().name(), Timestamp.from(payment.getCreatedAt()),
 				Timestamp.from(payment.getUpdatedAt())) == 1;
 	}
 

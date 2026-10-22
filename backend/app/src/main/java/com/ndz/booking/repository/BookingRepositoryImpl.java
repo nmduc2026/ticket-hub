@@ -9,6 +9,7 @@ import java.util.UUID;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import com.ndz.booking.dto.response.BookingResponses.RefundProgress;
 import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
 import com.ndz.booking.dto.response.BookingViews.AffectedBooking;
 import com.ndz.booking.dto.response.BookingViews.BookingItemView;
@@ -154,10 +155,10 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 	@Override
 	public PaymentInfo paymentInfo(UUID bookingId) {
 		Object[] row = em.createQuery("""
-				select b.totalMinor, b.currency, e.platformFeeBps
+				select b.totalMinor, b.currency, e.platformFeeBps, e.organizerId
 				from Booking b join EventSnapshot e on e.eventId = b.eventId where b.id = :id
 				""", Object[].class).setParameter("id", bookingId).getSingleResult();
-		return new PaymentInfo((Long) row[0], (String) row[1], (Integer) row[2]);
+		return new PaymentInfo((Long) row[0], (String) row[1], (Integer) row[2], (UUID) row[3]);
 	}
 
 	@Override
@@ -179,6 +180,17 @@ public class BookingRepositoryImpl implements BookingRepositoryCustom {
 	@Override
 	public List<UUID> releaseSoldSeats(UUID bookingId) {
 		return releaseWhere(bookingId, "SOLD");
+	}
+
+	@Override
+	public RefundProgress refundProgress(UUID eventId, String reason) {
+		Object[] row = (Object[]) em.createNativeQuery("""
+				SELECT count(*), count(*) FILTER (WHERE status = 'REFUNDED'),
+				       count(*) FILTER (WHERE status = 'REFUND_REQUESTED'), count(*) FILTER (WHERE status = 'REFUND_FAILED')
+				FROM booking.bookings WHERE event_id = :eventId AND refund_reason = :reason
+				""").setParameter("eventId", eventId).setParameter("reason", reason).getSingleResult();
+		return new RefundProgress(((Number) row[0]).intValue(), ((Number) row[1]).intValue(),
+				((Number) row[2]).intValue(), ((Number) row[3]).intValue());
 	}
 
 	@Override

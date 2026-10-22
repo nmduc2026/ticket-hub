@@ -18,7 +18,13 @@ class PaymentRefundRequestedListener {
 
 	@ApplicationModuleListener
 	void on(RefundRequested event) {
-		refunds.refundForBooking(event);
+		if (RefundRequested.EVENT_CANCELLED.equals(event.reason())) {
+			// BR-08: huỷ sự kiện có thể sinh hàng nghìn lệnh hoàn, đi qua hàng đợi có giới hạn tốc độ.
+			refunds.enqueueForCancelledEvent(event);
+		}
+		else {
+			refunds.refundForBooking(event);
+		}
 	}
 
 }

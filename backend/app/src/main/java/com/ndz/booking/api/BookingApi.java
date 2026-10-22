@@ -39,8 +39,11 @@ public interface BookingApi {
 			String currency, Instant createdAt, String refundStatus, Long refundAmountMinor, int ticketCount) {
 	}
 
-	/** Số tiền cần thu và mức phí nền tảng đã chốt khi publish (BR-06). Tiền là số nguyên đơn vị nhỏ nhất (BR-10). */
-	record PaymentStart(UUID bookingId, long amountMinor, String currency, int platformFeeBps) {
+	/**
+	 * Số tiền cần thu, mức phí nền tảng đã chốt khi publish (BR-06) và organizer nhận tiền (destination charge, §7.8).
+	 * Tiền là số nguyên đơn vị nhỏ nhất (BR-10).
+	 */
+	record PaymentStart(UUID bookingId, long amountMinor, String currency, int platformFeeBps, UUID organizerId) {
 	}
 
 }

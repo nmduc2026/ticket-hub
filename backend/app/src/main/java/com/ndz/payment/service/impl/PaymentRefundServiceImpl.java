@@ -1,6 +1,7 @@
 package com.ndz.payment.service.impl;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -11,6 +12,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.ndz.booking.event.RefundCompleted;
@@ -25,8 +27,12 @@ import com.ndz.payment.entity.enums.PaymentStatus;
 import com.ndz.payment.entity.enums.RefundStatus;
 import com.ndz.payment.repository.PaymentProcessedEventRepository;
 import com.ndz.payment.repository.PaymentRepository;
+import com.ndz.payment.config.PaymentProperties;
+import com.ndz.payment.repository.RefundQueueRepository;
+import com.ndz.payment.repository.RefundQueueRepository.QueuedRefund;
 import com.ndz.payment.repository.RefundRepository;
 import com.ndz.payment.service.PaymentRefundService;
+import com.ndz.payment.util.RefundPacer;
 import com.ndz.shared.util.Uuid7;
 
 /**
@@ -47,11 +53,15 @@ public class PaymentRefundServiceImpl implements PaymentRefundService {
 	private final StripeGateway stripe;
 	private final ApplicationEventPublisher publisher;
 	private final TransactionTemplate newTransaction;
+	private final RefundQueueRepository queue;
+	private final PaymentProperties properties;
+	private final RefundPacer pacer;
 	private final Clock clock;
 
 	PaymentRefundServiceImpl(PaymentRepository payments, RefundRepository refunds,
 			PaymentProcessedEventRepository processed, StripeGateway stripe, ApplicationEventPublisher publisher,
-			PlatformTransactionManager transactions, Clock clock) {
+			PlatformTransactionManager transactions, RefundQueueRepository queue, PaymentProperties properties,
+			Clock clock) {
 		this.payments = payments;
 		this.refunds = refunds;
 		this.processed = processed;
@@ -59,6 +69,9 @@ public class PaymentRefundServiceImpl implements PaymentRefundService {
 		this.publisher = publisher;
 		this.newTransaction = new TransactionTemplate(transactions);
 		this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+		this.queue = queue;
+		this.properties = properties;
+		this.pacer = new RefundPacer(properties.refundQueueRate());
 		this.clock = clock;
 	}
 
@@ -92,6 +105,75 @@ public class PaymentRefundServiceImpl implements PaymentRefundService {
 			log.info("Bỏ qua RefundRequested đã xử lý {}", event.messageId());
 			return;
 		}
+		refundBooking(event);
+	}
+
+	@Override
+	public void enqueueForCancelledEvent(RefundRequested event) {
+		if (!processed.markProcessed(REQUESTED_CONSUMER, event.messageId())) {
+			log.info("Bỏ qua RefundRequested đã xử lý {}", event.messageId());
+			return;
+		}
+		boolean queued = queue.enqueue(Uuid7.next(clock), new QueuedRefund(null, event.bookingId(), event.userId(),
+				event.contactEmail(), event.eventTitle(), event.refundAmountMinor(), event.currency(), 0), clock.instant());
+		log.info("Booking {} {} hàng đợi hoàn tiền (huỷ sự kiện)", event.bookingId(), queued ? "vào" : "đã có trong");
+	}
+
+	@Override
+	public int processRefundQueue() {
+		List<QueuedRefund> due = newTransaction.execute(status -> queue.claimDue(clock.instant(),
+				properties.refundQueueLease(), properties.refundQueueBatchSize()));
+		int done = 0;
+		for (QueuedRefund item : due) {
+			try {
+				pacer.acquire();
+			}
+			catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				return done; // dòng chưa xử lý quay lại sau khi hết lease
+			}
+			done += processQueued(item) ? 1 : 0;
+		}
+		return done;
+	}
+
+	/** @return true nếu đã gửi Stripe (kết quả cuối do refund / webhook ghi); false nếu để thử lại / đánh dấu lỗi */
+	private boolean processQueued(QueuedRefund item) {
+		RefundRequested request = new RefundRequested(item.id(), clock.instant(), item.bookingId(), item.userId(), null,
+				item.eventTitle(), item.contactEmail(), RefundRequested.EVENT_CANCELLED, item.amountMinor(),
+				item.currency(), null);
+		if (alreadyRefunded(item.bookingId())) {
+			// Pod trước đã hoàn xong nhưng chết trước khi đánh dấu DONE: không gọi Stripe lần nữa.
+			queue.markDone(item.id());
+			return true;
+		}
+		try {
+			refundBooking(request);
+			queue.markDone(item.id());
+			return true;
+		}
+		catch (StripeGatewayException e) {
+			if (item.attempts() >= properties.refundQueueMaxAttempts()) {
+				queue.markFailed(item.id(), e.getMessage());
+				log.error("Hoàn tiền booking {} vẫn lỗi sau {} lần: cần Admin xử lý", item.bookingId(), item.attempts());
+				return false;
+			}
+			// Lỗi tạm thời: chờ lâu dần (5 giây × 2^(lần thử − 1), tối đa 5 phút), cùng bản ghi hoàn và khoá cũ.
+			long delaySeconds = Math.min(300, 5L << Math.min(item.attempts() - 1, 6));
+			queue.retryLater(item.id(), clock.instant().plusSeconds(delaySeconds), e.getMessage());
+			log.warn("Hoàn tiền booking {} lỗi tạm thời, thử lại sau {} giây", item.bookingId(), delaySeconds);
+			return false;
+		}
+	}
+
+	private boolean alreadyRefunded(UUID bookingId) {
+		return payments.findByBookingId(bookingId)
+				.flatMap(payment -> refunds.findFirstByPaymentIdAndReasonOrderByCreatedAtDesc(payment.getId(),
+						RefundRequested.EVENT_CANCELLED))
+				.map(refund -> refund.getStatus() == RefundStatus.SUCCEEDED).orElse(false);
+	}
+
+	private void refundBooking(RefundRequested event) {
 		Payment payment = payments.findByBookingId(event.bookingId()).orElse(null);
 		if (payment == null || payment.getStatus() != PaymentStatus.SUCCEEDED) {
 			log.error("Booking {} yêu cầu hoàn nhưng payment {}: không hoàn được", event.bookingId(),
@@ -152,10 +234,13 @@ public class PaymentRefundServiceImpl implements PaymentRefundService {
 	}
 
 	private void callStripe(Payment payment, Refund refund) {
+		// §7.8: destination charge thì kéo lại phần đã chuyển; chỉ hoàn luôn phí nền tảng khi không phải BR-07.
+		boolean reverseTransfer = payment.getDestinationAccountId() != null;
+		boolean refundApplicationFee = reverseTransfer && !RefundRequested.CUSTOMER_REQUEST.equals(refund.getReason());
 		GatewayRefund result;
 		try {
 			result = stripe.createRefund(payment.getStripePaymentIntentId(), refund.getAmountMinor(), refund.getId(),
-					"refund-" + refund.getId());
+					"refund-" + refund.getId(), reverseTransfer, refundApplicationFee);
 		}
 		catch (StripeGatewayException e) {
 			if (e.code() == null) {
@@ -178,32 +263,51 @@ public class PaymentRefundServiceImpl implements PaymentRefundService {
 		}
 	}
 
-	private void complete(Refund refund) {
-		if (!refund.markSucceeded(clock.instant())) {
-			log.info("Lần hoàn {} đã ở trạng thái {}: bỏ qua", refund.getId(), refund.getStatus());
-			return;
+	/**
+	 * Chạy trong transaction hiện có nếu người gọi đã mở một transaction (webhook, listener của event khác — giữ
+	 * nguyên hành vi cũ); mở transaction riêng khi không có (vd. job hàng đợi gọi {@code processRefundQueue} trực
+	 * tiếp, không qua listener nào): {@code RefundCompleted} / {@code RefundFailed} là
+	 * {@code @TransactionalEventListener(AFTER_COMMIT)}, publish ngoài mọi transaction bị Spring bỏ qua lặng lẽ.
+	 */
+	private void runInTransaction(Runnable work) {
+		if (TransactionSynchronizationManager.isActualTransactionActive()) {
+			work.run();
 		}
-		refunds.save(refund);
-		Payment payment = payments.findById(refund.getPaymentId()).orElseThrow();
-		publisher.publishEvent(new RefundCompleted(Uuid7.next(clock), clock.instant(), refund.getId(),
-				payment.getId(), bookingOf(refund, payment), refund.getUserId(), refund.getAmountMinor(),
-				payment.getCurrency(), refund.getContactEmail(), refund.getEventTitle()));
-		log.info("Hoàn tiền {} của payment {} đã xong", refund.getId(), payment.getId());
+		else {
+			newTransaction.executeWithoutResult(status -> work.run());
+		}
+	}
+
+	private void complete(Refund refund) {
+		runInTransaction(() -> {
+			if (!refund.markSucceeded(clock.instant())) {
+				log.info("Lần hoàn {} đã ở trạng thái {}: bỏ qua", refund.getId(), refund.getStatus());
+				return;
+			}
+			refunds.save(refund);
+			Payment payment = payments.findById(refund.getPaymentId()).orElseThrow();
+			publisher.publishEvent(new RefundCompleted(Uuid7.next(clock), clock.instant(), refund.getId(),
+					payment.getId(), bookingOf(refund, payment), refund.getUserId(), refund.getAmountMinor(),
+					payment.getCurrency(), refund.getContactEmail(), refund.getEventTitle()));
+			log.info("Hoàn tiền {} của payment {} đã xong", refund.getId(), payment.getId());
+		});
 	}
 
 	private void fail(Refund refund, String failureCode) {
-		if (!refund.markFailed(failureCode, clock.instant())) {
-			log.info("Lần hoàn {} đã ở trạng thái {}: bỏ qua", refund.getId(), refund.getStatus());
-			return;
-		}
-		refunds.save(refund);
-		Payment payment = payments.findById(refund.getPaymentId()).orElseThrow();
-		publisher.publishEvent(new RefundFailed(Uuid7.next(clock), clock.instant(), refund.getId(), payment.getId(),
-				bookingOf(refund, payment), refund.getUserId(), refund.getAmountMinor(), payment.getCurrency(),
-				failureCode, refund.getEventTitle()));
-		// Alert mức cao (overview.md §16.3): REFUND_FAILED cần Admin hoàn thủ công.
-		log.error("Hoàn tiền {} của payment {} thất bại ({}): cần Admin xử lý", refund.getId(), payment.getId(),
-				failureCode);
+		runInTransaction(() -> {
+			if (!refund.markFailed(failureCode, clock.instant())) {
+				log.info("Lần hoàn {} đã ở trạng thái {}: bỏ qua", refund.getId(), refund.getStatus());
+				return;
+			}
+			refunds.save(refund);
+			Payment payment = payments.findById(refund.getPaymentId()).orElseThrow();
+			publisher.publishEvent(new RefundFailed(Uuid7.next(clock), clock.instant(), refund.getId(),
+					payment.getId(), bookingOf(refund, payment), refund.getUserId(), refund.getAmountMinor(),
+					payment.getCurrency(), failureCode, refund.getEventTitle()));
+			// Alert mức cao (overview.md §16.3): REFUND_FAILED cần Admin hoàn thủ công.
+			log.error("Hoàn tiền {} của payment {} thất bại ({}): cần Admin xử lý", refund.getId(), payment.getId(),
+					failureCode);
+		});
 	}
 
 	private static UUID bookingOf(Refund refund, Payment payment) {

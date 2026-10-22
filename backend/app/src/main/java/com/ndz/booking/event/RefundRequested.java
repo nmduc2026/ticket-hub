@@ -19,5 +19,7 @@ public record RefundRequested(UUID messageId, Instant occurredAt, UUID bookingId
 	public static final String CUSTOMER_REQUEST = "CUSTOMER_REQUEST";
 	/** Phát vé vi phạm UNIQUE (§7.3): hoàn 100%. */
 	public static final String TICKET_ISSUANCE_FAILED = "TICKET_ISSUANCE_FAILED";
+	/** Admin huỷ sự kiện (BR-08): hoàn 100% gồm phí, Payment hoàn qua hàng đợi có giới hạn tốc độ. */
+	public static final String EVENT_CANCELLED = "EVENT_CANCELLED";
 
 }

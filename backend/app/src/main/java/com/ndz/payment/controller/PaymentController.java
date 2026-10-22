@@ -43,8 +43,9 @@ class PaymentController {
 	@ApiResponse(responseCode = "404", description = "BOOKING_NOT_FOUND (không có hoặc không phải của bạn)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "409",
-			description = "HOLD_EXPIRING (còn dưới 90 giây), BOOKING_NOT_PAYABLE hoặc PAYMENT_ALREADY_SUCCEEDED (đơn đã "
-					+ "trả tiền, đang chờ xác nhận)",
+			description = "HOLD_EXPIRING (còn dưới 90 giây), BOOKING_NOT_PAYABLE, PAYMENT_ALREADY_SUCCEEDED (đơn đã "
+					+ "trả tiền, đang chờ xác nhận) hoặc ORGANIZER_PAYOUT_NOT_READY (Stripe Connect của organizer chưa "
+					+ "charges_enabled)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "503", description = "PAYMENT_PROVIDER_UNAVAILABLE (Stripe không phản hồi)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))

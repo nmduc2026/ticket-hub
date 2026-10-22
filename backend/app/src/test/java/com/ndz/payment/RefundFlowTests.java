@@ -308,9 +308,13 @@ class RefundFlowTests {
 				.andExpect(status().isAccepted());
 
 		await().atMost(Duration.ofSeconds(20)).untilAsserted(() -> assertThat(statusOf(bookingId)).isEqualTo("REFUNDED"));
-		assertThat(jdbc.queryForList("select id from payment.refunds order by created_at", UUID.class)).hasSize(2);
-		assertThat(jdbc.queryForList("select status from payment.refunds order by created_at", String.class))
-				.containsExactly("FAILED", "SUCCEEDED");
+		// Khớp theo stripe_refund_id (định danh của từng lần thử): created_at và id (Uuid7 theo clock cố định của
+		// test) trùng giờ nên không dùng để sắp được.
+		assertThat(jdbc.queryForList("select id from payment.refunds", UUID.class)).hasSize(2);
+		assertThat(jdbc.queryForObject("select status from payment.refunds where stripe_refund_id = 're_1'",
+				String.class)).isEqualTo("FAILED");
+		assertThat(jdbc.queryForObject("select status from payment.refunds where stripe_refund_id = 're_2'",
+				String.class)).isEqualTo("SUCCEEDED");
 		var requests = stripe.findAll(postRequestedFor(urlEqualTo("/v1/refunds")));
 		assertThat(requests).hasSize(2);
 		assertThat(requests.get(0).getHeader("Idempotency-Key")).isNotEqualTo(requests.get(1).getHeader("Idempotency-Key"));

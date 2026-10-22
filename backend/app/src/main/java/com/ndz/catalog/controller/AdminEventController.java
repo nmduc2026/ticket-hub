@@ -45,6 +45,17 @@ class AdminEventController {
 		return suspensions.suspendEvent(CurrentUser.require().id(), id, request.reason());
 	}
 
+	@Operation(operationId = "cancelEvent",
+			summary = "Huỷ sự kiện, hoàn 100% mọi đơn đã thanh toán qua hàng đợi (BR-08)")
+	@ApiResponse(responseCode = "200", description = "Đã huỷ",
+			content = @Content(schema = @Schema(implementation = EventStatusResult.class)))
+	@ApiResponse(responseCode = "409", description = "INVALID_EVENT_TRANSITION (đã kết thúc / đã huỷ)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@PostMapping("/{id}/cancel")
+	EventStatusResult cancel(@PathVariable UUID id, @Valid @RequestBody SuspensionRequests.Suspend request) {
+		return suspensions.cancelEvent(CurrentUser.require().id(), id, request.reason());
+	}
+
 	@Operation(operationId = "bulkSuspendEvents", summary = "Tạm dừng nhiều sự kiện; kết quả theo từng id")
 	@PostMapping("/bulk-suspend")
 	BulkResult bulkSuspend(@Valid @RequestBody SuspensionRequests.BulkSuspend request) {

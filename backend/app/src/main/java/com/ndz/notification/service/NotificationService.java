@@ -3,6 +3,7 @@ package com.ndz.notification.service;
 import com.ndz.booking.event.BookingHoldExpiring;
 import com.ndz.booking.event.BookingSalePaused;
 import com.ndz.booking.event.RefundCompleted;
+import com.ndz.booking.event.RefundRequested;
 import com.ndz.catalog.event.OrganizerApproved;
 import com.ndz.catalog.event.OrganizerRejected;
 import com.ndz.ticket.event.TicketIssued;
@@ -28,6 +29,9 @@ public interface NotificationService {
 
 	/** Email "tạm dừng bán" cho khách có đơn (BR-13): loại tuỳ chọn, theo cờ email. */
 	void onSalePaused(BookingSalePaused event);
+
+	/** Email bắt buộc khi sự kiện bị huỷ (BR-08): chỉ với yêu cầu hoàn lý do huỷ sự kiện. */
+	void onRefundRequested(RefundRequested event);
 
 	/**
 	 * Gửi email kết quả duyệt hồ sơ organizer tới email liên hệ trong hồ sơ. Idempotent theo {@code messageId}; gửi lỗi

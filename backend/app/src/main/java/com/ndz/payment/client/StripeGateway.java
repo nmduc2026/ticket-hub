@@ -42,16 +42,35 @@ public class StripeGateway {
 	}
 
 	/**
-	 * Tạo PaymentIntent cho booking. Không gửi {@code application_fee_amount}: chưa có connected account (ADR 0022).
+	 * Tạo PaymentIntent cho booking thu trên tài khoản platform (không có connected account; chỉ organizer dữ liệu
+	 * seed, ADR 0022): không gửi {@code application_fee_amount} / {@code transfer_data}.
 	 *
 	 * @param idempotencyKey {@code booking-{bookingId}}: gọi lại cùng khoá trả đúng PaymentIntent đã tạo
 	 */
 	public GatewayPaymentIntent createPaymentIntent(long amountMinor, String currency, UUID bookingId,
 			String idempotencyKey) {
-		var params = PaymentIntentCreateParams.builder().setAmount(amountMinor).setCurrency(currency.toLowerCase())
+		return createPaymentIntent(amountMinor, currency, bookingId, idempotencyKey, null, 0);
+	}
+
+	/**
+	 * Tạo PaymentIntent cho booking (destination charge khi {@code destinationAccountId} có giá trị, ADR 0022, §7.8):
+	 * tiền vào tài khoản platform, Stripe tự chuyển {@code amountMinor - applicationFeeMinor} sang connected account
+	 * đó. {@code destinationAccountId} null (organizer dữ liệu seed, chưa có Connect) thì thu hẳn trên platform,
+	 * không gửi {@code application_fee_amount} / {@code transfer_data}.
+	 *
+	 * @param idempotencyKey {@code booking-{bookingId}}: gọi lại cùng khoá trả đúng PaymentIntent đã tạo
+	 */
+	public GatewayPaymentIntent createPaymentIntent(long amountMinor, String currency, UUID bookingId,
+			String idempotencyKey, String destinationAccountId, long applicationFeeMinor) {
+		var builder = PaymentIntentCreateParams.builder().setAmount(amountMinor).setCurrency(currency.toLowerCase())
 				.setAutomaticPaymentMethods(
 						PaymentIntentCreateParams.AutomaticPaymentMethods.builder().setEnabled(true).build())
-				.putAllMetadata(Map.of("bookingId", bookingId.toString())).build();
+				.putAllMetadata(Map.of("bookingId", bookingId.toString()));
+		if (destinationAccountId != null) {
+			builder.setApplicationFeeAmount(applicationFeeMinor).setTransferData(
+					PaymentIntentCreateParams.TransferData.builder().setDestination(destinationAccountId).build());
+		}
+		var params = builder.build();
 		var options = RequestOptions.builder().setIdempotencyKey(idempotencyKey).build();
 		return call(true, "create PaymentIntent", () -> client.v1().paymentIntents().create(params, options));
 	}
@@ -66,17 +85,33 @@ public class StripeGateway {
 	}
 
 	/**
-	 * Hoàn tiền một phần hoặc toàn bộ cho PaymentIntent đã thanh toán.
-	 *
-	 * <p>Khi có Connect (destination charge, ADR 0022) hàm này chừa chỗ cho transfer reversal và
-	 * {@code refund_application_fee}.
+	 * Hoàn tiền một phần hoặc toàn bộ cho PaymentIntent thu trên platform (không có destination transfer để kéo lại).
 	 *
 	 * @param idempotencyKey {@code refund-{refundId}}: gọi lại cùng khoá trả đúng lần hoàn đã tạo
 	 */
 	public GatewayRefund createRefund(String paymentIntentId, long amountMinor, UUID refundId,
 			String idempotencyKey) {
-		var params = RefundCreateParams.builder().setPaymentIntent(paymentIntentId).setAmount(amountMinor)
-				.putMetadata("refundId", refundId.toString()).build();
+		return createRefund(paymentIntentId, amountMinor, refundId, idempotencyKey, false, false);
+	}
+
+	/**
+	 * Hoàn tiền một phần hoặc toàn bộ cho PaymentIntent đã thanh toán (ADR 0022, §7.8).
+	 *
+	 * @param reverseTransfer kéo lại phần đã chuyển cho organizer; chỉ có ý nghĩa khi payment là destination charge
+	 * @param refundApplicationFee hoàn luôn phí nền tảng cho khách (BR-08); bỏ qua khi {@code reverseTransfer} false
+	 * @param idempotencyKey {@code refund-{refundId}}: gọi lại cùng khoá trả đúng lần hoàn đã tạo
+	 */
+	public GatewayRefund createRefund(String paymentIntentId, long amountMinor, UUID refundId, String idempotencyKey,
+			boolean reverseTransfer, boolean refundApplicationFee) {
+		var builder = RefundCreateParams.builder().setPaymentIntent(paymentIntentId).setAmount(amountMinor)
+				.putMetadata("refundId", refundId.toString());
+		if (reverseTransfer) {
+			builder.setReverseTransfer(true);
+			if (refundApplicationFee) {
+				builder.setRefundApplicationFee(true);
+			}
+		}
+		var params = builder.build();
 		var options = RequestOptions.builder().setIdempotencyKey(idempotencyKey).build();
 		return resilience.execute(true, () -> {
 			try {

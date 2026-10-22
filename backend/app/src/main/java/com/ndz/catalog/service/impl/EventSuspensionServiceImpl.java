@@ -23,6 +23,7 @@ import com.ndz.catalog.entity.Event;
 import com.ndz.catalog.entity.Organizer;
 import com.ndz.catalog.entity.enums.EventStatus;
 import com.ndz.catalog.entity.enums.OrganizerStatus;
+import com.ndz.catalog.event.EventCancelled;
 import com.ndz.catalog.event.EventResumed;
 import com.ndz.catalog.event.EventSuspended;
 import com.ndz.catalog.event.OrganizerPayoutStatusChanged;
@@ -74,6 +75,21 @@ public class EventSuspensionServiceImpl implements EventSuspensionService {
 		suspend(event, reason, false);
 		audit.record(adminId, AuditAction.EVENT_SUSPENDED, "event", eventId, Map.of("status", before.name()),
 				Map.of("status", EventStatus.SUSPENDED.name(), "reason", reason));
+		return new EventStatusResult(eventId, event.getStatus().name());
+	}
+
+	@Override
+	@Transactional
+	public EventStatusResult cancelEvent(UUID adminId, UUID eventId, String reason) {
+		Event event = event(eventId);
+		EventStatus before = event.getStatus();
+		event.cancel();
+		events.save(event);
+		publisher.publishEvent(new EventCancelled(Uuid7.next(clock), clock.instant(), eventId, event.getOrganizerId(),
+				event.getTitle(), reason));
+		audit.record(adminId, AuditAction.EVENT_CANCELLED, "event", eventId, Map.of("status", before.name()),
+				Map.of("status", EventStatus.CANCELLED.name(), "reason", reason));
+		log.warn("Admin {} huỷ sự kiện {}: {}", adminId, eventId, reason);
 		return new EventStatusResult(eventId, event.getStatus().name());
 	}
 

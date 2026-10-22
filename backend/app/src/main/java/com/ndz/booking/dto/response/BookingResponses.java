@@ -64,6 +64,14 @@ public final class BookingResponses {
 					requiredMode = Schema.RequiredMode.REQUIRED) long refundAmountMinor) {
 	}
 
+	@Schema(name = "RefundProgress", description = "Tiến độ hoàn tiền khi huỷ sự kiện (BR-08)")
+	public record RefundProgress(
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int total,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int refunded,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int pending,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int failed) {
+	}
+
 	@Schema(name = "Booking")
 	public record BookingResponse(
 			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,

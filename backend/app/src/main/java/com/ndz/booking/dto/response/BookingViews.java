@@ -53,8 +53,8 @@ public final class BookingViews {
 			List<BookingItemView> items) {
 	}
 
-	/** Số tiền và mức phí của booking để Payment tạo thanh toán. */
-	public record PaymentInfo(long totalMinor, String currency, int platformFeeBps) {
+	/** Số tiền, mức phí và organizer của booking để Payment tạo thanh toán (destination charge, §7.8). */
+	public record PaymentInfo(long totalMinor, String currency, int platformFeeBps, UUID organizerId) {
 	}
 
 	/**

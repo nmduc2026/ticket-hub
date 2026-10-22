@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ndz.booking.dto.response.BookingResponses.RefundProgress;
 import com.ndz.booking.dto.response.BookingViews.AdminBookingSummary;
 import com.ndz.booking.dto.response.BookingViews.AffectedBooking;
 import com.ndz.booking.dto.response.BookingViews.BookingSummary;
@@ -50,6 +51,9 @@ public interface BookingRepositoryCustom {
 	/** Nhả các ghế đang giữ của booking về {@code AVAILABLE}; trả về id các ghế đã nhả. */
 	@Transactional
 	List<UUID> releaseSeats(UUID bookingId);
+
+	/** Đếm đơn hoàn theo lý do của sự kiện: đã hoàn, đang hoàn, hoàn lỗi (màn #34). */
+	RefundProgress refundProgress(UUID eventId, String reason);
 
 	/** Booking {@code PENDING_PAYMENT} / {@code CONFIRMED} của sự kiện (báo khách khi tạm dừng bán, BR-13). */
 	List<AffectedBooking> affectedBySalePause(UUID eventId);
