@@ -54,6 +54,9 @@ class BookingController {
 			description = "Bắt buộc header Idempotency-Key. Giữ ghế 10 phút (BR-03).")
 	@Parameter(name = "Idempotency-Key", in = ParameterIn.HEADER, required = true,
 			description = "Khoá chống gửi lặp (1-128 ký tự in được)", schema = @Schema(type = "string"))
+	@ApiResponse(responseCode = "403",
+			description = "ADMISSION_REQUIRED: sự kiện có phòng chờ mà bạn chưa có lượt vào còn hạn (mỗi lượt vào chỉ tạo được 1 booking)",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "409",
 			description = "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS (kèm bookingId của đơn đang chờ thanh toán)",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))

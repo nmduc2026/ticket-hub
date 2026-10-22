@@ -138,6 +138,16 @@ public class RedisWaitingRoom {
 		return rank == null ? OptionalLong.empty() : OptionalLong.of(rank);
 	}
 
+	public boolean hasAdmission(UUID eventId, UUID userId) {
+		return Boolean.TRUE.equals(redis.hasKey(admitKey(eventId, userId)));
+	}
+
+	/** Xoá key lượt vào và bỏ khỏi {@code admitted}: từ đây chỗ của khách do booking chờ thanh toán đếm. */
+	public void consumeAdmission(UUID eventId, UUID userId) {
+		redis.delete(admitKey(eventId, userId));
+		redis.opsForZSet().remove(admittedKey(eventId), userId.toString());
+	}
+
 	/** Giờ hết hạn lượt vào (giá trị key là epoch millis); rỗng nếu khách không có lượt vào còn hạn. */
 	public Optional<Instant> admission(UUID eventId, UUID userId) {
 		String expiresAtMillis = redis.opsForValue().get(admitKey(eventId, userId));

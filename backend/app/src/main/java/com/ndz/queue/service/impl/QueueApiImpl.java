@@ -19,6 +19,16 @@ class QueueApiImpl implements QueueApi {
 	}
 
 	@Override
+	public boolean hasAdmission(UUID eventId, UUID userId) {
+		return room.hasAdmission(eventId, userId);
+	}
+
+	@Override
+	public void consumeAdmission(UUID eventId, UUID userId) {
+		room.consumeAdmission(eventId, userId);
+	}
+
+	@Override
 	public void bookingPending(UUID eventId, UUID bookingId, Instant countedUntil) {
 		room.addPending(eventId, bookingId, countedUntil);
 	}

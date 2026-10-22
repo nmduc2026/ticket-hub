@@ -30,6 +30,7 @@ import com.ndz.booking.dto.response.BookingViews.LockedBooking;
 import com.ndz.booking.dto.response.BookingViews.LockedSeat;
 import com.ndz.booking.repository.BookingRepository;
 import com.ndz.booking.repository.EventSnapshotRepository;
+import com.ndz.queue.api.QueueApi;
 import com.ndz.booking.service.SeatHoldService;
 import com.ndz.shared.exception.BusinessException;
 import com.ndz.shared.exception.ErrorCode;
@@ -55,17 +56,19 @@ public class BookingServiceImpl implements BookingService {
 	private final BookingRepository bookings;
 	private final EventSnapshotRepository snapshots;
 	private final SeatHoldService seatHolds;
+	private final QueueApi queue;
 	private final BookingProperties properties;
 	private final TransactionTemplate transaction;
 	private final ApplicationEventPublisher publisher;
 	private final Clock clock;
 
 	BookingServiceImpl(BookingRepository bookings, EventSnapshotRepository snapshots, SeatHoldService seatHolds,
-			BookingProperties properties, TransactionTemplate transaction, ApplicationEventPublisher publisher,
+			QueueApi queue, BookingProperties properties, TransactionTemplate transaction, ApplicationEventPublisher publisher,
 			Clock clock) {
 		this.bookings = bookings;
 		this.snapshots = snapshots;
 		this.seatHolds = seatHolds;
+		this.queue = queue;
 		this.properties = properties;
 		this.transaction = transaction;
 		this.publisher = publisher;
@@ -87,19 +90,42 @@ public class BookingServiceImpl implements BookingService {
 		if (!"ON_SALE".equals(rules.status())) {
 			throw new BusinessException(ErrorCode.EVENT_NOT_ON_SALE, "Sự kiện chưa mở bán hoặc đã dừng bán");
 		}
+		// BR-04, bước 0 của §10: sự kiện bật phòng chờ thì phải có lượt vào còn hạn, trước khi đụng tới Redis hay DB.
+		if (rules.highDemand() && !queue.hasAdmission(eventId, userId)) {
+			throw new BusinessException(ErrorCode.ADMISSION_REQUIRED, "Bạn cần xếp hàng ở phòng chờ trước khi chọn ghế");
+		}
 		checkUserLimits(userId, rules, seatIds.size());
 
 		// Lớp 1 (Redis) chặn sớm các request tranh cùng ghế; Postgres bên dưới vẫn quyết định (overview.md §10).
 		UUID bookingId = Uuid7.next(clock);
 		Instant expiresAt = clock.instant().plus(properties.holdDuration());
 		seatHolds.acquire(eventId, seatIds, bookingId, expiresAt);
+		BookingView booking;
 		try {
-			return holdWithRetry(userId, contactEmail, eventId, seatIds, bookingId, expiresAt);
+			booking = holdWithRetry(userId, contactEmail, eventId, seatIds, bookingId, expiresAt);
 		}
 		catch (RuntimeException e) {
 			// TX Postgres lỗi: nhả đúng key của booking này (so giá trị), key của booking khác còn nguyên.
 			seatHolds.release(eventId, seatIds, bookingId);
 			throw e;
+		}
+		if (rules.highDemand()) {
+			consumeAdmission(eventId, userId, bookingId);
+		}
+		return booking;
+	}
+
+	/**
+	 * BR-04: một lượt vào chỉ tạo được một booking. Chỉ dùng lượt vào khi booking đã commit nên booking lỗi (ghế bận)
+	 * thì lượt vào còn nguyên để chọn lại. Booking đã có rồi nên Redis lỗi ở đây không làm hỏng nó; lượt vào còn sót
+	 * không tạo được booking thứ hai vì đã có đơn chờ thanh toán (BR-02) và tự hết hạn sau 15 phút.
+	 */
+	private void consumeAdmission(UUID eventId, UUID userId, UUID bookingId) {
+		try {
+			queue.consumeAdmission(eventId, userId);
+		}
+		catch (RuntimeException e) {
+			log.warn("Không xoá được lượt vào của booking {} (sự kiện {}), lượt vào sẽ tự hết hạn", bookingId, eventId, e);
 		}
 	}
 

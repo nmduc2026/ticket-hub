@@ -88,4 +88,8 @@ public class EventSnapshot {
 		return saleStartsAt;
 	}
 
+	public boolean isHighDemand() {
+		return highDemand;
+	}
+
 }

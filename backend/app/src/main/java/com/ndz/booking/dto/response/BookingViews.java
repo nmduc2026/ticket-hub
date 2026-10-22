@@ -13,7 +13,8 @@ public final class BookingViews {
 	}
 
 	/** Thông tin sự kiện Booking cần để kiểm quy tắc đặt vé (từ {@code event_snapshots}). */
-	public record EventRules(UUID eventId, String status, int maxTicketsPerUser, Instant saleStartsAt) {
+	public record EventRules(UUID eventId, String status, int maxTicketsPerUser, Instant saleStartsAt,
+			boolean highDemand) {
 	}
 
 	/** Ghế đang giữ cùng hạn của booking giữ nó, để dựng lại key Redis khi Redis phục hồi (overview.md §10). */

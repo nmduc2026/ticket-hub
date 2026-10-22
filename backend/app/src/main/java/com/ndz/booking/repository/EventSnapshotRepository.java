@@ -86,7 +86,7 @@ public interface EventSnapshotRepository extends JpaRepository<EventSnapshot, UU
 	/** Quy tắc đặt vé của sự kiện (trạng thái, giới hạn vé mỗi người), đọc từ bản sao; không đọc DB của Catalog. */
 	default Optional<EventRules> rules(UUID eventId) {
 		return findById(eventId).map(snapshot -> new EventRules(eventId, snapshot.getStatus(),
-				snapshot.getMaxTicketsPerUser(), snapshot.getSaleStartsAt()));
+				snapshot.getMaxTicketsPerUser(), snapshot.getSaleStartsAt(), snapshot.isHighDemand()));
 	}
 
 	default boolean exists(UUID eventId) {

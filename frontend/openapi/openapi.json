@@ -1336,6 +1336,16 @@
           "required" : true
         },
         "responses" : {
+          "403" : {
+            "description" : "ADMISSION_REQUIRED: sự kiện có phòng chờ mà bạn chưa có lượt vào còn hạn (mỗi lượt vào chỉ tạo được 1 booking)",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
           "409" : {
             "description" : "SEAT_UNAVAILABLE, EVENT_NOT_ON_SALE hoặc PENDING_BOOKING_EXISTS (kèm bookingId của đơn đang chờ thanh toán)",
             "content" : {
