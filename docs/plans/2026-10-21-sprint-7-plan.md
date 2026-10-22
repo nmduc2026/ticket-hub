@@ -83,7 +83,11 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 | 2 Điều tiết | Lua gọi người vào, job ShedLock mỗi giây, `max_active` 200, 20 người / giây; 8 test | Chưa đo thực tế (hạng mục 11) |
 | 3 Booking kiểm lượt vào | `403 ADMISSION_REQUIRED`, một lượt một booking, ghế bận thì giữ lượt; 4 test | – |
 | 6 Cache chi tiết sự kiện | Cache + khoá rebuild + bản cũ, xoá sau commit; 6 test | – |
-| 4, 5, 7, 8, 9 | Chưa làm | Xem "Việc treo" |
+| 4 SSE | 3 luồng (`/queue/{id}/stream`, `/events/{id}/seats/stream` công khai, `/me/notifications/stream`) qua Redis pub/sub, heartbeat 15 giây; Booking gom thay đổi ghế và phát 250 ms một lần; 12 test | Gateway chuyển SSE không buffer và Envoy HTTP/2 (hạ tầng, S7-2); không giữ `seatstatus:{eventId}` trong Redis (xem quyết định) |
+| 5 Rate limit | Bucket4j trên Redis ở Gateway, fail-open; 5 test với Redis thật (kể cả `docker pause`) | Alert cho `tickethub_gateway_ratelimit_bypassed_total` (hạ tầng, S7-2) |
+| 7 Load shedding, tắt êm | `503 OVERLOADED` + `Retry-After`, SSE đếm riêng, `server.shutdown=graceful`, `SseHub` đóng kết nối trước khi tắt, metric `tickethub_events_opening_soon`; 7 test | `preStop` / `terminationGracePeriodSeconds`, rolling restart 0 lỗi 5xx (S7-2) |
+| 9 (phần BE) | `highDemand` ở tạo / sửa sự kiện, khoá sau publish; 2 test | FE (#24, #5, #23, #25) |
+| 8, FE của 9 | Chưa làm | S7-1 |
 
 ### Quyết định / thoả hiệp khi làm (chưa hỏi trước, cần duyệt)
 
@@ -92,6 +96,11 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 - Cache chi tiết sự kiện chứa cả hạng vé và `soldOut`, nên số vé còn / "hết vé" có thể cũ tới 5 phút (sơ đồ ghế vẫn chính xác). Nếu chỉ cache phần tĩnh thì không giảm được truy vấn đếm ghế, là phần nặng nhất. Đã sửa test `PublicEventApiTests` về `soldOut` theo TTL.
 - Đóng phòng chờ xoá cả `pending`; sự kiện được mở lại thì các booking đang chờ thanh toán không được đếm tới khi hết hạn, nên có thể gọi dư người trong thời gian ngắn (Booking vẫn là nơi chặn bán trùng).
 - Lượt vào chỉ bị xoá sau khi booking commit; xoá lỗi (Redis) chỉ ghi log vì booking đã tạo, lượt vào còn sót tự hết hạn.
+- **Không giữ `seatstatus:{eventId}` trong Redis** như plan hạng mục 4 ghi: màn chọn ghế vẫn tải snapshot từ Postgres và không có chỗ nào đọc hash đó; thêm khi đo thấy snapshot là điểm nghẽn.
+- Thay đổi ghế được gom 250 ms rồi mới phát; pod chết giữa chừng mất tối đa 250 ms thay đổi (client nối lại tải lại snapshot).
+- Rate limit: `POST /bookings` 10/phút, `POST /queue/*/join` 20/phút, còn lại 50/giây theo user; chưa đăng nhập 20/giây theo IP. IP lấy từ `getRemoteAddr()` sau `ForwardedHeaderFilter`, chỉ đúng khi Gateway chỉ nhận request qua proxy tin cậy ghi đè `X-Forwarded-For`. Redis lỗi: timeout lệnh 200 ms rồi bỏ qua giới hạn 5 giây.
+- Load shedding: ngưỡng ghi 500, ngưỡng đọc 350 request đang xử lý (chỉnh theo load test).
+- Gateway có chuyển SSE không buffer được hay không chưa kiểm (Spring Cloud Gateway Server MVC); cần chạy thật ở S7-2 trước khi tin SSE qua Gateway.
 - `IntegrationTest` đặt `tickethub.queue.admit-interval=24h` để job không chạy nền trong test; test gọi `QueueAdmissionService.admitWaiting()` với đồng hồ test.
 
 ## Việc treo của Sprint 7
