@@ -1,15 +1,17 @@
 import { useNavigate } from '@tanstack/react-router'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { useListOrganizerEvents } from '@/api/generated/endpoints/organizer-event-controller/organizer-event-controller'
 import { getListOrganizerBookingsUrl, useListOrganizerBookings } from '@/api/generated/endpoints/organizer-sales-controller/organizer-sales-controller'
+import { useBulkResendTickets } from '@/api/generated/endpoints/organizer-ticket-resend-controller/organizer-ticket-resend-controller'
 import type { OrganizerBooking } from '@/api/generated/model'
 import { type Column, DataTable } from '@/components/list/DataTable'
 import { DateRangeFilter } from '@/components/list/DateRangeFilter'
 import { FacetFilter } from '@/components/list/FacetFilter'
 import { ListToolbar } from '@/components/list/ListToolbar'
+import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api-client'
 import { downloadServerCsv } from '@/lib/csv'
 import { formatDate, formatTime, vnInputsToIso } from '@/lib/date'
@@ -18,12 +20,16 @@ import { formatMoney } from '@/lib/money'
 import type { OrganizerOrderSearch } from './organizerOrderSearch'
 
 const DEFAULT_PAGE_SIZE = 20
+const MAX_RESEND = 100
 const STATUSES = ['PENDING_PAYMENT', 'CONFIRMED', 'EXPIRED', 'CANCELLED', 'REFUND_REQUESTED', 'REFUNDED', 'REFUND_FAILED']
 
 /** Đơn hàng của organizer (màn #14): lọc theo sự kiện / trạng thái / khoảng ngày / từ khoá, xuất CSV theo bộ lọc. */
 export function OrganizerOrdersPage({ search }: { search: OrganizerOrderSearch }) {
   const { t } = useTranslation()
   const navigate = useNavigate({ from: '/organizer/orders' })
+
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set())
+  const resend = useBulkResendTickets()
 
   const page = search.page ?? 0
   const size = search.size ?? DEFAULT_PAGE_SIZE
@@ -52,9 +58,36 @@ export function OrganizerOrdersPage({ search }: { search: OrganizerOrderSearch }
     [t],
   )
 
-  const update = (changes: Partial<OrganizerOrderSearch>) => void navigate({ search: (previous) => ({ ...previous, ...changes, page: undefined }) })
+  const update = (changes: Partial<OrganizerOrderSearch>) => {
+    setSelected(new Set())
+    void navigate({ search: (previous) => ({ ...previous, ...changes, page: undefined }) })
+  }
   const hasFilters = Boolean(search.eventId || search.status?.length || search.from || search.to || search.q)
-  const resetFilters = () => void navigate({ search: {} })
+  const resetFilters = () => {
+    setSelected(new Set())
+    void navigate({ search: {} })
+  }
+
+  const resendSelected = () => {
+    if (selected.size > MAX_RESEND) {
+      toast.error(t('organizerOrders.resendLimit', { max: MAX_RESEND }))
+      return
+    }
+    resend.mutate(
+      { data: { bookingIds: [...selected] } },
+      {
+        onSuccess: (response) => {
+          const results = response.data.results ?? []
+          const ok = results.filter((item) => item.ok).length
+          const failed = results.length - ok
+          if (failed > 0) toast.warning(t('organizerOrders.resentPartial', { ok, failed }))
+          else toast.success(t('organizerOrders.resent', { ok }))
+          setSelected(new Set())
+        },
+        onError: (failure: unknown) => toast.error(failure instanceof ApiError ? failure.message : t('list.loadError')),
+      },
+    )
+  }
 
   const exportRows = () => {
     const url = getListOrganizerBookingsUrl({ eventId: search.eventId, status: search.status, from, to, q: search.q })
@@ -93,6 +126,13 @@ export function OrganizerOrdersPage({ search }: { search: OrganizerOrderSearch }
         onReset={resetFilters}
         selectedCount={0}
         onExport={exportRows}
+        bulkActions={
+          selected.size > 0 && (
+            <Button size="sm" variant="outline" disabled={resend.isPending} onClick={resendSelected}>
+              {t('organizerOrders.resendSelected', { count: selected.size })}
+            </Button>
+          )
+        }
       />
       <DataTable
         columns={columns}
@@ -107,6 +147,7 @@ export function OrganizerOrdersPage({ search }: { search: OrganizerOrderSearch }
         onResetFilters={resetFilters}
         emptyTitle={t('organizerOrders.emptyTitle')}
         emptyBody={t('organizerOrders.emptyBody')}
+        selection={{ selected, onChange: setSelected }}
         pagination={{
           page,
           size,

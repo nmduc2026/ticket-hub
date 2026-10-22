@@ -2,8 +2,9 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { MoreHorizontal, Plus } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
-import { useListOrganizerEvents } from '@/api/generated/endpoints/organizer-event-controller/organizer-event-controller'
+import { useBulkDuplicateEvents, useDuplicateEvent, useListOrganizerEvents } from '@/api/generated/endpoints/organizer-event-controller/organizer-event-controller'
 import { useListVenues } from '@/api/generated/endpoints/venue-controller/venue-controller'
 import type { ListOrganizerEventsStatusItem, OrganizerEventSummary } from '@/api/generated/model'
 import { type Column, DataTable } from '@/components/list/DataTable'
@@ -34,6 +35,8 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
   const size = search.size ?? DEFAULT_PAGE_SIZE
   const status = search.status as ListOrganizerEventsStatusItem[] | undefined
   const events = useListOrganizerEvents({ q: search.q, status, venueId: search.venue, page, size })
+  const duplicate = useDuplicateEvent()
+  const bulkDuplicate = useBulkDuplicateEvents()
   const venues = useListVenues({ query: { staleTime: 5 * 60_000 } })
 
   const data = events.data?.status === 200 ? events.data.data : undefined
@@ -82,6 +85,37 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
     )
   }
 
+  const onDuplicateError = (failure: unknown) => toast.error(failure instanceof ApiError ? failure.message : t('list.loadError'))
+
+  const duplicateOne = (id: string) =>
+    duplicate.mutate(
+      { eventId: id },
+      {
+        onSuccess: (response) => {
+          toast.success(t('organizerEvents.duplicated'))
+          void navigate({ to: '/organizer/events/$eventId/edit', params: { eventId: response.data.id } })
+        },
+        onError: onDuplicateError,
+      },
+    )
+
+  const duplicateSelected = () =>
+    bulkDuplicate.mutate(
+      { data: { ids: [...selected] } },
+      {
+        onSuccess: (response) => {
+          const results = response.data.results
+          const ok = results.filter((item) => item.ok).length
+          const failed = results.length - ok
+          if (failed > 0) toast.warning(t('organizerEvents.duplicatedBulkPartial', { ok, failed }))
+          else toast.success(t('organizerEvents.duplicatedBulk', { ok }))
+          setSelected(new Set())
+          void events.refetch()
+        },
+        onError: onDuplicateError,
+      },
+    )
+
   const error = events.error instanceof ApiError ? events.error : undefined
 
   return (
@@ -125,6 +159,13 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
         }}
         selectedCount={selected.size}
         onExport={exportRows}
+        bulkActions={
+          selected.size > 0 && (
+            <Button size="sm" variant="outline" disabled={bulkDuplicate.isPending} onClick={duplicateSelected}>
+              {t('organizerEvents.duplicateSelected', { count: selected.size })}
+            </Button>
+          )
+        }
         primaryAction={
           <Button size="sm" onClick={() => setCreating(true)}>
             <Plus aria-hidden="true" />
@@ -165,6 +206,9 @@ export function OrganizerEventsPage({ search }: { search: OrganizerEventSearch }
                 <Link to="/organizer/events/$eventId/edit" params={{ eventId: row.id }}>
                   {t('organizerEvents.editRow')}
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={duplicate.isPending} onSelect={() => duplicateOne(row.id)}>
+                {t('organizerEvents.duplicateRow')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

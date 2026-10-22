@@ -833,6 +833,11 @@ export const vi = {
     createButton: 'Tạo sự kiện',
     rowMenu: 'Thao tác với {{name}}',
     editRow: 'Chỉnh sửa',
+    duplicateRow: 'Nhân bản',
+    duplicateSelected: 'Nhân bản ({{count}})',
+    duplicated: 'Đã nhân bản thành bản nháp mới',
+    duplicatedBulk: 'Đã nhân bản {{ok}} sự kiện',
+    duplicatedBulkPartial: 'Đã nhân bản {{ok}} sự kiện, {{failed}} sự kiện không nhân bản được',
     actions: 'Thao tác',
     create: {
       title: 'Tạo sự kiện mới',
@@ -1013,6 +1018,10 @@ export const vi = {
     colTotal: 'Tổng tiền',
     emptyTitle: 'Chưa có đơn hàng',
     emptyBody: 'Đơn hàng của các sự kiện sẽ hiện ở đây.',
+    resendSelected: 'Gửi lại vé ({{count}})',
+    resendLimit: 'Chỉ gửi lại được tối đa {{max}} đơn mỗi lần',
+    resent: 'Đã gửi lại vé cho {{ok}} đơn',
+    resentPartial: 'Đã gửi lại vé cho {{ok}} đơn, {{failed}} đơn bị bỏ qua',
   },
   organizerEventSales: {
     loadError: 'Không tải được số liệu',
