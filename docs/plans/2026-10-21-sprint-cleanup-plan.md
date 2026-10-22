@@ -232,13 +232,14 @@ Hạng mục 1–6 đã commit từ trước (`9072c33`, `27fb3c1`, `776b15b`, `
 
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
-| 14 Audit log | `GET /admin/audit-logs` (lọc người thao tác, hành động, thời gian), màn #31 | Xuất CSV có audit chưa làm |
+| 14 Audit log | `GET /admin/audit-logs` (lọc người thao tác, hành động, thời gian), màn #31 | – (xuất CSV tối đa 10.000 dòng, `422 EXPORT_TOO_LARGE`, ghi audit; nút xuất ở màn #31) |
 | 15 Địa điểm, đơn vị hành chính | CRUD `/admin/venues` (+ `bulk-delete`), `/admin/administrative-units`; màn #16, #33 | `GET /administrative-units` công khai có cache chưa làm |
 | 20 Cấu hình thanh toán | `GET /admin/payment-config`, `stripe-events`, `reprocess`, `webhook-check`; màn #36 | – |
 | 21 Organizer | `duplicate`, `bulk-duplicate`, `GET/PUT /organizer/profile`, `bulk-resend-tickets`; màn #27 (hồ sơ, thông báo) | FE nút nhân bản và gửi lại vé hàng loạt (#12, #14) |
 | 16 Spike `generateSeats` | Xong: `generateSeats.ts` và `SeatGenerator.java` ra cùng toạ độ trên bộ dữ liệu chung `shared-test-data/generate-seats.json` (9 ca, 82 ghế; kỳ vọng tính độc lập bằng Python); không cần lùi về "form + lưới" | – |
 | 17 Sơ đồ ghế BE | `GET/POST/PUT/DELETE /admin/seat-maps`, `POST /{id}/copy`; lưu thì sinh lại ghế, khu giữ `id` theo `code`; `SEAT_MAP_LOCKED`, `SEAT_MAP_BEING_EDITED`, `SECTION_IN_USE`; 5 test tích hợp | Quyết định chờ duyệt bên dưới |
-| 18, 19 | Chưa làm (19 cần thư viện đọc Excel chưa có trong repo) | – |
+| 19 Import Excel | Chưa làm (cần thêm thư viện đọc Excel, repo chưa có) | Làm trước 18 theo thứ tự người dùng chốt 22/10/2026; modal import ở #17 gắn khi làm editor (hạng mục 18) |
+| 18 FE editor sơ đồ ghế | Chưa làm | Làm sau 19; gồm modal import ở #17 |
 
 ### Quyết định khi làm sơ đồ ghế (chưa hỏi trước, cần duyệt)
 
@@ -254,6 +255,6 @@ Hạng mục 1–6 đã commit từ trước (`9072c33`, `27fb3c1`, `776b15b`, `
 | S6-1 | Nợ kiểm chứng (bỏ qua theo yêu cầu đi nhanh): chưa viết test cho hạng mục 7, 10, 11, 12, 14, 15, 20, 21 (hạng mục 1–6 đã có test từ trước); chưa chạy `./mvnw verify`, `spotless:check`, Vitest, Playwright toàn bộ | Không bị chặn, chỉ hoãn | Viết test theo `ticket-hub-testcase-rule` cho: BE (`AdminDashboardServiceImpl`, `AdminEventListServiceImpl`, cờ `needs_reconcile` 2 chiều, CSV export mới); FE (Vitest cho các trang mới, Playwright mock cho luồng tạm dừng / huỷ / hoàn thủ công / kết nối Stripe) |
 | S6-2 | AWS lab 2 + gỡ AWS (hạng mục 8, 9 Sprint 6) | B6 (thăm dò Free plan + xác nhận credits), duyệt `terraform apply` từng lần | Làm theo hạng mục 8, 9 của plan Sprint 6 khi B6 xong |
 | S6-3 | Verify lõi đầy đủ (hạng mục 13) và review độc lập dòng tiền Connect / hoàn hàng loạt (hạng mục 23) | Hạng mục 1–12 (còn 8, 9 AWS); S6-1 | Chạy lại mọi test, đối chiếu AC-1 → AC-14 của plan Sprint 6, ghi `docs/test/sprint-6-verify.md`; gọi subagent review độc lập theo skill `code-review` cho `payment` và `booking` |
-| S6-4 | Hạng mục MR 16–19 (`generateSeats`, sơ đồ ghế BE / FE, import Excel) chưa làm; 14, 15, 20, 21 đã có code (xem "Đợt MR") | Không bị chặn | Làm theo thứ tự 16 → 17 → 18, 19 sau 15 và 17 |
+| S6-4 | Hạng mục MR 18 (FE editor sơ đồ ghế) và 19 (import Excel) chưa làm; 14, 15, 16, 17, 20, 21 đã có code (xem "Đợt MR") | Không bị chặn | Làm 19 trước, rồi 18 (thứ tự người dùng chốt 22/10/2026) |
 | S6-5 | ~~Side sheet chi tiết đơn có dòng thời gian Stripe ở #29~~ **Xong 22/10/2026**: `GET /admin/bookings/{id}/payment` (khoản thu, lần hoàn, timeline từ `stripe_events` khớp theo PaymentIntent), `OrderPaymentSheet`; 2 test BE, 1 test FE | – | – |
 | S6-6 | ~~Thông báo "Stripe bị hạn chế" cho Admin~~ **Xong 22/10/2026**: Payment phát `StripeAccountRestricted` khi chuyển sang `restricted` (không phát lại khi đã restricted), Notification báo Admin; có test | – | – |
