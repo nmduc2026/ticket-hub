@@ -6,6 +6,7 @@ import { useListAdminAdministrativeUnits } from '@/api/generated/endpoints/admin
 import type { AdminAdministrativeUnit } from '@/api/generated/model'
 import { type Column, DataTable } from '@/components/list/DataTable'
 import { FacetFilter } from '@/components/list/FacetFilter'
+import { ExcelMenu } from '@/components/list/ExcelMenu'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,7 @@ export function AdminRegionsPage() {
         }
         hasFilters={Boolean(q || level)}
         onReset={() => { setQ(''); setLevel(undefined) }}
+        excelMenu={<ExcelMenu type="administrative-units" />}
         selectedCount={0}
         primaryAction={
           <Button size="sm" onClick={() => { setEditing(undefined); setDialogOpen(true) }}>

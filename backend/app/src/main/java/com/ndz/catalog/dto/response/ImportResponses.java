@@ -27,13 +27,24 @@ public final class ImportResponses {
 	}
 
 	@Schema(description = "Một lỗi của file import: dòng Excel (dòng 1 là tiêu đề), tên cột, nội dung lỗi")
-	public record RowError(int row, String column, String message) {
+	public record RowError(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int row,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String column,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) String message) {
 	}
 
-	public record ImportResult(UUID id, ImportStatus status, boolean dryRun, int totalRows, int validRows,
-			int errorRows, int created, int updated, int skipped,
-			@Schema(description = "Tối đa 200 lỗi đầu tiên; đủ hơn trong file lỗi") List<RowError> errors,
-			@Schema(description = "true khi có file lỗi để tải ở GET /admin/imports/{id}/errors") boolean hasErrorFile) {
+	public record ImportResult(@Schema(requiredMode = Schema.RequiredMode.REQUIRED) UUID id,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) ImportStatus status,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean dryRun,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int totalRows,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int validRows,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int errorRows,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int created,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int updated,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED) int skipped,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "Tối đa 200 lỗi đầu tiên; đủ hơn trong file lỗi") List<RowError> errors,
+			@Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+					description = "true khi có file lỗi để tải ở GET /admin/imports/{id}/errors") boolean hasErrorFile) {
 	}
 
 }

@@ -1988,6 +1988,16 @@
           }
         },
         "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
           "422" : {
             "description" : "IMPORT_FILE_INVALID, IMPORT_FILE_TOO_LARGE, IMPORT_TOO_MANY_ROWS, EMPTY_FILE hoặc SEAT_MAP_REQUIRED",
             "content" : {
@@ -4636,6 +4646,75 @@
           }
         },
         "required" : [ "code", "id" ]
+      },
+      "ImportResult" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "status" : {
+            "type" : "string",
+            "enum" : [ "VALIDATING", "VALID", "INVALID", "IMPORTED", "FAILED" ]
+          },
+          "dryRun" : {
+            "type" : "boolean"
+          },
+          "totalRows" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "validRows" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "errorRows" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "created" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "updated" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "skipped" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "errors" : {
+            "type" : "array",
+            "description" : "Tối đa 200 lỗi đầu tiên; đủ hơn trong file lỗi",
+            "items" : {
+              "$ref" : "#/components/schemas/RowError"
+            }
+          },
+          "hasErrorFile" : {
+            "type" : "boolean",
+            "description" : "true khi có file lỗi để tải ở GET /admin/imports/{id}/errors"
+          }
+        },
+        "required" : [ "created", "dryRun", "errorRows", "errors", "hasErrorFile", "id", "skipped", "status", "totalRows", "updated", "validRows" ]
+      },
+      "RowError" : {
+        "type" : "object",
+        "description" : "Một lỗi của file import: dòng Excel (dòng 1 là tiêu đề), tên cột, nội dung lỗi",
+        "properties" : {
+          "row" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "column" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "column", "message", "row" ]
       },
       "EventStatusResult" : {
         "type" : "object",

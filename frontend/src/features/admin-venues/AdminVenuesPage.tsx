@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { getListAdminVenuesQueryKey, useBulkDeleteVenues, useListAdminVenues } from '@/api/generated/endpoints/admin-venue-controller/admin-venue-controller'
 import type { AdminVenue } from '@/api/generated/model'
 import { type Column, DataTable } from '@/components/list/DataTable'
+import { ExcelMenu } from '@/components/list/ExcelMenu'
 import { ListToolbar } from '@/components/list/ListToolbar'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -70,6 +71,7 @@ export function AdminVenuesPage() {
         search={{ value: q, onChange: setQ, placeholder: t('adminVenues.searchPlaceholder') }}
         hasFilters={false}
         onReset={() => setQ('')}
+        excelMenu={<ExcelMenu type="venues" />}
         selectedCount={selected.size}
         bulkActions={
           selected.size > 0 && (

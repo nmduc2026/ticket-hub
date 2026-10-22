@@ -26,6 +26,8 @@ interface Props {
   selectedCount: number
   onExport?: () => void
   bulkActions?: ReactNode
+  /** Menu Excel (Import, Tải file mẫu), sau nút Xuất. */
+  excelMenu?: ReactNode
   /** Nút Tạo, luôn ở hàng đầu bên phải. */
   primaryAction?: ReactNode
 }
@@ -43,6 +45,7 @@ export function ListToolbar({
   selectedCount,
   onExport,
   bulkActions,
+  excelMenu,
   primaryAction,
 }: Props) {
   const { t } = useTranslation()
@@ -73,6 +76,7 @@ export function ListToolbar({
             {selectedCount > 0 ? t('list.exportSelected', { count: selectedCount }) : t('list.export')}
           </Button>
         )}
+        {excelMenu}
         {primaryAction}
       </div>
     </div>

@@ -5,7 +5,12 @@ import { ApiError, gatewayFetch } from '@/lib/api-client'
  * có BOM). Dùng cho CSV toàn bộ theo bộ lọc, khác {@link downloadCsv} (chỉ xuất các dòng đang hiện ở client).
  */
 export async function downloadServerCsv(url: string, filename: string): Promise<void> {
-  const response = await gatewayFetch(url, { headers: { Accept: 'text/csv' } })
+  await downloadServerFile(url, filename, { Accept: 'text/csv' })
+}
+
+/** Tải một file nhị phân (vd. .xlsx mẫu / file lỗi import) qua gateway; lỗi trả về dạng `ApiError`. */
+export async function downloadServerFile(url: string, filename: string, headers: HeadersInit = {}): Promise<void> {
+  const response = await gatewayFetch(url, { headers })
   if (!response.ok) {
     let problem: Record<string, unknown> = {}
     try {

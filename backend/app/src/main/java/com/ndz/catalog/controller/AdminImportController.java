@@ -56,6 +56,7 @@ class AdminImportController {
 
 	@Operation(operationId = "importExcel",
 			summary = "Kiểm file Excel (dryRun=true) hoặc ghi các dòng hợp lệ (dryRun=false); type: administrative-units, venues, seat-maps")
+	@ApiResponse(responseCode = "200", content = @Content(schema = @Schema(implementation = ImportResult.class)))
 	@ApiResponse(responseCode = "422",
 			description = "IMPORT_FILE_INVALID, IMPORT_FILE_TOO_LARGE, IMPORT_TOO_MANY_ROWS, EMPTY_FILE hoặc SEAT_MAP_REQUIRED",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
