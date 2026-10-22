@@ -66,6 +66,13 @@ class CatalogApiImpl implements CatalogApi {
 
 	@Override
 	@Transactional(readOnly = true)
+	public Optional<QueueEventInfo> queueInfo(UUID eventId) {
+		return events.findById(eventId).filter(event -> event.getStatus() != EventStatus.DRAFT).map(
+				event -> new QueueEventInfo(event.getStatus().name(), event.isHighDemand(), event.getSaleStartsAt()));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public Map<UUID, GuestInfo> guestInfo(Collection<UUID> eventIds) {
 		return events.findAllById(eventIds).stream().collect(Collectors.toMap(event -> event.getId(),
 				event -> new GuestInfo(event.getDoorsOpenAt(), event.getAgeRestriction(), event.getRules())));

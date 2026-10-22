@@ -50,7 +50,8 @@
 - AC-2 (BR-04): Người vào trong 15 phút trước giờ mở bán được xếp ngẫu nhiên và đứng trước mọi người vào sau giờ mở bán; người vào sau xếp theo thời điểm vào; vào lại (F5, tab mới) không đổi vị trí.
 - AC-3 (BR-04): Lượt vào hạn 15 phút; một lượt vào chỉ tạo được 1 booking (lần hai → `403 ADMISSION_REQUIRED`); booking lỗi vì ghế bận thì lượt vào vẫn còn; muốn mua tiếp phải xếp hàng lại.
 - AC-4 (BR-04): SSE đứt đúng lúc được gọi tên → kết nối lại hoặc gọi `status` nhận `ADMITTED` ngay, không mất lượt; khách chờ 40 phút vẫn không phải đăng nhập lại khi được gọi.
-- AC-5: Số người đang ở trong không vượt `max_active`; khách bỏ đi (lượt vào hoặc booking hết hạn) thì người kế tiếp được gọi trong ≤ 2 nhịp scheduler; sự kiện bị tạm dừng / huỷ / kết thúc → phòng chờ đóng, người đang chờ được báo lý do.- AC-6 (§12): Thay đổi ghế ở pod bất kỳ tới mọi client đang xem sơ đồ trong ≤ 2 giây; kết nối lại thì sơ đồ khớp snapshot.
+- AC-5: Số người đang ở trong không vượt `max_active`; khách bỏ đi (lượt vào hoặc booking hết hạn) thì người kế tiếp được gọi trong ≤ 2 nhịp scheduler; sự kiện bị tạm dừng / huỷ / kết thúc → phòng chờ đóng, người đang chờ được báo lý do.
+- AC-6 (§12): Thay đổi ghế ở pod bất kỳ tới mọi client đang xem sơ đồ trong ≤ 2 giây; kết nối lại thì sơ đồ khớp snapshot.
 - AC-7: Thông báo mới tới chuông qua SSE không cần tải lại trang; SSE lỗi → chuông vẫn cập nhật bằng polling 60 giây; user chỉ nhận thông báo của mình.
 - AC-8 (§13.4): Vượt rate limit → `429 RATE_LIMITED` + `Retry-After`; user đã đăng nhập chỉ bị giới hạn theo tài khoản, không theo IP; Redis chết → rate limit fail-open, có log, metric và alert.
 - AC-9: Cache sự kiện: 200 request đồng thời khi cache trống → 1 lần đọc DB; sửa sự kiện hoặc tới giờ mở bán → bản mới hiện trong lần đọc kế tiếp.

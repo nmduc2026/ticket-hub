@@ -578,6 +578,55 @@
         }
       }
     },
+    "/api/v1/queue/{eventId}/join" : {
+      "post" : {
+        "tags" : [ "queue-controller" ],
+        "summary" : "Vào phòng chờ",
+        "description" : "Mở từ 15 phút trước giờ mở bán. Vào lại không đổi vị trí; đang có lượt vào thì trả ADMITTED.",
+        "operationId" : "joinQueue",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "202" : {
+            "description" : "Đã vào hàng chờ",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueueStatusResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "QUEUE_NOT_ENABLED (sự kiện không dùng phòng chờ) hoặc EVENT_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "QUEUE_NOT_OPEN (chưa tới giờ mở phòng chờ) hoặc QUEUE_CLOSED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/payments" : {
       "post" : {
         "tags" : [ "payment-controller" ],
@@ -2365,6 +2414,55 @@
                   "items" : {
                     "$ref" : "#/components/schemas/SeatMap"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/queue/{eventId}/status" : {
+      "get" : {
+        "tags" : [ "queue-controller" ],
+        "summary" : "Vị trí trong phòng chờ",
+        "description" : "ADMITTED nếu còn lượt vào (dùng khi kết nối lại).",
+        "operationId" : "getQueueStatus",
+        "parameters" : [ {
+          "name" : "eventId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Trạng thái hiện tại",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QueueStatusResponse"
+                }
+              }
+            }
+          },
+          "404" : {
+            "description" : "QUEUE_NOT_JOINED, QUEUE_NOT_ENABLED hoặc EVENT_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "QUEUE_CLOSED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
                 }
               }
             }
@@ -4237,6 +4335,27 @@
           }
         },
         "required" : [ "code", "effectiveFrom", "name", "type" ]
+      },
+      "QueueStatusResponse" : {
+        "type" : "object",
+        "properties" : {
+          "position" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int32"
+          },
+          "estimatedWaitSeconds" : {
+            "type" : [ "integer", "null" ],
+            "format" : "int64"
+          },
+          "phase" : {
+            "type" : "string",
+            "enum" : [ "LOTTERY", "QUEUED", "ADMITTED" ]
+          },
+          "admissionExpiresAt" : {
+            "type" : [ "string", "null" ],
+            "format" : "date-time"
+          }
+        }
       },
       "CreatePaymentRequest" : {
         "type" : "object",

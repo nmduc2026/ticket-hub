@@ -45,6 +45,16 @@ public interface CatalogApi {
 	record GuestInfo(Instant doorsOpenAt, Short ageRestriction, String rules) {
 	}
 
+	/**
+	 * Thông tin để Queue dựng lại {@code queue:{eventId}:meta} khi Redis thiếu (overview.md §7.1). Rỗng nếu không có sự
+	 * kiện hoặc sự kiện còn nháp.
+	 */
+	Optional<QueueEventInfo> queueInfo(UUID eventId);
+
+	/** {@code status}: PUBLISHED, ON_SALE, SUSPENDED, ENDED hoặc CANCELLED. */
+	record QueueEventInfo(String status, boolean highDemand, Instant saleStartsAt) {
+	}
+
 	/** Trạng thái và email liên hệ của organizer (Payment tạo connected account, BR-05). */
 	Optional<OrganizerContact> organizerContact(UUID organizerId);
 

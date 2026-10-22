@@ -22,7 +22,7 @@ class ModularityTests {
 				.toList();
 
 		assertThat(names).containsExactlyInAnyOrder(
-				"account", "catalog", "booking", "payment", "ticket", "notification", "shared");
+				"account", "catalog", "booking", "payment", "ticket", "notification", "queue", "shared");
 	}
 
 }

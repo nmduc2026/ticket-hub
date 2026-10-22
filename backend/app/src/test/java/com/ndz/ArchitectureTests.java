@@ -30,7 +30,7 @@ class ArchitectureTests {
 	private static final String ROOT = "com.ndz";
 	private static final String FIXTURES = "com.ndz.archfixtures";
 	private static final List<String> BUSINESS_MODULES = List.of("account", "catalog", "booking", "payment", "ticket",
-			"notification");
+			"notification", "queue");
 	private static final List<String> FIXTURE_MODULES = List.of("booking", "catalog");
 
 	private static final JavaClasses APP = new ClassFileImporter()
