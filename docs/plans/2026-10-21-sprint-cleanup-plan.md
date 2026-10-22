@@ -205,3 +205,34 @@ Việc cần làm khi triển khai lên staging (thao tác báo trước, chưa 
 - Khai báo schema 200 cho các endpoint mới trong OpenAPI (không khai thì Orval không sinh kiểu).
 - Chữ trên giao diện #15, #22, #28: Claude đối chiếu với prototype rồi bạn duyệt (S5-7).
 - **Mở sớm một phần Sprint 6** trong lúc chờ B3 (cổng vào Sprint 6 chưa đạt): hạng mục 3, 4 (phần Admin tạm dừng / đình chỉ; nhánh mất `charges_enabled` chờ hạng mục 1), 6, 7 (trừ tiến độ hoàn tiền, chờ hạng mục 5), FE 11, 12 với dữ liệu MSW. Hạng mục 1, 2, 5 chờ spike Stripe Connect (S5-4); hạng mục 8 chờ thăm dò Free plan (hạng mục 16 ở trên).
+
+## Tình trạng đợt code Sprint 6 (nhánh `feature/sprint-6`, 22/10/2026)
+
+Làm hạng mục 7, 10, 11, 12 (không bị chặn) theo yêu cầu người dùng: **bỏ qua viết test mới, bỏ qua `./mvnw verify` / `spotless:check` / Vitest / Playwright** để đi nhanh; chỉ `./mvnw compile` (BE) và `tsc -b` + `vite build` (FE) để chắc không lỗi cú pháp và kiểu. Riêng `OpenApiContractTests` được chạy thật (không phải test nghiệp vụ, mà là bước sinh `frontend/openapi/openapi.json` cho Orval) vì không có cách nào khác lấy contract mới. Chưa push, chưa commit (chờ bạn duyệt).
+
+| Hạng mục | Kết quả | Còn lại |
+|---|---|---|
+| 7 Admin dashboard/vận hành | `GET /admin/dashboard`, `GET /admin/events` (+ CSV), `GET /admin/bookings` mở rộng (+ CSV); cờ `needs_reconcile` trên `bookings` do Payment phát hiện khi đối soát quá hạn | Thông báo vận hành "Stripe bị hạn chế" cho Admin chưa làm (đang chỉ có trong dashboard count) |
+| 10 FE kết nối Stripe (#26) | 5 trạng thái, thanh 4 bước, modal mở Stripe, Express Dashboard, nút ngắt kết nối luôn khoá; link "Kết nối Stripe" trong hộp "Chưa thể publish" (#24) | – |
+| 11 FE organizer số liệu | Tổng quan (#11) dùng `GET /organizer/dashboard`; bảng điều khiển sự kiện (#25, rút gọn — xem quyết định dưới) dùng `GET /organizer/events/{id}/sales`; đơn hàng (#14) có lọc + CSV server | Số đếm "đã vào/tổng vé" ở app check-in (ẩn theo `docs/design/checkin.md`) chưa bật lại — không nằm trong hạng mục 11, chỉ là API đã có |
+| 12 FE Admin vận hành | Tổng quan (#35), sự kiện (#34: lọc, tạm dừng/mở lại/huỷ gõ "HUY", tạm dừng hàng loạt, tiến độ hoàn), đơn hàng & đối soát (#29: lọc rộng hơn + CSV, hoàn thủ công), phí (#30: lịch sử + đặt mức mới) | Side sheet chi tiết đơn có dòng thời gian Stripe (#29) chưa làm; chỉ có bảng + hoàn thủ công |
+
+### Quyết định / thoả hiệp khi làm (chưa hỏi bạn trước, cần duyệt lại)
+
+- **Sửa lỗi OpenAPI có sẵn từ hạng mục 6**: hai `@GetMapping` cùng path phân biệt bằng `produces` (list JSON / export CSV, đúng quy ước `overview.md` §11.1) khiến springdoc chỉ giữ lại **một** operation cho path đó — có lúc mất hẳn response 200 của "list" (`OrganizerSalesController.bookings`, phát hiện khi Orval sinh ra thiếu type). Sửa bằng `@Hidden` trên method export ở cả 3 controller cùng kiểu (`OrganizerSalesController`, `AdminBookingController`, `AdminEventController`): export vẫn chạy đúng ở runtime (Spring tự phân biệt theo `Accept`), chỉ không vào tài liệu OpenAPI / Orval. FE gọi CSV bằng `fetch` thẳng tới URL của "list" kèm header `Accept: text/csv` (hàm `downloadServerCsv` mới ở `frontend/src/lib/csv.ts`), không qua Orval.
+- **Cờ `needs_reconcile`** (đơn cần đối soát, cho `todo.reconcile` ở dashboard và lọc ở #29): thêm cột `bookings.needs_reconcile` (migration `V202610251500`). Payment phát `PaymentReconcileFlagged` (định nghĩa ở `booking.event`, theo đúng hướng phụ thuộc Payment → Booking đã có) khi job đối soát thấy payment quá hạn mà vẫn chưa chốt, và khi thanh toán chốt xong (`PaymentSettlementServiceImpl.markSucceeded` / `markCanceled`) thì phát lại với `flagged=false`. Hạn chế đã biết: nếu một payment được đánh cờ rồi tự chốt bằng đường ngoài `PaymentSettlementService` (hiện không có đường nào khác, nhưng ghi lại để không quên), cờ sẽ không tự tắt.
+- **Bảng điều khiển sự kiện (#25)** rút gọn so với prototype `OrgEventSales.dc.html`: bỏ "vé bán theo giờ" (cần dữ liệu theo giờ, Sprint 7 mới có), bỏ số đếm phòng chờ (Sprint 7), bỏ "đơn hàng mới nhất tự cập nhật" (cần SSE, Sprint 7). Thay bằng biểu đồ doanh thu theo ngày (Recharts) + theo hạng vé + banner tạm dừng, đúng dữ liệu `GET /organizer/events/{id}/sales` đang có. Đặt thành tab thứ 4 ("Doanh thu") trong khung sửa sự kiện (`EventEditLayout`) thay vì màn độc lập như prototype, vì khung đó đã bọc mọi route con bằng header + thanh tab — tách riêng cần đổi cấu trúc route nhiều hơn mức cần cho sprint này.
+- **"Tuỳ chọn khoảng ngày"** làm thành component riêng `DateRangeFilter` (không nhúng vào `FacetFilter` single-mode) để không ảnh hưởng các chỗ đang dùng `FacetFilter` (sự kiện, hồ sơ organizer…). Dùng cho đơn hàng organizer (#14) và sự kiện Admin (#34).
+- Thêm `recharts@3.2.1` vào `frontend/package.json` (chưa dùng trước đó). Đã kiểm `npm audit`: không thêm lỗ hổng mới (toàn bộ cảnh báo hiện có đến từ `orval` / `shadcn`, là dev dependency có từ trước).
+- Thêm `CatalogApi.organizerNames`, `countPendingOrganizers`, `countSuspendedEvents`, `countEventsOnSale`, `openingSoonEvents` và `BookingApi.adminTotals`, `countNeedsReconcile`, `countRefundFailed`: đọc được vì Payment đã phụ thuộc cả Booking và Catalog (ADR 0018), không tạo vòng mới.
+
+## Việc treo của Sprint 6
+
+| # | Việc | Bị chặn bởi | Làm gì khi được gỡ |
+|---|---|---|---|
+| S6-1 | Nợ kiểm chứng của hạng mục 7, 10, 11, 12 (bỏ qua theo yêu cầu đi nhanh): chưa viết test mới, chưa chạy `./mvnw verify`, `spotless:check`, Vitest, Playwright cho các hạng mục này | Không bị chặn, chỉ hoãn | Viết test theo `ticket-hub-testcase-rule` cho: BE (`AdminDashboardServiceImpl`, `AdminEventListServiceImpl`, cờ `needs_reconcile` 2 chiều, CSV export mới); FE (Vitest cho các trang mới, Playwright mock cho luồng tạm dừng / huỷ / hoàn thủ công / kết nối Stripe) |
+| S6-2 | AWS lab 2 + gỡ AWS (hạng mục 8, 9 Sprint 6) | B6 (thăm dò Free plan + xác nhận credits), duyệt `terraform apply` từng lần | Làm theo hạng mục 8, 9 của plan Sprint 6 khi B6 xong |
+| S6-3 | Verify lõi đầy đủ (hạng mục 13) và review độc lập dòng tiền Connect / hoàn hàng loạt (hạng mục 23) | Hạng mục 1–12 (còn 8, 9 AWS); S6-1 | Chạy lại mọi test, đối chiếu AC-1 → AC-14 của plan Sprint 6, ghi `docs/test/sprint-6-verify.md`; gọi subagent review độc lập theo skill `code-review` cho `payment` và `booking` |
+| S6-4 | Hạng mục mở rộng (MR) 14–21 chưa mở | S6-3 (hạng mục 13 phải xong trước) | Làm theo thứ tự 14 → 21 của plan Sprint 6 |
+| S6-5 | Side sheet chi tiết đơn có dòng thời gian Stripe ở #29 | Không bị chặn, chỉ chưa làm | Thêm vào `AdminOrdersPage`: click dòng mở `Sheet` gọi API chi tiết payment (cần kiểm BE đã có đủ dữ liệu dòng thời gian hay phải thêm) |
+| S6-6 | Thông báo "Stripe bị hạn chế" cho Admin (đang chỉ có trong đếm ở dashboard, chưa có event/thông báo riêng) | Không bị chặn, chỉ chưa làm | Payment phát event khi `connected_accounts` chuyển sang trạng thái `restricted` (suy từ `account.updated`), Notification thêm case `STRIPE_RESTRICTED` cho Admin |
