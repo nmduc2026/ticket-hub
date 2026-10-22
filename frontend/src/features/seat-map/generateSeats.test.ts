@@ -1,6 +1,4 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
-
+import fixture from '../../../../shared-test-data/generate-seats.json'
 import { generateSeats, type GeneratedSeat, type GridParams, rowLabel } from './generateSeats'
 
 interface Case {
@@ -10,9 +8,7 @@ interface Case {
 }
 
 // Cùng file với bản Java (`SeatGeneratorTests`): hai bên phải ra cùng toạ độ (ADR 0030).
-const { cases } = JSON.parse(readFileSync(resolve(__dirname, '../../../../shared-test-data/generate-seats.json'), 'utf-8')) as {
-  cases: Case[]
-}
+const { cases } = fixture as { cases: Case[] }
 
 describe('generateSeats', () => {
   it.each(cases.map((item) => [item.name, item] as const))('%s', (_name, item) => {

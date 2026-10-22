@@ -398,6 +398,99 @@
         }
       }
     },
+    "/api/v1/admin/seat-maps/{id}" : {
+      "get" : {
+        "tags" : [ "admin-seat-map-controller" ],
+        "summary" : "Chi tiết sơ đồ: khu (tham số), phần tử không bán",
+        "operationId" : "getAdminSeatMap",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "404" : {
+            "description" : "SEAT_MAP_NOT_FOUND",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "admin-seat-map-controller" ],
+        "summary" : "Lưu sơ đồ: thay khu và phần tử, sinh lại ghế",
+        "operationId" : "updateAdminSeatMap",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SeatMapRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "409" : {
+            "description" : "SEAT_MAP_LOCKED, SEAT_MAP_BEING_EDITED, SECTION_IN_USE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "admin-seat-map-controller" ],
+        "summary" : "Xoá sơ đồ chưa khoá và chưa sự kiện nào dùng",
+        "operationId" : "deleteAdminSeatMap",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "409" : {
+            "description" : "SEAT_MAP_LOCKED, SEAT_MAP_IN_USE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "204" : {
+            "description" : "No Content"
+          }
+        }
+      }
+    },
     "/api/v1/admin/administrative-units/{id}" : {
       "put" : {
         "tags" : [ "admin-administrative-unit-controller" ],
@@ -1467,6 +1560,102 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/StripeReprocessResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/seat-maps" : {
+      "get" : {
+        "tags" : [ "admin-seat-map-controller" ],
+        "summary" : "Danh sách sơ đồ ghế, lọc theo địa điểm",
+        "operationId" : "listAdminSeatMaps",
+        "parameters" : [ {
+          "name" : "venueId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AdminSeatMapSummary"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "admin-seat-map-controller" ],
+        "summary" : "Tạo sơ đồ ghế version 1; ghế sinh từ tham số khu",
+        "operationId" : "createAdminSeatMap",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SeatMapRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "422" : {
+            "description" : "SEAT_MAP_INVALID, SEAT_MAP_NAME_DUPLICATE",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SeatMap"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/seat-maps/{id}/copy" : {
+      "post" : {
+        "tags" : [ "admin-seat-map-controller" ],
+        "summary" : "Tạo bản sao version mới (chưa khoá) để sửa",
+        "operationId" : "copyAdminSeatMap",
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "responses" : {
+          "201" : {
+            "description" : "Created",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SeatMap"
                 }
               }
             }
@@ -3228,7 +3417,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED" ]
+            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED", "SEAT_MAP_CREATED", "SEAT_MAP_UPDATED", "SEAT_MAP_COPIED", "SEAT_MAP_DELETED" ]
           }
         }, {
           "name" : "from",
@@ -3746,6 +3935,89 @@
         },
         "required" : [ "address", "name", "wardId" ]
       },
+      "SeatMapElementInput" : {
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "pattern" : "STAGE|AISLE|LABEL|AREA"
+          },
+          "label" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          },
+          "shape" : {
+            "type" : "object",
+            "description" : "x, y, w, h, rotation"
+          }
+        },
+        "required" : [ "shape" ]
+      },
+      "SeatMapRequest" : {
+        "type" : "object",
+        "properties" : {
+          "venueId" : {
+            "type" : "string",
+            "format" : "uuid",
+            "description" : "Bắt buộc khi tạo; bỏ qua khi sửa"
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 20000,
+            "minimum" : 100
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32",
+            "maximum" : 20000,
+            "minimum" : 100
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapSectionInput"
+            },
+            "maxItems" : 200,
+            "minItems" : 0
+          },
+          "elements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapElementInput"
+            },
+            "maxItems" : 500,
+            "minItems" : 0
+          }
+        },
+        "required" : [ "elements", "name", "sections" ]
+      },
+      "SeatMapSectionInput" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "maxLength" : 30,
+            "minLength" : 0
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 120,
+            "minLength" : 0
+          },
+          "shape" : {
+            "type" : "object",
+            "description" : "GRID: kind, x, y, rotation, rows, seatsPerRow, rowGap, seatGap, curve, numbering, hiddenSeats. IMPORTED: chỉ đổi được vị trí / góc xoay, ghế giữ nguyên"
+          }
+        },
+        "required" : [ "code", "name", "shape" ]
+      },
       "AdminUnitRequest" : {
         "type" : "object",
         "properties" : {
@@ -4062,6 +4334,92 @@
         },
         "required" : [ "id", "processed" ]
       },
+      "SeatMap" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "locked" : {
+            "type" : "boolean",
+            "description" : "true khi đã có sự kiện publish dùng: bất biến"
+          },
+          "sections" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapSection"
+            }
+          },
+          "elements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatMapElement"
+            }
+          }
+        },
+        "required" : [ "elements", "height", "id", "locked", "name", "sections", "version", "width" ]
+      },
+      "SeatMapElement" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "type" : {
+            "type" : "string",
+            "description" : "STAGE, AISLE, LABEL hoặc AREA"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "shape" : {
+            "type" : "object"
+          }
+        },
+        "required" : [ "id", "shape", "type" ]
+      },
+      "SeatMapSection" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "seatCount" : {
+            "type" : "integer",
+            "format" : "int32",
+            "description" : "Số ghế của khu"
+          },
+          "shape" : {
+            "type" : "object",
+            "description" : "Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json"
+          }
+        },
+        "required" : [ "code", "id", "name", "seatCount", "shape" ]
+      },
       "PlatformFeeRequest" : {
         "type" : "object",
         "properties" : {
@@ -4259,92 +4617,6 @@
           }
         },
         "required" : [ "address", "capacity", "cityName", "id", "name", "wardName" ]
-      },
-      "SeatMap" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "version" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "width" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "height" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "locked" : {
-            "type" : "boolean",
-            "description" : "true khi đã có sự kiện publish dùng: bất biến"
-          },
-          "sections" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/SeatMapSection"
-            }
-          },
-          "elements" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/SeatMapElement"
-            }
-          }
-        },
-        "required" : [ "elements", "height", "id", "locked", "name", "sections", "version", "width" ]
-      },
-      "SeatMapElement" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "type" : {
-            "type" : "string",
-            "description" : "STAGE, AISLE, LABEL hoặc AREA"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "shape" : {
-            "type" : "object"
-          }
-        },
-        "required" : [ "id", "shape", "type" ]
-      },
-      "SeatMapSection" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "string",
-            "format" : "uuid"
-          },
-          "code" : {
-            "type" : "string"
-          },
-          "name" : {
-            "type" : "string"
-          },
-          "seatCount" : {
-            "type" : "integer",
-            "format" : "int32",
-            "description" : "Số ghế của khu"
-          },
-          "shape" : {
-            "type" : "object",
-            "description" : "Tham số hình học của khu (GRID / IMPORTED), nguyên văn từ shape_json"
-          }
-        },
-        "required" : [ "code", "id", "name", "seatCount", "shape" ]
       },
       "StripeAccount" : {
         "type" : "object",
@@ -5650,6 +5922,46 @@
           }
         }
       },
+      "AdminSeatMapSummary" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "venueId" : {
+            "type" : "string",
+            "format" : "uuid"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "width" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "height" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "locked" : {
+            "type" : "boolean"
+          },
+          "sectionCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "seatCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "height", "id", "locked", "name", "seatCount", "sectionCount", "venueId", "version", "width" ]
+      },
       "AdminPaymentConfig" : {
         "type" : "object",
         "properties" : {
@@ -6110,7 +6422,7 @@
           },
           "action" : {
             "type" : "string",
-            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED" ]
+            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED", "SEAT_MAP_CREATED", "SEAT_MAP_UPDATED", "SEAT_MAP_COPIED", "SEAT_MAP_DELETED" ]
           },
           "targetType" : {
             "type" : "string"
