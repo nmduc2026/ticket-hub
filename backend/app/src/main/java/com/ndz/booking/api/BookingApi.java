@@ -3,6 +3,7 @@ package com.ndz.booking.api;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -41,6 +42,14 @@ public interface BookingApi {
 	long countRefundFailed();
 
 	record AdminTotals(long grossMinor, long feeMinor, int ticketsSold) {
+	}
+
+	/** Thông tin cần để gửi lại email vé (Ticket module, #27 "Gửi lại email vé hàng loạt"); rỗng nếu không có booking. */
+	Optional<BookingContact> contactOf(UUID bookingId);
+
+	/** {@code status}: tên trạng thái booking, vd. {@code CONFIRMED}. */
+	record BookingContact(UUID organizerId, String status, String contactEmail, String eventTitle, Instant startsAt,
+			String venueName) {
 	}
 
 	/**

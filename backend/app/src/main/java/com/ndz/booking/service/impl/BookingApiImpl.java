@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -89,6 +90,16 @@ public class BookingApiImpl implements BookingApi {
 		}
 		Set<UUID> confirmed = bookings.findConfirmed(bookingIds);
 		return bookingIds.stream().filter(id -> !confirmed.contains(id)).collect(Collectors.toSet());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<BookingContact> contactOf(UUID bookingId) {
+		return bookings.findById(bookingId).map(booking -> {
+			var data = bookings.confirmationData(bookingId);
+			return new BookingContact(data.organizerId(), booking.getStatus().name(), data.contactEmail(),
+					data.eventTitle(), data.startsAt(), data.venueName());
+		});
 	}
 
 	@Override

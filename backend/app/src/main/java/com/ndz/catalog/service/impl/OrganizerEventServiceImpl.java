@@ -2,6 +2,7 @@ package com.ndz.catalog.service.impl;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ import com.ndz.catalog.dto.response.EventResponses.Assignment;
 import com.ndz.catalog.dto.response.EventResponses.Detail;
 import com.ndz.catalog.dto.response.EventResponses.EventPage;
 import com.ndz.catalog.dto.response.EventResponses.Tier;
+import com.ndz.catalog.dto.response.SuspensionResponses.BulkItem;
+import com.ndz.catalog.dto.response.SuspensionResponses.BulkResult;
 import com.ndz.catalog.entity.Event;
 import com.ndz.catalog.entity.EventContent;
 import com.ndz.catalog.entity.TicketTier;
@@ -209,6 +212,48 @@ public class OrganizerEventServiceImpl implements OrganizerEventService {
 			saved.add(mapper.toAssignment(section));
 		}
 		return saved;
+	}
+
+	@Override
+	@Transactional
+	public Detail duplicate(UUID organizerId, UUID eventId) {
+		return detail(duplicateOne(ownedEvent(organizerId, eventId)));
+	}
+
+	@Override
+	@Transactional
+	public BulkResult bulkDuplicate(UUID organizerId, List<UUID> eventIds) {
+		List<BulkItem> results = eventIds.stream().map(id -> {
+			Event source = events.findByIdAndOrganizerId(id, organizerId).orElse(null);
+			if (source == null) {
+				return new BulkItem(id, false, ErrorCode.EVENT_NOT_FOUND.name());
+			}
+			duplicateOne(source);
+			return new BulkItem(id, true, null);
+		}).toList();
+		return new BulkResult(results);
+	}
+
+	/** Bản nháp mới: chép thông tin, hạng vé và cách gán khu; không chép giờ mở bán (#12, #14). */
+	private Event duplicateOne(Event source) {
+		EventContent content = new EventContent(source.getTitle(), source.getDescription(), source.getCategory(),
+				source.getVenueId(), source.getSeatMapId(), source.getStartsAt(), source.getEndsAt(), null,
+				source.getMaxTicketsPerUser(), source.getDoorsOpenAt(), source.getAgeRestriction(),
+				source.getRules());
+		Event copy = events.save(Event.draft(Uuid7.next(clock), source.getOrganizerId(), content, clock.instant()));
+		Map<UUID, UUID> tierIdMap = new HashMap<>();
+		for (TicketTier sourceTier : tiers.findByEventIdOrderById(source.getId())) {
+			TicketTier newTier = tiers
+					.save(new TicketTier(Uuid7.next(clock), copy.getId(), sourceTier.getName(), sourceTier.getPriceMinor()));
+			tierIdMap.put(sourceTier.getId(), newTier.getId());
+		}
+		for (TierSection assignment : tierSections.findByEventId(source.getId())) {
+			UUID newTierId = tierIdMap.get(assignment.getTierId());
+			if (newTierId != null) {
+				tierSections.save(new TierSection(copy.getId(), assignment.getSectionId(), newTierId));
+			}
+		}
+		return copy;
 	}
 
 	// ---- helpers ----

@@ -9,7 +9,8 @@ public final class CatalogViews {
 	private CatalogViews() {
 	}
 
-	public record VenueRow(UUID id, String name, String address, String wardName, String cityName, int capacity) {
+	public record VenueRow(UUID id, String name, String address, UUID wardId, String wardName, String cityName,
+			int capacity) {
 	}
 
 	public record SeatMapRow(UUID id, UUID venueId, String name, int version, int width, int height, boolean locked) {

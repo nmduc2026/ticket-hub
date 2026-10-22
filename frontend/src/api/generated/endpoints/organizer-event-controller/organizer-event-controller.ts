@@ -24,6 +24,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  BulkIdsRequest,
+  BulkResult,
   EventRequest,
   ListOrganizerEventsParams,
   OrganizerEventDetail,
@@ -1005,6 +1007,88 @@ export const usePublishOrganizerEvent = <TError = ProblemDetail | ProblemDetail,
       return useMutation(mutationOptions, queryClient);
     }
     /**
+ * @summary Nhân bản thành bản nháp mới, không chép giờ mở bán
+ */
+export type duplicateEventResponse200 = {
+  data: OrganizerEventDetail
+  status: 200
+}
+    
+export type duplicateEventResponseSuccess = (duplicateEventResponse200) & {
+  headers: Headers;
+};
+;
+
+export type duplicateEventResponse = (duplicateEventResponseSuccess)
+
+export const getDuplicateEventUrl = (eventId: string,) => {
+
+
+  
+
+  return `/api/v1/organizer/events/${eventId}/duplicate`
+}
+
+export const duplicateEvent = async (eventId: string, options?: RequestInit): Promise<duplicateEventResponse> => {
+  
+  return apiFetch<duplicateEventResponse>(getDuplicateEventUrl(eventId),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+
+export const getDuplicateEventMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateEvent>>, TError,{eventId: string}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof duplicateEvent>>, TError,{eventId: string}, TContext> => {
+
+const mutationKey = ['duplicateEvent'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof duplicateEvent>>, {eventId: string}> = (props) => {
+          const {eventId} = props ?? {};
+
+          return  duplicateEvent(eventId,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DuplicateEventMutationResult = NonNullable<Awaited<ReturnType<typeof duplicateEvent>>>
+    
+    export type DuplicateEventMutationError = unknown
+
+    /**
+ * @summary Nhân bản thành bản nháp mới, không chép giờ mở bán
+ */
+export const useDuplicateEvent = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof duplicateEvent>>, TError,{eventId: string}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof duplicateEvent>>,
+        TError,
+        {eventId: string},
+        TContext
+      > => {
+
+      const mutationOptions = getDuplicateEventMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
  * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
  * @summary Tải ảnh banner
  */
@@ -1095,6 +1179,89 @@ export const useUploadEventBanner = <TError = ProblemDetail,
       > => {
 
       const mutationOptions = getUploadEventBannerMutationOptions(options);
+
+      return useMutation(mutationOptions, queryClient);
+    }
+    /**
+ * @summary Nhân bản nhiều sự kiện; kết quả theo từng id
+ */
+export type bulkDuplicateEventsResponse200 = {
+  data: BulkResult
+  status: 200
+}
+    
+export type bulkDuplicateEventsResponseSuccess = (bulkDuplicateEventsResponse200) & {
+  headers: Headers;
+};
+;
+
+export type bulkDuplicateEventsResponse = (bulkDuplicateEventsResponseSuccess)
+
+export const getBulkDuplicateEventsUrl = () => {
+
+
+  
+
+  return `/api/v1/organizer/events/bulk-duplicate`
+}
+
+export const bulkDuplicateEvents = async (bulkIdsRequest: BulkIdsRequest, options?: RequestInit): Promise<bulkDuplicateEventsResponse> => {
+  
+  return apiFetch<bulkDuplicateEventsResponse>(getBulkDuplicateEventsUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      bulkIdsRequest,)
+  }
+);}
+
+
+
+
+export const getBulkDuplicateEventsMutationOptions = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkDuplicateEvents>>, TError,{data: BulkIdsRequest}, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bulkDuplicateEvents>>, TError,{data: BulkIdsRequest}, TContext> => {
+
+const mutationKey = ['bulkDuplicateEvents'];
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+      
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bulkDuplicateEvents>>, {data: BulkIdsRequest}> = (props) => {
+          const {data} = props ?? {};
+
+          return  bulkDuplicateEvents(data,)
+        }
+
+        
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BulkDuplicateEventsMutationResult = NonNullable<Awaited<ReturnType<typeof bulkDuplicateEvents>>>
+    export type BulkDuplicateEventsMutationBody = BulkIdsRequest
+    export type BulkDuplicateEventsMutationError = unknown
+
+    /**
+ * @summary Nhân bản nhiều sự kiện; kết quả theo từng id
+ */
+export const useBulkDuplicateEvents = <TError = unknown,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bulkDuplicateEvents>>, TError,{data: BulkIdsRequest}, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bulkDuplicateEvents>>,
+        TError,
+        {data: BulkIdsRequest},
+        TContext
+      > => {
+
+      const mutationOptions = getBulkDuplicateEventsMutationOptions(options);
 
       return useMutation(mutationOptions, queryClient);
     }

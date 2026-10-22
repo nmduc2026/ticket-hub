@@ -20,4 +20,13 @@ public interface OrganizerApplicationService {
 	/** Hồ sơ của chính người gọi; chưa nộp thì {@code APPLICATION_NOT_FOUND} (404). */
 	Application myApplication(UUID userId);
 
+	/**
+	 * Sửa hồ sơ công khai và pháp lý (#27). Đổi tên pháp lý / mã số thuế hoặc CCCD / loại hình đưa hồ sơ về
+	 * {@code PENDING} chờ Admin duyệt lại; các trường khác đổi ngay.
+	 *
+	 * @throws com.ndz.shared.exception.BusinessException {@code ORGANIZER_STATE_INVALID} (chưa là organizer đang
+	 *         hoạt động), {@code LEGAL_ID_INVALID}, {@code PHONE_INVALID}, {@code WEBSITE_INVALID}
+	 */
+	Application updateProfile(UUID userId, OrganizerApplyRequest request);
+
 }

@@ -153,6 +153,33 @@ public class Organizer {
 		return status == OrganizerStatus.PENDING;
 	}
 
+	/**
+	 * Sửa hồ sơ công khai (#27): đổi tên pháp lý hoặc mã số thuế / CCCD đưa hồ sơ về {@code PENDING} để Admin duyệt
+	 * lại (sự kiện đang bán không bị ảnh hưởng); các trường còn lại đổi ngay, không cần duyệt.
+	 *
+	 * @throws BusinessException {@code ORGANIZER_STATE_INVALID} khi không ở {@code APPROVED}
+	 */
+	public void updateProfile(Application application, Instant now) {
+		if (status != OrganizerStatus.APPROVED) {
+			throw new BusinessException(ErrorCode.ORGANIZER_STATE_INVALID, "Chỉ sửa hồ sơ khi đang hoạt động");
+		}
+		boolean legalChanged = !this.legalName.equals(application.legalName())
+				|| !this.legalId.equals(application.legalId()) || this.organizerType != application.type();
+		this.displayName = application.displayName();
+		this.contactEmail = application.contactEmail();
+		this.contactPhone = application.contactPhone();
+		this.website = application.website();
+		this.introduction = application.introduction();
+		this.eventScale = application.eventScale();
+		if (legalChanged) {
+			this.legalName = application.legalName();
+			this.legalId = application.legalId();
+			this.organizerType = application.type();
+			this.status = OrganizerStatus.PENDING;
+			this.submittedAt = now;
+		}
+	}
+
 	private void requirePending() {
 		if (status != OrganizerStatus.PENDING) {
 			throw new BusinessException(ErrorCode.ORGANIZER_NOT_PENDING, "Hồ sơ không còn ở trạng thái chờ duyệt");

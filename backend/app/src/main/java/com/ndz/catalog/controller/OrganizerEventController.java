@@ -40,8 +40,10 @@ import com.ndz.catalog.entity.enums.EventStatus;
 import com.ndz.catalog.dto.response.EventResponses.Detail;
 import com.ndz.catalog.dto.response.EventResponses.EventPage;
 import com.ndz.catalog.dto.response.EventResponses.Tier;
+import com.ndz.catalog.dto.request.BulkIdsRequest;
 import com.ndz.catalog.dto.request.TierRequests.AssignmentsRequest;
 import com.ndz.catalog.dto.request.TierRequests.TierRequest;
+import com.ndz.catalog.dto.response.SuspensionResponses.BulkResult;
 import com.ndz.shared.util.CurrentUser;
 
 /**
@@ -159,6 +161,20 @@ class OrganizerEventController {
 	List<Assignment> replaceAssignments(@PathVariable UUID eventId,
 			@Valid @RequestBody AssignmentsRequest request) {
 		return service.replaceAssignments(CurrentUser.require().id(), eventId, request);
+	}
+
+	// ---- Nhân bản ----
+
+	@Operation(operationId = "duplicateEvent", summary = "Nhân bản thành bản nháp mới, không chép giờ mở bán")
+	@PostMapping("/{eventId}/duplicate")
+	Detail duplicate(@PathVariable UUID eventId) {
+		return service.duplicate(CurrentUser.require().id(), eventId);
+	}
+
+	@Operation(operationId = "bulkDuplicateEvents", summary = "Nhân bản nhiều sự kiện; kết quả theo từng id")
+	@PostMapping("/bulk-duplicate")
+	BulkResult bulkDuplicate(@Valid @RequestBody BulkIdsRequest request) {
+		return service.bulkDuplicate(CurrentUser.require().id(), request.ids());
 	}
 
 }

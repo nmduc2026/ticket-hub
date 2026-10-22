@@ -149,6 +149,13 @@ export const publishOrganizerEventParams = zod.object({
 })
 
 /**
+ * @summary Nhân bản thành bản nháp mới, không chép giờ mở bán
+ */
+export const duplicateEventParams = zod.object({
+  "eventId": zod.uuid()
+})
+
+/**
  * jpg, png hoặc webp, tối đa 2 MB; sửa được cả sau publish (thông tin hiển thị)
  * @summary Tải ảnh banner
  */
@@ -158,5 +165,15 @@ export const uploadEventBannerParams = zod.object({
 
 export const uploadEventBannerBody = zod.object({
   "file": zod.instanceof(File)
+})
+
+/**
+ * @summary Nhân bản nhiều sự kiện; kết quả theo từng id
+ */
+export const bulkDuplicateEventsBodyIdsMin = 0;
+export const bulkDuplicateEventsBodyIdsMax = 100;
+
+export const bulkDuplicateEventsBody = zod.object({
+  "ids": zod.array(zod.uuid()).min(bulkDuplicateEventsBodyIdsMin).max(bulkDuplicateEventsBodyIdsMax)
 })
 

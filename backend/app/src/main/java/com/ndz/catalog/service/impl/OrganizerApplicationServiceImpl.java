@@ -86,6 +86,17 @@ public class OrganizerApplicationServiceImpl implements OrganizerApplicationServ
 						() -> new BusinessException(ErrorCode.APPLICATION_NOT_FOUND, "Bạn chưa nộp hồ sơ"));
 	}
 
+	@Override
+	@Transactional
+	public Application updateProfile(UUID userId, OrganizerApplyRequest request) {
+		Organizer.Application application = normalize(request);
+		Organizer organizer = organizers.lockById(userId)
+				.orElseThrow(() -> new BusinessException(ErrorCode.ORGANIZER_NOT_FOUND, "Không tìm thấy hồ sơ"));
+		organizer.updateProfile(application, clock.instant());
+		log.info("Organizer {} sửa hồ sơ", userId);
+		return mapper.toApplication(organizer);
+	}
+
 	/** Chuẩn hoá khoảng trắng / dấu phân cách và kiểm mã số theo loại organizer. */
 	private static Organizer.Application normalize(OrganizerApplyRequest request) {
 		String legalId = SEPARATORS.matcher(request.legalId()).replaceAll("");
