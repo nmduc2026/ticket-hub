@@ -57,13 +57,25 @@ public class StripeWebhookServiceImpl implements StripeWebhookService {
 	@Transactional
 	public void handle(String payload, String signatureHeader) {
 		GatewayWebhookEvent event = verify(payload, signatureHeader);
+		recordAndApply(event, payload);
+	}
+
+	@Override
+	@Transactional
+	public boolean reprocess(String stripeEventId) {
+		GatewayWebhookEvent event = stripe.retrieveEvent(stripeEventId);
+		return recordAndApply(event, "{\"source\":\"admin-reprocess\"}");
+	}
+
+	private boolean recordAndApply(GatewayWebhookEvent event, String payloadToStore) {
 		Instant now = clock.instant();
-		if (!stripeEvents.insertIfAbsent(event.id(), event.type(), payload, now)) {
+		if (!stripeEvents.insertIfAbsent(event.id(), event.type(), payloadToStore, now)) {
 			log.info("Bỏ qua webhook đã nhận {} ({})", event.id(), event.type());
-			return;
+			return false;
 		}
 		apply(event, now);
 		stripeEvents.markProcessed(event.id(), now);
+		return true;
 	}
 
 	private GatewayWebhookEvent verify(String payload, String signatureHeader) {

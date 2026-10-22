@@ -1,5 +1,6 @@
 package com.ndz.catalog.repository;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,5 +36,7 @@ public interface OrganizerRepository extends JpaRepository<Organizer, UUID> {
 
 	/** Hồ sơ chờ duyệt, cho Admin dashboard (§11.2). */
 	long countByStatusAndSubmittedAtNotNull(OrganizerStatus status);
+
+	long countByStatusIn(Collection<OrganizerStatus> statuses);
 
 }

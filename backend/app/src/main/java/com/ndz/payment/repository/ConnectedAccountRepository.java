@@ -2,7 +2,9 @@ package com.ndz.payment.repository;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -47,6 +49,38 @@ public class ConnectedAccountRepository {
 				WHERE charges_enabled = false AND details_submitted = true AND requirements_due = '[]'::jsonb
 				  AND disabled_reason IS NOT NULL AND disabled_reason <> 'requirements.pending_verification'
 				""", Integer.class);
+	}
+
+	/**
+	 * Số connected account theo {@code state} (trừ {@code none}, vì đó là organizer chưa có dòng nào) — cùng thứ tự
+	 * suy luận với {@link com.ndz.payment.service.impl.OrganizerStripeServiceImpl#toResponse}, cho Admin xem cấu hình
+	 * thanh toán (màn #36).
+	 */
+	public Map<String, Integer> countByState() {
+		return jdbc.query("""
+				SELECT
+				    CASE
+				        WHEN charges_enabled THEN 'active'
+				        WHEN NOT details_submitted OR requirements_due <> '[]'::jsonb THEN 'incomplete'
+				        WHEN disabled_reason IS NULL OR disabled_reason = 'requirements.pending_verification' THEN 'pending'
+				        ELSE 'restricted'
+				    END AS state,
+				    count(*) AS total
+				FROM payment.connected_accounts
+				GROUP BY 1
+				""", rs -> {
+			Map<String, Integer> result = new HashMap<>();
+			while (rs.next()) {
+				result.put(rs.getString("state"), rs.getInt("total"));
+			}
+			return result;
+		});
+	}
+
+	/** Tổng số connected account đang có (dùng để suy ra số organizer ở state {@code none}). */
+	public int countTotal() {
+		Integer total = jdbc.queryForObject("SELECT count(*) FROM payment.connected_accounts", Integer.class);
+		return total == null ? 0 : total;
 	}
 
 	/** Lưu account vừa tạo; hai request đồng thời cùng tạo (cùng idempotency key) chỉ một dòng được ghi. */

@@ -2,6 +2,8 @@ package com.ndz.payment.client;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -16,6 +18,7 @@ import com.stripe.model.Refund;
 import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
 import com.stripe.net.RequestOptions;
+import com.stripe.param.EventListParams;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 
@@ -150,6 +153,35 @@ public class StripeGateway {
 			throw new InvalidWebhookException("Không đọc được nội dung webhook", e);
 		}
 		return toWebhookEvent(event);
+	}
+
+	/** Event Stripe đã thử gửi tới webhook của ta nhưng không nhận (Admin màn #36). */
+	public List<GatewayStripeDeliveryFailure> listFailedDeliveries(int limit) {
+		var params = EventListParams.builder().setDeliverySuccess(false).setLimit((long) limit).build();
+		return resilience.execute(false, () -> {
+			try {
+				return client.v1().events().list(params).getData().stream()
+						.map(event -> new GatewayStripeDeliveryFailure(event.getId(), event.getType(),
+								Instant.ofEpochSecond(event.getCreated()),
+								event.getPendingWebhooks() == null ? 0 : event.getPendingWebhooks().intValue()))
+						.toList();
+			}
+			catch (StripeException e) {
+				throw new StripeGatewayException("Stripe: list Events thất bại", e.getCode(), e);
+			}
+		});
+	}
+
+	/** Lấy lại một event theo id để xử lý lại (Admin reprocess, màn #36); không cần chữ ký vì không phải webhook. */
+	public GatewayWebhookEvent retrieveEvent(String eventId) {
+		return resilience.execute(false, () -> {
+			try {
+				return toWebhookEvent(client.v1().events().retrieve(eventId));
+			}
+			catch (StripeException e) {
+				throw new StripeGatewayException("Stripe: retrieve Event thất bại", e.getCode(), e);
+			}
+		});
 	}
 
 	private static GatewayWebhookEvent toWebhookEvent(Event event) {

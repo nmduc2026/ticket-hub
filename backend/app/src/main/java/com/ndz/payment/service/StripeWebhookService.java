@@ -15,4 +15,13 @@ public interface StripeWebhookService {
 	 */
 	void handle(String payload, String signatureHeader);
 
+	/**
+	 * Lấy lại event từ Stripe theo id và áp dụng như một webhook mới tới (Admin màn #36, không cần chữ ký vì gọi trực
+	 * tiếp Stripe API bằng secret key). Idempotent theo {@code stripe_event_id}: event đã xử lý thì chỉ bỏ qua, không
+	 * đổi trạng thái payment.
+	 *
+	 * @return true nếu vừa xử lý (lần đầu), false nếu đã xử lý từ trước
+	 */
+	boolean reprocess(String stripeEventId);
+
 }

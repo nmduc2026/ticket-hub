@@ -109,6 +109,12 @@ class CatalogApiImpl implements CatalogApi {
 
 	@Override
 	@Transactional(readOnly = true)
+	public long countApprovedOrganizers() {
+		return organizers.countByStatusIn(java.util.List.of(OrganizerStatus.APPROVED, OrganizerStatus.SUSPENDED));
+	}
+
+	@Override
+	@Transactional(readOnly = true)
 	public long countSuspendedEvents() {
 		return events.countByStatus(EventStatus.SUSPENDED);
 	}

@@ -1,8 +1,15 @@
 package com.ndz.payment.repository;
 
+import java.time.Instant;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.ndz.payment.entity.StripeEvent;
 
 public interface StripeEventRepository extends JpaRepository<StripeEvent, String>, StripeEventRepositoryCustom {
+
+	long countByReceivedAtGreaterThanEqual(Instant since);
+
+	long countByReceivedAtGreaterThanEqualAndProcessedAtIsNotNull(Instant since);
+
 }

@@ -67,6 +67,9 @@ public interface CatalogApi {
 	/** Hồ sơ organizer đang chờ duyệt (Admin dashboard, §11.2). */
 	long countPendingOrganizers();
 
+	/** Organizer đã duyệt (kể cả bị đình chỉ); cho Admin suy ra số chưa kết nối Stripe (màn #36). */
+	long countApprovedOrganizers();
+
 	/** Sự kiện đang bị tạm dừng bán (BR-13; Admin dashboard). */
 	long countSuspendedEvents();
 
