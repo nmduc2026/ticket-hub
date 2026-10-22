@@ -14,6 +14,7 @@ import com.ndz.catalog.entity.enums.AdministrativeUnitType;
 import com.ndz.catalog.repository.AdministrativeUnitRepository;
 import com.ndz.catalog.repository.VenueRepository;
 import com.ndz.catalog.service.AdminAdministrativeUnitService;
+import com.ndz.catalog.util.AdministrativeUnitCache;
 import com.ndz.shared.audit.AuditAction;
 import com.ndz.shared.audit.AuditLogService;
 import com.ndz.shared.exception.BusinessException;
@@ -26,12 +27,14 @@ class AdminAdministrativeUnitServiceImpl implements AdminAdministrativeUnitServi
 	private final AdministrativeUnitRepository units;
 	private final VenueRepository venues;
 	private final AuditLogService audit;
+	private final AdministrativeUnitCache cache;
 
 	AdminAdministrativeUnitServiceImpl(AdministrativeUnitRepository units, VenueRepository venues,
-			AuditLogService audit) {
+			AuditLogService audit, AdministrativeUnitCache cache) {
 		this.units = units;
 		this.venues = venues;
 		this.audit = audit;
+		this.cache = cache;
 	}
 
 	@Override
@@ -63,6 +66,7 @@ class AdminAdministrativeUnitServiceImpl implements AdminAdministrativeUnitServi
 		units.save(unit);
 		audit.record(adminId, AuditAction.ADMIN_UNIT_CREATED, "administrative_unit", unit.getId(), null,
 				Map.of("code", unit.getCode(), "name", unit.getName()));
+		cache.evictAfterCommit();
 		return toResponse(unit);
 	}
 
@@ -78,6 +82,7 @@ class AdminAdministrativeUnitServiceImpl implements AdminAdministrativeUnitServi
 		unit.update(request.name().trim(), request.code().trim(), request.effectiveFrom());
 		audit.record(adminId, AuditAction.ADMIN_UNIT_UPDATED, "administrative_unit", id, before,
 				Map.of("code", unit.getCode(), "name", unit.getName()));
+		cache.evictAfterCommit();
 		return toResponse(unit);
 	}
 
@@ -92,6 +97,7 @@ class AdminAdministrativeUnitServiceImpl implements AdminAdministrativeUnitServi
 					unit.getLevel() == 1 ? "Còn đơn vị con đang hoạt động" : "Còn địa điểm thuộc đơn vị này");
 		}
 		unit.disable();
+		cache.evictAfterCommit();
 		audit.record(adminId, AuditAction.ADMIN_UNIT_DISABLED, "administrative_unit", id,
 				Map.of("active", true), Map.of("active", false));
 	}

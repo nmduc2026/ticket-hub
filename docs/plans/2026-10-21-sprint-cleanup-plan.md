@@ -233,9 +233,9 @@ Hạng mục 1–6 đã commit từ trước (`9072c33`, `27fb3c1`, `776b15b`, `
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
 | 14 Audit log | `GET /admin/audit-logs` (lọc người thao tác, hành động, thời gian), màn #31 | – (xuất CSV tối đa 10.000 dòng, `422 EXPORT_TOO_LARGE`, ghi audit; nút xuất ở màn #31) |
-| 15 Địa điểm, đơn vị hành chính | CRUD `/admin/venues` (+ `bulk-delete`), `/admin/administrative-units`; màn #16, #33 | `GET /administrative-units` công khai có cache chưa làm |
+| 15 Địa điểm, đơn vị hành chính | CRUD `/admin/venues` (+ `bulk-delete`), `/admin/administrative-units`; màn #16, #33 | – (`GET /administrative-units` có cache trong bộ nhớ, TTL `tickethub.catalog.administrative-unit-cache-ttl` mặc định 10 phút, chỉ cache truy vấn không có từ khoá, Admin đổi thì xoá cache của pod đó, pod khác chờ hết TTL) |
 | 20 Cấu hình thanh toán | `GET /admin/payment-config`, `stripe-events`, `reprocess`, `webhook-check`; màn #36 | – |
-| 21 Organizer | `duplicate`, `bulk-duplicate`, `GET/PUT /organizer/profile`, `bulk-resend-tickets`; màn #27 (hồ sơ, thông báo) | FE nút nhân bản và gửi lại vé hàng loạt (#12, #14) |
+| 21 Organizer | `duplicate`, `bulk-duplicate`, `GET/PUT /organizer/profile`, `bulk-resend-tickets`; màn #27 (hồ sơ, thông báo) | – (nút nhân bản ở #12, gửi lại vé hàng loạt ở #14) |
 | 16 Spike `generateSeats` | Xong: `generateSeats.ts` và `SeatGenerator.java` ra cùng toạ độ trên bộ dữ liệu chung `shared-test-data/generate-seats.json` (9 ca, 82 ghế; kỳ vọng tính độc lập bằng Python); không cần lùi về "form + lưới" | – |
 | 17 Sơ đồ ghế BE | `GET/POST/PUT/DELETE /admin/seat-maps`, `POST /{id}/copy`; lưu thì sinh lại ghế, khu giữ `id` theo `code`; `SEAT_MAP_LOCKED`, `SEAT_MAP_BEING_EDITED`, `SECTION_IN_USE`; 5 test tích hợp | Quyết định chờ duyệt bên dưới |
 | 19 Import Excel | Chưa làm (cần thêm thư viện đọc Excel, repo chưa có) | Làm trước 18 theo thứ tự người dùng chốt 22/10/2026; modal import ở #17 gắn khi làm editor (hạng mục 18) |
