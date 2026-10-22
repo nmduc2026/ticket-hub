@@ -122,6 +122,18 @@ public class SeatMapAdminRepository {
 				(rs, i) -> new SeatRow(rs.getString(1), rs.getInt(2), rs.getInt(3), rs.getInt(4)), sectionId);
 	}
 
+	/** Đổi toạ độ các ghế đã có (khoá theo hàng + số ghế), dùng khi import đè. */
+	public void updateSeatPositions(UUID sectionId, List<SeatRow> seats) {
+		jdbc.batchUpdate("UPDATE catalog.seats SET x = ?, y = ? WHERE section_id = ? AND row_label = ? AND seat_number = ?",
+				seats, 1000, (ps, seat) -> {
+					ps.setInt(1, seat.x());
+					ps.setInt(2, seat.y());
+					ps.setObject(3, sectionId);
+					ps.setString(4, seat.rowLabel());
+					ps.setInt(5, seat.seatNumber());
+				});
+	}
+
 	public void insertSeats(UUID sectionId, List<SeatRow> seats) {
 		jdbc.batchUpdate("INSERT INTO catalog.seats (id, section_id, row_label, seat_number, x, y) VALUES (?, ?, ?, ?, ?, ?)",
 				seats, 1000, (ps, seat) -> {

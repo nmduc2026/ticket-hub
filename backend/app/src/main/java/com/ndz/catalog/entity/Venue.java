@@ -15,6 +15,10 @@ public class Venue {
 	@Id
 	private UUID id;
 
+	/** Mã để khớp khi import lại; trống với địa điểm tạo tay. */
+	@Column
+	private String code;
+
 	@Column(nullable = false)
 	private String name;
 
@@ -38,6 +42,12 @@ public class Venue {
 		this.capacity = capacity;
 	}
 
+	/** Địa điểm tạo từ import Excel, khớp lại theo {@code code}. */
+	public Venue(UUID id, String code, String name, String address, UUID wardId, int capacity) {
+		this(id, name, address, wardId, capacity);
+		this.code = code;
+	}
+
 	public void update(String name, String address, UUID wardId, int capacity) {
 		this.name = name;
 		this.address = address;
@@ -47,6 +57,10 @@ public class Venue {
 
 	public UUID getId() {
 		return id;
+	}
+
+	public String getCode() {
+		return code;
 	}
 
 	public String getName() {

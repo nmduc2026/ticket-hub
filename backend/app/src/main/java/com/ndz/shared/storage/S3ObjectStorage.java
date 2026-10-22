@@ -4,6 +4,7 @@ import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /** Cài đặt {@link ObjectStorage} bằng AWS SDK v2. */
@@ -27,6 +28,16 @@ final class S3ObjectStorage implements ObjectStorage {
 		}
 		catch (SdkException e) {
 			throw new StorageException("Không ghi được đối tượng " + key, e);
+		}
+	}
+
+	@Override
+	public byte[] get(String key) {
+		try {
+			return s3.getObjectAsBytes(GetObjectRequest.builder().bucket(bucket).key(key).build()).asByteArray();
+		}
+		catch (SdkException e) {
+			throw new StorageException("Không đọc được đối tượng " + key, e);
 		}
 	}
 

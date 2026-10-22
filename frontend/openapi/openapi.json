@@ -1933,6 +1933,84 @@
         }
       }
     },
+    "/api/v1/admin/imports/{type}" : {
+      "post" : {
+        "tags" : [ "admin-import-controller" ],
+        "summary" : "Kiểm file Excel (dryRun=true) hoặc ghi các dòng hợp lệ (dryRun=false); type: administrative-units, venues, seat-maps",
+        "operationId" : "importExcel",
+        "parameters" : [ {
+          "name" : "type",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "dryRun",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "boolean",
+            "default" : true
+          }
+        }, {
+          "name" : "onDuplicate",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "default" : "UPDATE",
+            "enum" : [ "UPDATE", "SKIP" ]
+          }
+        }, {
+          "name" : "seatMapId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "string",
+            "format" : "uuid"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "422" : {
+            "description" : "IMPORT_FILE_INVALID, IMPORT_FILE_TOO_LARGE, IMPORT_TOO_MANY_ROWS, EMPTY_FILE hoặc SEAT_MAP_REQUIRED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "409" : {
+            "description" : "SEAT_MAP_LOCKED hoặc SEAT_MAP_BEING_EDITED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/events/{id}/suspend" : {
       "post" : {
         "tags" : [ "admin-event-controller" ],
@@ -3417,7 +3495,7 @@
           "required" : false,
           "schema" : {
             "type" : "string",
-            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED", "SEAT_MAP_CREATED", "SEAT_MAP_UPDATED", "SEAT_MAP_COPIED", "SEAT_MAP_DELETED" ]
+            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED", "SEAT_MAP_CREATED", "SEAT_MAP_UPDATED", "SEAT_MAP_COPIED", "SEAT_MAP_DELETED", "DATA_IMPORTED" ]
           }
         }, {
           "name" : "from",
@@ -6422,7 +6500,7 @@
           },
           "action" : {
             "type" : "string",
-            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED", "SEAT_MAP_CREATED", "SEAT_MAP_UPDATED", "SEAT_MAP_COPIED", "SEAT_MAP_DELETED" ]
+            "enum" : [ "ORGANIZER_APPROVED", "ORGANIZER_REJECTED", "USER_LOCKED", "USER_UNLOCKED", "REFUND_RETRIED", "PLATFORM_FEE_SCHEDULED", "EVENT_SUSPENDED", "EVENT_RESUMED", "ORGANIZER_SUSPENDED", "ORGANIZER_REINSTATED", "DATA_EXPORTED", "EVENT_CANCELLED", "VENUE_CREATED", "VENUE_UPDATED", "VENUE_DELETED", "ADMIN_UNIT_CREATED", "ADMIN_UNIT_UPDATED", "ADMIN_UNIT_DISABLED", "SEAT_MAP_CREATED", "SEAT_MAP_UPDATED", "SEAT_MAP_COPIED", "SEAT_MAP_DELETED", "DATA_IMPORTED" ]
           },
           "targetType" : {
             "type" : "string"

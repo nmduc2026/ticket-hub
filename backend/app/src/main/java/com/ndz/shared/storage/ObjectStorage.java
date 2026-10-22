@@ -9,6 +9,9 @@ public interface ObjectStorage {
 	/** Ghi đè nếu key đã có. */
 	void put(String key, byte[] content, String contentType);
 
+	/** Nội dung đối tượng; ném {@link StorageException} nếu không có hoặc lỗi hạ tầng. */
+	byte[] get(String key);
+
 	/** Xoá một đối tượng; không có thì coi như đã xoá. */
 	void delete(String key);
 

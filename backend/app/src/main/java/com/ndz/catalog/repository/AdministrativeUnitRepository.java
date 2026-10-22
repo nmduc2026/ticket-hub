@@ -15,6 +15,8 @@ import com.ndz.catalog.entity.AdministrativeUnit;
 
 public interface AdministrativeUnitRepository extends JpaRepository<AdministrativeUnit, UUID> {
 
+	Optional<AdministrativeUnit> findByCode(String code);
+
 	boolean existsByCode(String code);
 
 	boolean existsByCodeAndIdNot(String code, UUID id);
