@@ -8,7 +8,7 @@ import com.ndz.catalog.event.EventEnded;
 import com.ndz.catalog.event.EventPublished;
 import com.ndz.catalog.event.EventSuspended;
 import com.ndz.queue.service.QueueService;
-import com.ndz.queue.service.QueueService.CloseReason;
+import com.ndz.queue.constant.CloseReason;
 
 /**
  * Nghe event của Catalog để giữ {@code queue:{eventId}:meta} và đóng phòng chờ (overview.md §7.1). Ghi / xoá key Redis

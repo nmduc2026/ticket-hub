@@ -3,6 +3,7 @@ package com.ndz.queue.service;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.ndz.queue.constant.CloseReason;
 import com.ndz.queue.dto.response.QueueStatusResponse;
 
 /** Phòng chờ ảo (overview.md §7.1, BR-04). */
@@ -21,9 +22,5 @@ public interface QueueService {
 	 * SSE rồi xoá các key {@code queue:{eventId}:*}.
 	 */
 	void close(UUID eventId, CloseReason reason);
-
-	enum CloseReason {
-		SUSPENDED, CANCELLED, ENDED
-	}
 
 }

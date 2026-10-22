@@ -1019,7 +1019,7 @@ frontend/src/
 
 ### 15.3. Các cơ chế khác
 
-- **Load shedding**: Gateway trả `503 + Retry-After` khi số request đang xử lý vượt ngưỡng, thay vì để quá tải lan xuống DB. Kết nối SSE đếm riêng, không tính vào ngưỡng; không shed webhook Stripe, health probe và `POST /payments` (khách đang giữ ghế); API đọc bị shed trước.
+- **Load shedding**: Gateway trả `503 + Retry-After` khi số request đang xử lý vượt ngưỡng, thay vì để quá tải lan xuống DB. Kết nối SSE đếm riêng, không tính vào ngưỡng; không shed webhook Stripe, health probe và `POST /payments` (khách đang giữ ghế); API đọc bị shed trước (ngưỡng đọc thấp hơn ngưỡng ghi). Tắt pod êm: `server.shutdown: graceful`, `app` đóng các kết nối SSE trước để trình duyệt tự nối sang pod khác.
 - **Feature flag (Unleash)**: kill switch cho hoàn vé, phòng chờ, tìm kiếm Elasticsearch; rollout dần tính năng mới.
 - **Graceful shutdown**: khi pod bị tắt → ngừng nhận request mới, xử lý xong request đang chạy, commit Kafka offset, đóng SSE (client tự reconnect sang pod khác).
 
@@ -1068,7 +1068,7 @@ App (traceId) ─┼─▶ Metrics : Micrometer ─▶ Prometheus ─▶ Grafana
 | Tầng | Cơ chế | Tín hiệu |
 |---|---|---|
 | Gateway, app / Booking (API) | **KEDA** (KEDA tự tạo HPA; không khai báo HPA riêng trên cùng workload) | Trigger CPU + Prometheus (request/giây, p95 latency) |
-| Trước giờ mở bán | **KEDA** trigger Prometheus | Metric `events_opening_soon` (số sự kiện mở bán trong 15 phút tới, app tự xuất) > 0 → giữ số replica tối thiểu cao hơn (pre-warm), tránh JVM khởi động chậm |
+| Trước giờ mở bán | **KEDA** trigger Prometheus | Metric `tickethub_events_opening_soon` (số sự kiện đã publish mở bán trong 15 phút tới, app tự xuất, cập nhật 30 giây một lần) > 0 → giữ số replica tối thiểu cao hơn (pre-warm), tránh JVM khởi động chậm |
 | Consumers đã tách service (Ticket, Notification…) | **KEDA** | Kafka consumer lag; **scale-to-zero** khi không có message. Chỉ áp dụng sau khi tách service; ở modular monolith mọi consumer chạy chung app |
 | Node | Cluster Autoscaler / Karpenter (trên cloud) | Pod không còn chỗ chạy |
 | Right-sizing | **VPA** (chế độ gợi ý) | Lịch sử dùng CPU/RAM |

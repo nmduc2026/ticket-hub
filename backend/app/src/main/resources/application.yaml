@@ -1,8 +1,13 @@
 server:
+  # Tắt êm: ngừng nhận request mới, chờ request đang chạy xong (SSE được đóng trước, xem SseHub).
+  shutdown: graceful
   # 8080 dành cho Gateway (redirect URI của client tickethub-bff); app nằm sau Gateway.
   port: 8081
 
 spring:
+  lifecycle:
+    # Thời hạn tối đa chờ request đang chạy khi tắt; khớp terminationGracePeriodSeconds của pod trừ preStop.
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:30s}
   application:
     name: app
   data:

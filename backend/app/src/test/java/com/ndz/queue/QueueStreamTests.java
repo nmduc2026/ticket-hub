@@ -30,7 +30,7 @@ import com.ndz.queue.client.RedisWaitingRoom;
 import com.ndz.queue.client.RedisWaitingRoom.Meta;
 import com.ndz.queue.service.QueueAdmissionService;
 import com.ndz.queue.service.QueueService;
-import com.ndz.queue.service.QueueService.CloseReason;
+import com.ndz.queue.constant.CloseReason;
 import com.ndz.queue.service.QueueStreamService;
 import com.ndz.shared.util.Uuid7;
 

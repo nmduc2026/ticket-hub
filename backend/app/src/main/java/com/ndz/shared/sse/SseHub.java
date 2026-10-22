@@ -9,6 +9,7 @@ import java.util.function.BiConsumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.SmartLifecycle;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 /**
@@ -16,14 +17,21 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * nên thay đổi đi qua Redis pub/sub ({@link SseBroadcaster}) tới {@link #deliver} của mọi pod. Một kết nối có thể
  * nghe nhiều topic (vd. kênh chung của sự kiện và kênh riêng của user).
  */
-public class SseHub {
+public class SseHub implements SmartLifecycle {
 
 	private static final Logger log = LoggerFactory.getLogger(SseHub.class);
 
 	private record Subscriber(SseEmitter emitter, Object attachment) {
 	}
 
+	/**
+	 * Dừng trước khi web server bắt đầu chờ request đang chạy (graceful shutdown): kết nối SSE sống hàng chục phút,
+	 * không đóng thì pod phải chờ hết thời hạn tắt. Phase lớn hơn nghĩa là dừng sớm hơn.
+	 */
+	private static final int PHASE = Integer.MAX_VALUE - 512;
+
 	private final ConcurrentMap<String, Set<Subscriber>> byTopic = new ConcurrentHashMap<>();
+	private volatile boolean running;
 
 	/**
 	 * Mở kết nối không hết hạn phía server (client tự đóng, heartbeat phát hiện kết nối chết).
@@ -78,6 +86,34 @@ public class SseHub {
 		byTopic.values().stream().flatMap(Set::stream).distinct()
 				.filter(subscriber -> type.isInstance(subscriber.attachment()))
 				.forEach(subscriber -> action.accept(type.cast(subscriber.attachment()), subscriber.emitter()));
+	}
+
+	/** Đóng mọi kết nối của pod này; trình duyệt tự nối lại và được chuyển sang pod khác (overview.md §17). */
+	public void closeAll() {
+		byTopic.values().stream().flatMap(Set::stream).distinct().forEach(subscriber -> subscriber.emitter().complete());
+		byTopic.clear();
+	}
+
+	@Override
+	public void start() {
+		running = true;
+	}
+
+	@Override
+	public void stop() {
+		running = false;
+		log.info("Tắt pod: đóng {} kết nối SSE", connections());
+		closeAll();
+	}
+
+	@Override
+	public boolean isRunning() {
+		return running;
+	}
+
+	@Override
+	public int getPhase() {
+		return PHASE;
 	}
 
 	public int connections() {

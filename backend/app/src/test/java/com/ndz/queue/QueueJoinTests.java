@@ -29,7 +29,7 @@ import com.ndz.MutableClock;
 import com.ndz.TestTokens;
 import com.ndz.queue.client.RedisWaitingRoom;
 import com.ndz.queue.service.QueueService;
-import com.ndz.queue.service.QueueService.CloseReason;
+import com.ndz.queue.constant.CloseReason;
 import com.ndz.shared.util.Uuid7;
 
 /**

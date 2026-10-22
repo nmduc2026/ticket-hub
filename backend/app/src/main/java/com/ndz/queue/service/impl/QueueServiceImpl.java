@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.ndz.catalog.api.CatalogApi;
 import com.ndz.catalog.api.CatalogApi.QueueEventInfo;
 import com.ndz.queue.client.RedisWaitingRoom;
+import com.ndz.queue.constant.CloseReason;
 import com.ndz.queue.client.RedisWaitingRoom.Meta;
 import com.ndz.queue.config.QueueProperties;
 import com.ndz.queue.dto.response.QueueStatusResponse;

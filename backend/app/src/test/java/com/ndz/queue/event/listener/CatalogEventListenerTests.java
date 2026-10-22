@@ -16,7 +16,7 @@ import com.ndz.catalog.event.EventEnded;
 import com.ndz.catalog.event.EventPublished;
 import com.ndz.catalog.event.EventSuspended;
 import com.ndz.queue.service.QueueService;
-import com.ndz.queue.service.QueueService.CloseReason;
+import com.ndz.queue.constant.CloseReason;
 import com.ndz.shared.util.Uuid7;
 
 /** Listener chỉ chuyển event của Catalog sang QueueService (plan Sprint 7 hạng mục 1; overview.md §7.1). */

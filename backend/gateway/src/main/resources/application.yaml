@@ -1,5 +1,7 @@
 server:
   port: 8080
+  # Tắt êm: ngừng nhận request mới, chờ request đang chạy xong (overview.md §17).
+  shutdown: graceful
   # Dựng URL redirect theo X-Forwarded-* của reverse proxy (Vite dev, nginx) — overview.md §13.1.
   forward-headers-strategy: framework
   servlet:
@@ -13,6 +15,9 @@ server:
         same-site: lax
 
 spring:
+  lifecycle:
+    # Thời hạn tối đa chờ request đang chạy khi tắt; khớp terminationGracePeriodSeconds của pod trừ preStop.
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:30s}
   application:
     name: gateway
   threads:

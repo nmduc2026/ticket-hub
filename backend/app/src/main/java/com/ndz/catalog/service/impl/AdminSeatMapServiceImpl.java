@@ -26,7 +26,6 @@ import com.ndz.catalog.mapper.VenueMapper;
 import com.ndz.catalog.repository.CatalogReadRepository;
 import com.ndz.catalog.repository.SeatMapAdminRepository;
 import com.ndz.catalog.repository.SeatMapAdminRepository.ElementRow;
-import com.ndz.catalog.repository.SeatMapAdminRepository.SeatRow;
 import com.ndz.catalog.repository.SeatMapAdminRepository.StoredSection;
 import com.ndz.catalog.service.AdminSeatMapService;
 import com.ndz.catalog.util.SeatGenerator;
