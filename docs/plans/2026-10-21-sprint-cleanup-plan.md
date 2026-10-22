@@ -208,14 +208,14 @@ Việc cần làm khi triển khai lên staging (thao tác báo trước, chưa 
 
 ## Tình trạng đợt code Sprint 6 (nhánh `feature/sprint-6`, 22/10/2026)
 
-Làm hạng mục 7, 10, 11, 12 (không bị chặn) theo yêu cầu người dùng: **bỏ qua viết test mới, bỏ qua `./mvnw verify` / `spotless:check` / Vitest / Playwright** để đi nhanh; chỉ `./mvnw compile` (BE) và `tsc -b` + `vite build` (FE) để chắc không lỗi cú pháp và kiểu. Riêng `OpenApiContractTests` được chạy thật (không phải test nghiệp vụ, mà là bước sinh `frontend/openapi/openapi.json` cho Orval) vì không có cách nào khác lấy contract mới. Chưa push, chưa commit (chờ bạn duyệt).
+Làm hạng mục 7, 10, 11, 12 (không bị chặn) theo yêu cầu người dùng: **bỏ qua viết test mới, bỏ qua `./mvnw verify` / `spotless:check` / Vitest / Playwright** để đi nhanh; chỉ `./mvnw compile` (BE) và `tsc -b` + `vite build` (FE) để chắc không lỗi cú pháp và kiểu. Riêng `OpenApiContractTests` được chạy thật (không phải test nghiệp vụ, mà là bước sinh `frontend/openapi/openapi.json` cho Orval) vì không có cách nào khác lấy contract mới. Đã commit từng hạng mục, chưa push.
 
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
-| 7 Admin dashboard/vận hành | `GET /admin/dashboard`, `GET /admin/events` (+ CSV), `GET /admin/bookings` mở rộng (+ CSV); cờ `needs_reconcile` trên `bookings` do Payment phát hiện khi đối soát quá hạn | Thông báo vận hành "Stripe bị hạn chế" cho Admin chưa làm (đang chỉ có trong dashboard count) |
+| 7 Admin dashboard/vận hành | `GET /admin/dashboard`, `GET /admin/events` (+ CSV), `GET /admin/bookings` mở rộng (+ CSV); cờ `needs_reconcile` trên `bookings` do Payment phát hiện khi đối soát quá hạn | – |
 | 10 FE kết nối Stripe (#26) | 5 trạng thái, thanh 4 bước, modal mở Stripe, Express Dashboard, nút ngắt kết nối luôn khoá; link "Kết nối Stripe" trong hộp "Chưa thể publish" (#24) | – |
 | 11 FE organizer số liệu | Tổng quan (#11) dùng `GET /organizer/dashboard`; bảng điều khiển sự kiện (#25, rút gọn — xem quyết định dưới) dùng `GET /organizer/events/{id}/sales`; đơn hàng (#14) có lọc + CSV server | Số đếm "đã vào/tổng vé" ở app check-in (ẩn theo `docs/design/checkin.md`) chưa bật lại — không nằm trong hạng mục 11, chỉ là API đã có |
-| 12 FE Admin vận hành | Tổng quan (#35), sự kiện (#34: lọc, tạm dừng/mở lại/huỷ gõ "HUY", tạm dừng hàng loạt, tiến độ hoàn), đơn hàng & đối soát (#29: lọc rộng hơn + CSV, hoàn thủ công), phí (#30: lịch sử + đặt mức mới) | Side sheet chi tiết đơn có dòng thời gian Stripe (#29) chưa làm; chỉ có bảng + hoàn thủ công |
+| 12 FE Admin vận hành | Tổng quan (#35), sự kiện (#34: lọc, tạm dừng/mở lại/huỷ gõ "HUY", tạm dừng hàng loạt, tiến độ hoàn), đơn hàng & đối soát (#29: lọc rộng hơn + CSV, hoàn thủ công), phí (#30: lịch sử + đặt mức mới) | – |
 
 ### Quyết định / thoả hiệp khi làm (chưa hỏi bạn trước, cần duyệt lại)
 
@@ -226,13 +226,25 @@ Làm hạng mục 7, 10, 11, 12 (không bị chặn) theo yêu cầu người d�
 - Thêm `recharts@3.2.1` vào `frontend/package.json` (chưa dùng trước đó). Đã kiểm `npm audit`: không thêm lỗ hổng mới (toàn bộ cảnh báo hiện có đến từ `orval` / `shadcn`, là dev dependency có từ trước).
 - Thêm `CatalogApi.organizerNames`, `countPendingOrganizers`, `countSuspendedEvents`, `countEventsOnSale`, `openingSoonEvents` và `BookingApi.adminTotals`, `countNeedsReconcile`, `countRefundFailed`: đọc được vì Payment đã phụ thuộc cả Booking và Catalog (ADR 0018), không tạo vòng mới.
 
+## Đợt MR Sprint 6 (nhánh `feature/sprint-6`, 22/10/2026)
+
+Hạng mục 1–6 đã commit từ trước (`9072c33`, `27fb3c1`, `776b15b`, `ce795d6`, `15a69d5`) và có test riêng. Phần MR làm tiếp, mỗi hạng mục một commit, chưa push; chưa viết test mới cho 14, 15, 20, 21 (nằm trong S6-1).
+
+| Hạng mục | Kết quả | Còn lại |
+|---|---|---|
+| 14 Audit log | `GET /admin/audit-logs` (lọc người thao tác, hành động, thời gian), màn #31 | Xuất CSV có audit chưa làm |
+| 15 Địa điểm, đơn vị hành chính | CRUD `/admin/venues` (+ `bulk-delete`), `/admin/administrative-units`; màn #16, #33 | `GET /administrative-units` công khai có cache chưa làm |
+| 20 Cấu hình thanh toán | `GET /admin/payment-config`, `stripe-events`, `reprocess`, `webhook-check`; màn #36 | – |
+| 21 Organizer | `duplicate`, `bulk-duplicate`, `GET/PUT /organizer/profile`, `bulk-resend-tickets`; màn #27 (hồ sơ, thông báo) | FE nút nhân bản và gửi lại vé hàng loạt (#12, #14) |
+| 16–19 | Chưa làm | – |
+
 ## Việc treo của Sprint 6
 
 | # | Việc | Bị chặn bởi | Làm gì khi được gỡ |
 |---|---|---|---|
-| S6-1 | Nợ kiểm chứng của hạng mục 7, 10, 11, 12 (bỏ qua theo yêu cầu đi nhanh): chưa viết test mới, chưa chạy `./mvnw verify`, `spotless:check`, Vitest, Playwright cho các hạng mục này | Không bị chặn, chỉ hoãn | Viết test theo `ticket-hub-testcase-rule` cho: BE (`AdminDashboardServiceImpl`, `AdminEventListServiceImpl`, cờ `needs_reconcile` 2 chiều, CSV export mới); FE (Vitest cho các trang mới, Playwright mock cho luồng tạm dừng / huỷ / hoàn thủ công / kết nối Stripe) |
+| S6-1 | Nợ kiểm chứng (bỏ qua theo yêu cầu đi nhanh): chưa viết test cho hạng mục 7, 10, 11, 12, 14, 15, 20, 21 (hạng mục 1–6 đã có test từ trước); chưa chạy `./mvnw verify`, `spotless:check`, Vitest, Playwright toàn bộ | Không bị chặn, chỉ hoãn | Viết test theo `ticket-hub-testcase-rule` cho: BE (`AdminDashboardServiceImpl`, `AdminEventListServiceImpl`, cờ `needs_reconcile` 2 chiều, CSV export mới); FE (Vitest cho các trang mới, Playwright mock cho luồng tạm dừng / huỷ / hoàn thủ công / kết nối Stripe) |
 | S6-2 | AWS lab 2 + gỡ AWS (hạng mục 8, 9 Sprint 6) | B6 (thăm dò Free plan + xác nhận credits), duyệt `terraform apply` từng lần | Làm theo hạng mục 8, 9 của plan Sprint 6 khi B6 xong |
 | S6-3 | Verify lõi đầy đủ (hạng mục 13) và review độc lập dòng tiền Connect / hoàn hàng loạt (hạng mục 23) | Hạng mục 1–12 (còn 8, 9 AWS); S6-1 | Chạy lại mọi test, đối chiếu AC-1 → AC-14 của plan Sprint 6, ghi `docs/test/sprint-6-verify.md`; gọi subagent review độc lập theo skill `code-review` cho `payment` và `booking` |
-| S6-4 | Hạng mục mở rộng (MR) 14–21 chưa mở | S6-3 (hạng mục 13 phải xong trước) | Làm theo thứ tự 14 → 21 của plan Sprint 6 |
-| S6-5 | Side sheet chi tiết đơn có dòng thời gian Stripe ở #29 | Không bị chặn, chỉ chưa làm | Thêm vào `AdminOrdersPage`: click dòng mở `Sheet` gọi API chi tiết payment (cần kiểm BE đã có đủ dữ liệu dòng thời gian hay phải thêm) |
-| S6-6 | Thông báo "Stripe bị hạn chế" cho Admin (đang chỉ có trong đếm ở dashboard, chưa có event/thông báo riêng) | Không bị chặn, chỉ chưa làm | Payment phát event khi `connected_accounts` chuyển sang trạng thái `restricted` (suy từ `account.updated`), Notification thêm case `STRIPE_RESTRICTED` cho Admin |
+| S6-4 | Hạng mục MR 16–19 (`generateSeats`, sơ đồ ghế BE / FE, import Excel) chưa làm; 14, 15, 20, 21 đã có code (xem "Đợt MR") | Không bị chặn | Làm theo thứ tự 16 → 17 → 18, 19 sau 15 và 17 |
+| S6-5 | ~~Side sheet chi tiết đơn có dòng thời gian Stripe ở #29~~ **Xong 22/10/2026**: `GET /admin/bookings/{id}/payment` (khoản thu, lần hoàn, timeline từ `stripe_events` khớp theo PaymentIntent), `OrderPaymentSheet`; 2 test BE, 1 test FE | – | – |
+| S6-6 | ~~Thông báo "Stripe bị hạn chế" cho Admin~~ **Xong 22/10/2026**: Payment phát `StripeAccountRestricted` khi chuyển sang `restricted` (không phát lại khi đã restricted), Notification báo Admin; có test | – | – |
