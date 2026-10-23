@@ -23,6 +23,20 @@
 | 10 | Verify toàn sprint theo AC bên dưới, kèm bằng chứng (skill `verification`) | Verify | AC bên dưới | 1–8 | Báo cáo verify |
 | 11 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho vùng rủi ro cao: bảo mật, secret, AWS) | Review | — | 10 | APPROVED / CHANGES REQUESTED |
 
+## Trạng thái
+
+Verify ngày 20/10/2026: `docs/test/sprint-1-verify.md` (APPROVED, kèm việc treo).
+
+| # | Trạng thái | Còn lại |
+|---|---|---|
+| 1, 2, 3, 4, 5, 6 | Xong. 59 test backend (`app` 52, `gateway` 7) xanh | – |
+| 7, 7b | Xong. 14 test Vitest, Playwright 23 xanh ở 1280px và 390px. Hồ sơ cá nhân (#19) đầy đủ xong 22/10/2026: ảnh đại diện, SĐT, ngày sinh, tỉnh, danh sách và đăng xuất phiên, xoá tài khoản (`GET/PUT /me/profile`, `POST /me/avatar`, `GET /me/sessions`, `DELETE /me/sessions/{id}`, `DELETE /me`) | Kiểm `sid` và xoá tài khoản trên stack thật (DC-1 ở plan dọn dẹp) |
+| 8 | Dockerfile, CI, Spotless, Error Prone, JaCoCo, gitleaks đã viết; 3 image build được, không còn CRITICAL | CI chưa chạy thật: PR, CI xanh trên `main`, image trên GHCR (plan dọn dẹp, hạng mục 1) |
+| 9 | Checklist, Terraform thăm dò, `run-probe.sh`, `verify-clean.sh` đã viết, `terraform validate` sạch | Chưa `apply`: bảng kết quả Free plan và destroy sạch (plan dọn dẹp, hạng mục 16) |
+| 10, 11 | Xong | – |
+
+AC-1 đến AC-6 và AC-9 đạt. AC-7 đạt một phần (gitleaks chặn secret; CI chưa chạy trên PR). AC-8 chưa đạt.
+
 ## Thứ tự
 
 1. Việc 1 → 2.

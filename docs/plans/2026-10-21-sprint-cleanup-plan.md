@@ -32,7 +32,6 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 | 3 | **Xong phần chạy ở local 22/10/2026 (nhánh `feature/sprint-cleanup`); còn: CI kiểm `spotless:check`, Orval 8 chờ Node ≥ 22.18.** Nợ nhỏ: `.gitattributes` (`* text=auto eol=lf`) và chuẩn hoá xuống dòng để `spotless:check` xanh trên Windows; `infra/docker-compose/.env.example` đủ `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `TICKET_SIGNING_JWK`, `MAIL_*` và truyền vào `app` (thiếu `TICKET_SIGNING_JWK` thì Ticket sinh khoá tạm, vé cũ không xác minh được sau khi khởi động lại), thêm `frontend/.env.example`, service stripe-mock trong compose dev; khai `Idempotency-Key` bằng `@Parameter` trong OpenAPI của `POST /bookings` rồi sinh lại client, FE bỏ truyền header tay trong `useHoldSeats`; `PENDING_BOOKING_EXISTS` kèm `bookingId` + FE link về đơn đang giữ; nâng Orval 8 nếu máy dev đã lên Node ≥ 22.18 | BE, FE, Infra | §6.7, §11.1, §19.2 | 1 | `spotless:check` xanh trên máy dev; `docker compose --profile core up` chạy được với `.env` sinh từ `.env.example`; hàm Orval `createBooking` có tham số `idempotencyKey` |
 | 4 | **Xong 21/10/2026 (nhánh `feature/sprint-5`, commit 177e985; 328 test xanh, không đổi test).** `booking` chuyển từ JdbcTemplate sang entity + Spring Data JPA; SQL đặc thù (`FOR UPDATE` theo thứ tự `seat_id`, `UPDATE … WHERE status = 'AVAILABLE'`, `RETURNING`, upsert `ON CONFLICT … WHERE`) giữ bằng native query; cột `version` cho optimistic lock theo convention | BE | §6.2, §10; ADR 0020, 0021; skill springbot (JPA) | 1 | Test 50 luồng tranh 1 ghế, test deadlock, truy vấn ghế trùng §10 và toàn bộ test `booking` xanh, số test không giảm |
 | 5 | **Xong 22/10/2026 (`feature/sprint-cleanup`).** Thanh toán đến muộn và mở lại checkout: Booking ghi lại khi nhận `PaymentSucceeded` cho đơn `EXPIRED` / `CANCELLED` mà không giữ lại được ghế, cập nhật khi nhận `RefundCompleted` / `RefundFailed`; `GET /bookings/{id}` thêm `latePayment` (`REFUND_PENDING` / `REFUNDED` / `REFUND_FAILED`); `POST /payments` khi payment của đơn đã `SUCCEEDED` → `409 PAYMENT_ALREADY_SUCCEEDED`. FE checkout: hiện "Không giữ lại được ghế, tiền sẽ được hoàn" theo `latePayment`; nhận `PAYMENT_ALREADY_SUCCEEDED` → "Đang xác nhận thanh toán" và hỏi lại trạng thái booking. Ghi vào §7.3, §11.2 | BE, FE | §7.2, §7.3, §7.7, §11.2; ADR 0019 | 4 | Integration test cả hai nhánh; Playwright (mock): đơn hết hạn có `latePayment = REFUND_PENDING` hiện đúng thông báo; tải lại trang sau khi đã trả không hiện lại form |
-| 6 | **Xong 22/10/2026 (`feature/sprint-cleanup`); lỗi upload dùng mã sẵn có `UNSUPPORTED_IMAGE_TYPE` / `IMAGE_TOO_LARGE` thay cho `FILE_TYPE_NOT_ALLOWED` / `FILE_TOO_LARGE`.** Hồ sơ cá nhân đầy đủ (#19): `user_profiles` thêm `avatar_url`, `phone`, `date_of_birth`, `province_id` (→ `administrative_units` cấp 1); `GET/PUT /me/profile`, `POST /me/avatar` (dùng lại cách upload banner); phiên đăng nhập `GET /me/sessions`, `DELETE /me/sessions/{id}` và xoá tài khoản `DELETE /me` qua Keycloak Admin API của module `account` (xoá user ở Keycloak, ẩn danh hoá `user_profiles`, giữ booking và vé cũ để đối soát; còn vé của sự kiện chưa diễn thì chặn). Email, tên, mật khẩu vẫn do Keycloak giữ. Không có mục "tài khoản liên kết" (đã gỡ khỏi prototype). Sửa §6.6, §11.2 | BE, FE | §6.6, §11.2, §13.2; ADR 0016; prototype #19 | 1 | Integration test (Testcontainers Keycloak): sửa hồ sơ, đăng xuất 1 phiên, xoá tài khoản; user khác không đọc / sửa được; Playwright #19 qua ở 1280px và 390px |
 | 7 | **Xong 22/10/2026 (`feature/sprint-cleanup`).** Trường sự kiện còn thiếu (#24): `events` thêm `doors_open_at`, `age_restriction` (số tuổi tối thiểu, có thể trống), `rules` (văn bản); sửa được cả sau publish, bổ sung vào danh sách thông tin hiển thị của BR-14; hiện ở chi tiết sự kiện (#3) và vé (#9). Gỡ khỏi prototype #24: thẻ, chế độ chỉ-link, kết thúc bán, xem trước | BE, FE | §6.1, §11.2; BR-14; prototype #3, #9, #24 | 1 | Test: sửa 3 trường sau publish → 200, `EventUpdated` cập nhật `event_snapshots`; `doors_open_at` sau `starts_at` → 422 |
 | 8 | **Xong 22/10/2026 (`feature/sprint-cleanup`); thông báo organizer khi khách yêu cầu hoàn chỉ có trong app (payload không có email organizer).** Thông báo còn thiếu: organizer nhận "khách yêu cầu hoàn"; gửi email theo cờ `email` của loại tuỳ chọn trong `notification_preferences` (cờ hiện mới chỉ lưu); job ShedLock "sắp hết giờ giữ ghế" (`HOLD_EXPIRING`, hiện mới có cài đặt): booking `PENDING_PAYMENT` chưa bắt đầu thanh toán còn ≤ 2 phút → 1 thông báo | BE | §6.5; BR-03 | 1 | Integration test: mỗi loại tạo đúng 1 thông báo, gửi lại event không trùng; tắt cờ `email` → không gửi email, vẫn có thông báo trong app |
 | 9 | **Xong 22/10/2026 (`feature/sprint-cleanup`).** Check-in theo giờ sự kiện: chỉ nhận từ 3 giờ trước `starts_at` tới `ends_at`, ngoài khoảng → `422 CHECKIN_NOT_OPEN` / `EVENT_ENDED`; phát `TicketCheckedIn` (có trong §8.1, chưa phát). Ghi quy tắc vào BR-09 và §7.5; FE check-in hiện đúng thông báo | BE, FE | §6.4, §7.5, §8.1; BR-09; ADR 0024 | 1 | Test biên: đúng 3 giờ trước → nhận, sớm hơn 1 giây → `CHECKIN_NOT_OPEN`; sau `ends_at` → `EVENT_ENDED` |
@@ -50,7 +49,7 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 ## Thứ tự
 
 1. 1 trước tiên (mọi hạng mục khác merge qua PR); 2, 3 ngay sau.
-2. Code: 4 → 5; 6, 7, 8, 9, 10 song song sau 1; 11 sau 3. Hạng mục 4 xong trước Sprint 5 vì Sprint 5 sửa đúng lớp giữ ghế.
+2. Code: 4 → 5; 7, 8, 9, 10 song song sau 1; 11 sau 3. Hạng mục 4 xong trước Sprint 5 vì Sprint 5 sửa đúng lớp giữ ghế.
 3. Hạng mục chờ bạn (12–17) làm ngay khi việc chặn tương ứng được gỡ, không chờ phần code.
 4. 18 sau 4 và 5; 19 cuối cùng.
 
@@ -61,10 +60,6 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 | `GET /bookings/{id}` | — | thêm `latePayment?: REFUND_PENDING \| REFUNDED \| REFUND_FAILED` | — |
 | `POST /payments` | — | — | thêm `409 PAYMENT_ALREADY_SUCCEEDED` |
 | `POST /bookings` | — | — | `409 PENDING_BOOKING_EXISTS` kèm `bookingId` |
-| `GET/PUT /me/profile` | `{phone, dateOfBirth, provinceId}` | thêm `avatarUrl`, `phone`, `dateOfBirth`, `province` | `PHONE_INVALID` |
-| `POST /me/avatar` | multipart `file` (jpg / png / webp, ≤ 2 MB) | `{avatarUrl}` | `FILE_TYPE_NOT_ALLOWED`, `FILE_TOO_LARGE` |
-| `GET /me/sessions`, `DELETE /me/sessions/{id}` | — | `[{id, ipAddress, startedAt, lastAccessAt, current}]` | `CANNOT_END_CURRENT_SESSION` |
-| `DELETE /me` | `{confirmEmail}` | `204` | `ACCOUNT_HAS_UPCOMING_TICKETS`, `CONFIRM_EMAIL_MISMATCH` |
 | `PUT /organizer/events/{id}` | thêm `doorsOpenAt`, `ageRestriction`, `rules` | — | `DOORS_OPEN_AFTER_START` |
 | `POST /checkins` | — | — | thêm `CHECKIN_NOT_OPEN`, `EVENT_ENDED` |
 
@@ -74,7 +69,6 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 - AC-2: `spotless:check` xanh trên Windows; compose `core` chạy được chỉ với `.env` sinh từ `.env.example`.
 - AC-3 (BR-01): Sau khi chuyển `booking` sang JPA: test 50 luồng tranh 1 ghế → đúng 1 thắng; hai booking chồng ghế không treo; truy vấn ghế trùng = 0; số test không giảm.
 - AC-4 (§7.3): Đơn `EXPIRED` nhận thanh toán, không giữ lại được ghế → `GET /bookings/{id}` có `latePayment = REFUND_PENDING`, sau khi hoàn xong là `REFUNDED`; FE hiện đúng thông báo. Mở lại checkout của đơn đã trả → `409 PAYMENT_ALREADY_SUCCEEDED`, FE không hiện lại form.
-- AC-5: Khách sửa SĐT, ngày sinh, tỉnh, ảnh đại diện; xem và đăng xuất từng phiên (không đăng xuất được phiên hiện tại bằng nút này); xoá tài khoản khi còn vé của sự kiện chưa diễn → `409 ACCOUNT_HAS_UPCOMING_TICKETS`.
 - AC-6 (BR-14): Sau publish, sửa giờ mở cửa, độ tuổi, quy định → thành công và hiện ở trang sự kiện; trường bán vé vẫn bị khoá như trước.
 - AC-7: Khách yêu cầu hoàn → organizer của sự kiện nhận 1 thông báo; booking còn ≤ 2 phút chưa thanh toán → khách nhận 1 thông báo "sắp hết giờ giữ ghế"; tắt cờ email của loại tuỳ chọn thì không nhận email loại đó.
 - AC-8 (BR-09): Check-in sớm hơn 3 giờ trước giờ diễn → `CHECKIN_NOT_OPEN`; sau giờ kết thúc → `EVENT_ENDED`; check-in hợp lệ phát đúng 1 `TicketCheckedIn`.
@@ -138,7 +132,7 @@ Phụ thuộc tính năng của sprint đó, đã ghi vào plan tương ứng:
 
 ## Tình trạng đợt code dọn dẹp (nhánh `feature/sprint-cleanup`, 22/10/2026)
 
-Làm các hạng mục code không bị chặn (3 phần local, 5–10), mỗi hạng mục một commit, chưa push. `./mvnw verify`: 391 test, 1 lỗi ArchUnit (`EventUpdatedFactory` nằm trong `service/impl`) đã sửa ở commit cuối; frontend 165 test (một lần chạy có 1 test đỏ, 4 lần chạy lại không tái hiện được: theo dõi ở CI), Playwright mock (1280px, 390px) cho check-in, thanh toán đến muộn, hồ sơ #19, zoom theo khu đều xanh.
+Làm các hạng mục code không bị chặn (3 phần local, 5, 7–10), mỗi hạng mục một commit, chưa push. `./mvnw verify`: 391 test, 1 lỗi ArchUnit (`EventUpdatedFactory` nằm trong `service/impl`) đã sửa ở commit cuối; frontend 165 test (một lần chạy có 1 test đỏ, 4 lần chạy lại không tái hiện được: theo dõi ở CI), Playwright mock (1280px, 390px) cho check-in, thanh toán đến muộn, hồ sơ #19, zoom theo khu đều xanh.
 
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
@@ -146,7 +140,6 @@ Làm các hạng mục code không bị chặn (3 phần local, 5–10), mỗi h
 | 7 Trường sự kiện | 3 trường ở Catalog, `event_snapshots`, trang #3, vé #9 (đọc bản hiện tại qua `CatalogApi.guestInfo`), form #24 | – |
 | 5 Thanh toán đến muộn | `bookings.late_payment`, `latePayment` ở `GET /bookings/{id}`, `409 PAYMENT_ALREADY_SUCCEEDED`, FE checkout | Chạy với Stripe test thật ở hạng mục 12 |
 | 8 Thông báo | Organizer nhận "khách yêu cầu hoàn" (trong app), `BookingHoldExpiring` + email theo cờ | – |
-| 6 Hồ sơ #19 | Profile, avatar, phiên, xoá tài khoản (Keycloak thật trong test) | DC-1 |
 | 10 FE nhỏ | Zoom theo khu, `.ics`, breadcrumb 4 cấp, header khách; gỡ nút hoá đơn ở prototype #7 | – |
 | 3 Nợ nhỏ (local) | `.env.example` đủ biến, `frontend/.env.example`, stripe-mock (profile `core`), `Idempotency-Key` khai trong OpenAPI (Orval sinh tham số header), `PENDING_BOOKING_EXISTS` kèm `bookingId` | Orval 8 chờ Node ≥ 22.18; CI chạy `spotless:check` khi có hạng mục 1 |
 
