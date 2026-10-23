@@ -29,8 +29,8 @@ Danh sách đầy đủ: `overview.md` §21.
 ```bash
 # Backend (chạy trong backend/, cần Docker cho Testcontainers):
 #   ./mvnw verify                                  # build + toàn bộ test
-#   DB_PASSWORD=... ./mvnw -pl app spring-boot:run # app ở :8081, cần compose profile core
-#   REDIS_PASSWORD=... KEYCLOAK_BFF_CLIENT_SECRET=... ./mvnw -pl gateway spring-boot:run # gateway ở :8080, cần Keycloak đã healthy
+#   ./mvnw -pl app spring-boot:run       # app ở :8081, cần compose profile core; tự đọc infra/docker-compose/.env
+#   ./mvnw -pl gateway spring-boot:run   # gateway ở :8080, cần Keycloak đã healthy; tự đọc .env như trên
 # TODO: Frontend (npm) điền khi scaffold frontend/
 # Hạ tầng dev (chạy trong infra/docker-compose/, lần đầu: cp .env.example .env):
 #   docker compose --profile <core|kafka|search|observability|platform> up -d

@@ -18,6 +18,9 @@ spring:
       password: ${REDIS_PASSWORD:}
       timeout: 500ms
       connect-timeout: 1s
+      # Không có repository Redis (chỉ dùng template / Lua): tắt quét để khỏi log INFO cho từng repository JPA.
+      repositories:
+        enabled: false
   threads:
     virtual:
       enabled: true
@@ -36,7 +39,7 @@ spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/tickethub}
     username: ${DB_USER:tickethub}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:}}
   jpa:
     open-in-view: false
     hibernate:

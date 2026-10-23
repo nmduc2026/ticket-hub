@@ -81,6 +81,13 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<systemPropertyVariables>
+						<spring.config.import>optional:file:../../infra/docker-compose/.env[.properties]</spring.config.import>
+						<!-- Log chữ thường cho dễ đọc ở máy dev; test và staging vẫn JSON. -->
+						<logging.structured.format.console></logging.structured.format.console>
+					</systemPropertyVariables>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
