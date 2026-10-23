@@ -328,7 +328,7 @@ class RefundFlowTests {
 	}
 
 	@Test
-	@DisplayName("Danh sách REFUND_FAILED cho Admin có email, sự kiện, tổng tiền, thời điểm lỗi; chỉ ADMIN gọi được")
+	@DisplayName("Danh sách REFUND_FAILED cho Admin có email liên hệ, sự kiện, tổng tiền, trạng thái; chỉ ADMIN gọi được")
 	void adminListsRefundFailedBookingsAndOnlyAdminMay() throws Exception {
 		jdbc.update("update booking.bookings set status = 'REFUND_FAILED', refund_failed_at = ? where id = ?",
 				Timestamp.from(NOW), bookingId);
@@ -337,16 +337,16 @@ class RefundFlowTests {
 				.get("/api/v1/admin/bookings?status=REFUND_FAILED")
 				.header(HttpHeaders.AUTHORIZATION, TestTokens.token().subject(TestTokens.ADMIN_ID).roles("ADMIN").bearer()))
 				.andExpect(status().isOk())
-				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].bookingId")
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].bookingId")
 						.value(bookingId.toString()))
-				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].userEmail")
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].contactEmail")
 						.value(email))
-				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].eventTitle")
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].eventTitle")
 						.value("Sự kiện thử"))
-				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].totalMinor")
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].totalMinor")
 						.value(1_000_000))
-				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$[0].failedAt")
-						.value("2026-11-01T03:00:00Z"));
+				.andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.items[0].status")
+						.value("REFUND_FAILED"));
 
 		for (String roles : new String[] { "CUSTOMER", "ORGANIZER" }) {
 			mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders

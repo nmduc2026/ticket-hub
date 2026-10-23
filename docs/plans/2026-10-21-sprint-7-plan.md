@@ -75,7 +75,7 @@ Commit / push / PR / merge; `kubectl` / `helm` lên k3d (KEDA, cấu hình Gatew
 
 ## Tình trạng đợt code Sprint 7 (nhánh `feature/sprint-7`, 22/10/2026)
 
-Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi hạng mục một commit, chưa push. Mỗi hạng mục có test tích hợp với Redis và Postgres thật; mới chạy các test liên quan (queue, booking giữ ghế / cache / projection, `ModularityTests`, `ArchitectureTests`, `OpenApiContractTests`), chưa chạy `./mvnw verify` toàn bộ.
+Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi hạng mục một commit, chưa push. Mỗi hạng mục có test tích hợp với Redis và Postgres thật; đã chạy `./mvnw verify` toàn bộ ngày 23/10: app 492 test, chỉ `RefundFlowTests` đỏ do lệch dạng phân trang của `GET /admin/bookings` (đã sửa test); gateway 21 test đạt. FE: lint, `tsc -b`, build sạch; Vitest 228/230, 2 test (`profile.test.tsx`, `adminOrganizers.test.tsx`) chạm timeout 5 giây khi chạy cả bộ nhưng đạt khi chạy riêng.
 
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
@@ -116,5 +116,5 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 | S7-2 | Hạng mục 4 và 7 phần hạ tầng (Gateway SSE không buffer, Envoy HTTP/2, `preStop`, `terminationGracePeriodSeconds`), hạng mục 10 (KEDA, PDB, probe) | B3, hạng mục 13, 14 dọn dẹp | Viết manifest trước, chạy trên k3d khi có cụm |
 | S7-3 | Hạng mục 11 (load test có phòng chờ, chaos C5), 12 (verify) | B3, S5-1 (baseline chưa đo), JMeter | Viết kịch bản JMeter với `GET /queue/{eventId}/status`, chạy trên staging |
 | S7-4 | Còn lại: Playwright hai trình duyệt thấy ghế đổi màu ≤ 2 giây; SSE đa pod thật (AC-6). Đã xong: spec mock phòng chờ và chuông | Hạng mục 11 dọn dẹp (E2E stack thật), trình duyệt thật | Viết spec mock trước; chạy với `app` + `gateway` thật khi có stack |
-| S7-5 | Review độc lập `queue` và lượt vào bằng subagent (hạng mục 13), `./mvnw verify` toàn bộ | Để cuối sprint theo quyết định của bạn | Gọi subagent review theo skill `code-review` |
-| S7-6 | Test Vitest đỏ có sẵn: `my-bookings/refund.test.tsx` (Admin hoàn thủ công) còn giả lập `/admin/bookings?status=REFUND_FAILED` kiểu cũ, lệch sau khi màn #29 đổi ở Sprint 6 (nợ S6-1) | Không bị chặn | Sửa test theo API `GET /admin/bookings` hiện tại |
+| S7-5 | Review độc lập `queue` và lượt vào bằng subagent (hạng mục 13); `./mvnw verify` toàn bộ đã chạy (xem trên) | Để cuối sprint theo quyết định của bạn | Gọi subagent review theo skill `code-review` |
+| S7-6 | ~~Test Vitest đỏ `my-bookings/refund.test.tsx`~~ đã sửa theo API `GET /admin/bookings` phân trang (cùng lỗi ở `RefundFlowTests` BE, cũng đã sửa) | – | – |
