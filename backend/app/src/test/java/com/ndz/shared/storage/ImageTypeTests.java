@@ -1,10 +1,8 @@
-package com.ndz.catalog;
+package com.ndz.shared.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-
-import com.ndz.catalog.entity.enums.ImageType;
 
 class ImageTypeTests {
 
