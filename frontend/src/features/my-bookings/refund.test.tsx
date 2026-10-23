@@ -141,22 +141,30 @@ describe('Admin: hoàn tiền lỗi', () => {
   it('liệt kê đơn REFUND_FAILED và hoàn thủ công từng đơn', async () => {
     let retried: string | null = null
     server.use(
+      http.get('/api/v1/admin/organizers', () => HttpResponse.json({ items: [], total: 0, page: 0, size: 100 })),
+      http.get('/api/v1/me/notifications/unread-count', () => HttpResponse.json({ count: 0 })),
       http.get('/api/v1/admin/bookings', ({ request }) => {
-        expect(new URL(request.url).searchParams.get('status')).toBe('REFUND_FAILED')
-        return HttpResponse.json(
-          retried
+        expect(new URL(request.url).searchParams.getAll('status')).toEqual(['REFUND_FAILED'])
+        return HttpResponse.json({
+          items: retried
             ? []
             : [
                 {
                   bookingId: BOOKING_ID,
-                  userEmail: 'khach@example.com',
                   eventTitle: 'Hòa nhạc Mùa Thu',
+                  organizerName: 'Ban tổ chức 1',
+                  contactEmail: 'khach@example.com',
+                  status: 'REFUND_FAILED',
+                  needsReconcile: false,
                   totalMinor: 1_000_000,
                   currency: 'VND',
-                  failedAt: new Date().toISOString(),
+                  createdAt: new Date().toISOString(),
                 },
               ],
-        )
+          total: retried ? 0 : 1,
+          page: 0,
+          size: 20,
+        })
       }),
       http.post(`/api/v1/admin/bookings/${BOOKING_ID}/refund`, () => {
         retried = BOOKING_ID
@@ -164,14 +172,14 @@ describe('Admin: hoàn tiền lỗi', () => {
       }),
     )
     const user = userEvent.setup()
-    renderAt('/admin/orders')
+    renderAt(`/admin/orders?status=${encodeURIComponent(JSON.stringify(['REFUND_FAILED']))}`)
 
     expect(await screen.findByText('khach@example.com', undefined, { timeout: 5000 })).toBeInTheDocument()
     expect(screen.getByText('1.000.000 ₫')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Hoàn thủ công' }))
 
-    expect(await screen.findByText('Không có đơn hoàn tiền lỗi.', undefined, { timeout: 5000 })).toBeInTheDocument()
+    expect(await screen.findByText('Không có kết quả khớp bộ lọc', undefined, { timeout: 5000 })).toBeInTheDocument()
     expect(retried).toBe(BOOKING_ID)
   })
 
