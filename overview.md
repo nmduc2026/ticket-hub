@@ -139,7 +139,7 @@ Bán vé concert là bài toán có tải **cực kỳ không đều**: ngày th
                      Kafka (KRaft) + Schema Registry + Debezium (outbox CDC)
 ═════════════════════════════════════════════════════════════════════════════════════
 
- Lưu trữ:  PostgreSQL (mỗi service 1 database)  ·  Redis  ·  Elasticsearch  ·  S3 (S3Mock khi dev)
+ Lưu trữ:  PostgreSQL (mỗi service 1 database)  ·  Redis  ·  Elasticsearch  ·  S3 (S3Mock khi test)
  Nền tảng: Vault · Unleash · Prometheus/Grafana · ELK · Jaeger
 ```
 
@@ -1224,7 +1224,7 @@ Dùng **Chaos Mesh** để chủ động gây sự cố. Mỗi kịch bản: gâ
 | Messaging | **Spring for Apache Kafka**, Kafka (KRaft), Avro + Schema Registry, **Debezium** (outbox) |
 | Thanh toán | **stripe-java** (PaymentIntent, Connect, Refund, Webhook) |
 | Search | Spring Data Elasticsearch |
-| Lưu file | AWS SDK v2 (S3; dev dùng Adobe S3Mock vì MinIO ngừng phát hành image) |
+| Lưu file | AWS SDK v2 (S3; dev và staging dùng chung một bucket thật, test tự động dùng Adobe S3Mock) |
 | Email | Spring Mail + Thymeleaf template, Mailpit (local), SES (cloud) |
 | QR | ZXing |
 | Resilience | **Resilience4j** |
@@ -1337,7 +1337,7 @@ ticket-hub/                         # monorepo
 - Region duy nhất: **`ap-southeast-1` (Singapore)**.
 - Tài khoản **Free plan**, không nâng cấp: không bị trừ thẻ, nhưng có thể bị giới hạn một số dịch vụ và tài khoản đóng khi hết credits. Trước lab đầu tiên, chạy Terraform thăm dò từng dịch vụ ở §23.2 (apply rồi destroy) để biết dịch vụ nào dùng được; dịch vụ bị chặn thì dùng phương án thay thế (vd. thiếu Multi-AZ → diễn tập failover bằng CNPG trên k3s; thiếu ALB → nginx trên EC2).
 - Credits hết hạn khoảng **22/01/2027**. Mọi tài nguyên AWS **gỡ xong trước 11/12/2026**, chừa khoảng 35 ngày kiểm tra trước khi hết credits.
-- **Không có tài nguyên thường trực**: mọi thứ trên AWS chỉ tồn tại trong buổi lab.
+- **Tài nguyên thường trực duy nhất** là bucket ảnh `tickethub-media-*` dùng chung cho dev và staging (`infra/terraform/aws/media`), cũng gỡ trước hạn trên. Mọi thứ khác chỉ tồn tại trong buổi lab.
 
 ### 23.2. Dịch vụ sử dụng
 

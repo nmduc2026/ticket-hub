@@ -48,9 +48,9 @@ env:
   MAIL_PORT: "1025"
   KEYCLOAK_ISSUER_URI: https://auth.tickethub.localhost/realms/tickethub
   KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tickethub/protocol/openid-connect/certs
-  STORAGE_ENDPOINT: http://s3mock:9090
-  STORAGE_BUCKET: tickethub-media
-  STORAGE_PUBLIC_BASE_URL: https://tickethub.localhost/media
+  # Bucket S3 thật dùng chung với dev (infra/terraform/aws/media); đặt theo `terraform output`.
+  STORAGE_BUCKET: ""
+  STORAGE_PUBLIC_BASE_URL: ""
   WEB_BASE_URL: https://tickethub.localhost
   # Trace xuyên Gateway → app (docs/ops/observability.md).
   OTLP_TRACES_ENABLED: "true"
@@ -65,8 +65,8 @@ secretEnv:
   - { name: STRIPE_SECRET_KEY, secret: tickethub-stripe, key: secret-key, optional: true }
   - { name: STRIPE_WEBHOOK_SECRET, secret: tickethub-stripe, key: webhook-secret, optional: true }
   - { name: TICKET_SIGNING_JWK, secret: tickethub-ticket-signing, key: jwk, optional: true }
-  - { name: STORAGE_ACCESS_KEY, secret: tickethub-storage, key: access-key, optional: true }
-  - { name: STORAGE_SECRET_KEY, secret: tickethub-storage, key: secret-key, optional: true }
+  - { name: STORAGE_ACCESS_KEY, secret: tickethub-storage, key: access-key }
+  - { name: STORAGE_SECRET_KEY, secret: tickethub-storage, key: secret-key }
 
 podLabels:
   tickethub/role: app

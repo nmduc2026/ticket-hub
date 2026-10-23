@@ -35,7 +35,7 @@ class StorageConfiguration {
 		return new S3ObjectStorage(s3, properties.bucket(), properties.publicBaseUrl());
 	}
 
-	/** Khoá tĩnh chỉ dành cho dev (S3Mock); môi trường thật dùng IAM role qua chuỗi credentials mặc định. */
+	/** Khoá tĩnh của IAM user (dev, staging) hoặc S3Mock (test); trên AWS dùng IAM role qua chuỗi credentials mặc định. */
 	private static AwsCredentialsProvider credentials(StorageProperties properties) {
 		if (StringUtils.hasText(properties.accessKey()) && StringUtils.hasText(properties.secretKey())) {
 			return StaticCredentialsProvider

@@ -9,11 +9,11 @@ import org.springframework.util.unit.DataSize;
 /**
  * Cấu hình kho file S3 (overview.md §21.1).
  *
- * @param endpoint ghi đè địa chỉ S3 (S3Mock khi dev); để trống thì dùng S3 của AWS
+ * @param endpoint ghi đè địa chỉ S3 (S3Mock khi test); để trống thì dùng S3 của AWS
  * @param region region của bucket
  * @param bucket tên bucket
- * @param publicBaseUrl phần đầu địa chỉ công khai của đối tượng, không có dấu "/" ở cuối (S3Mock hoặc CloudFront)
- * @param accessKey khoá truy cập tĩnh cho dev; để trống thì dùng chuỗi credentials mặc định (IAM role)
+ * @param publicBaseUrl phần đầu địa chỉ công khai của đối tượng, không có dấu "/" ở cuối (bucket, S3Mock hoặc CloudFront)
+ * @param accessKey khoá của IAM user cho dev / staging; để trống thì dùng chuỗi credentials mặc định (IAM role)
  * @param secretKey khoá bí mật đi kèm {@code accessKey}
  * @param maxBannerSize dung lượng tối đa của ảnh banner
  * @param maxAvatarSize dung lượng tối đa của ảnh đại diện
@@ -22,4 +22,12 @@ import org.springframework.util.unit.DataSize;
 public record StorageProperties(URI endpoint, @DefaultValue("ap-southeast-1") String region,
 		@DefaultValue("tickethub-media") String bucket, String publicBaseUrl, String accessKey, String secretKey,
 		@DefaultValue("2MB") DataSize maxBannerSize, @DefaultValue("2MB") DataSize maxAvatarSize) {
+
+	public StorageProperties {
+		// `STORAGE_ENDPOINT` để trống trong yaml vẫn có thể ra URI rỗng: coi như không ghi đè.
+		if (endpoint != null && endpoint.toString().isEmpty()) {
+			endpoint = null;
+		}
+	}
+
 }

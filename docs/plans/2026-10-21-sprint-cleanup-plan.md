@@ -98,6 +98,7 @@ Push, mở PR, merge (hạng mục 1, 2 và mọi PR sau đó); `kubectl` / `hel
 - Cập nhật image tag bằng PR tự động; không chạy `app` / `gateway` dạng container trong compose dev (container đã chạy trên k3d).
 - Zoom theo khu ở màn hẹp; "Thêm vào lịch" bằng `.ics`; bỏ "Tải PDF" và hoá đơn.
 - `booking` chuyển sang JPA; package `shared` giữ nguyên.
+- (23/10/2026) Dev và staging cấu hình giống nhau, không dùng mock: ảnh lưu ở một bucket S3 thật dùng chung (`infra/terraform/aws/media`, tài nguyên AWS thường trực duy nhất, gỡ trước 11/12/2026); Stripe test mode thật. Bỏ S3Mock khỏi compose và chart `core`; stripe-mock chuyển sang profile `loadtest` (load test, chaos C2). Test tự động giữ S3Mock, WireMock, stripe-mock. Việc treo: `terraform apply` bucket media (người dùng duyệt), điền `STORAGE_*` vào `.env`.
 
 ## Việc chuyển sang sprint sau
 
@@ -155,6 +156,7 @@ Làm các hạng mục code không bị chặn (3 phần local, 5–10), mỗi h
 |---|---|---|---|
 | DC-1 | Kiểm `sid` trong access token qua Gateway thật (phiên hiện tại ở #19) và xoá tài khoản trên stack thật | Hạng mục 11 (E2E stack thật) | Đăng nhập 2 trình duyệt, đăng xuất phiên kia, xoá tài khoản rồi thử đăng nhập lại |
 | DC-2 | Playwright stack thật cho các luồng mới (check-in theo giờ, thanh toán đến muộn, hồ sơ) | Hạng mục 11, 12 | Chuyển các `*.mock.spec.ts` mới sang chạy với `app` + `gateway` thật |
+| DC-3 | Bucket media thật thay S3Mock (code, compose, Helm, Terraform `infra/terraform/aws/media` đã sửa 23/10/2026, chưa commit) | Người dùng hoãn; B6 (AWS) | Duyệt `terraform apply` ở `infra/terraform/aws/media`; điền `STORAGE_*` vào `.env` và Secret `tickethub-storage`; chạy `./mvnw verify` toàn bộ; dọn container mồ côi `docker compose --profile core up -d --remove-orphans` |
 
 ## Tình trạng Sprint 5 (nhánh `feature/sprint-5`, 21/10/2026)
 

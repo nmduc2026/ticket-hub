@@ -1,6 +1,8 @@
 name: tickethub
 
-# Profile `core`: Postgres, Redis, Keycloak, S3Mock, Mailpit (overview.md §19.2).
+# Profile `core`: Postgres, Redis, Keycloak, Mailpit (overview.md §19.2). Ảnh lưu ở bucket S3 thật
+# (infra/terraform/aws/media), Stripe dùng test mode thật.
+# Profile `loadtest`: stripe-mock, chỉ bật khi load test / diễn tập chaos (Stripe không cho load test).
 # `app` và `gateway` vào profile này khi có image (việc 8).
 services:
   postgres:
@@ -78,21 +80,6 @@ services:
       start_period: 40s
     mem_limit: 1g
 
-  # S3 giả cho dev (Adobe S3Mock; MinIO đã ngừng phát hành image). Bucket tạo sẵn lúc khởi động.
-  s3mock:
-    image: adobe/s3mock:5.2.3
-    profiles: [core]
-    environment:
-      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: ${S3_BUCKET:-tickethub-media}
-    ports:
-      - "${S3MOCK_PORT:-9090}:9090"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:9090/ || exit 1"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    mem_limit: 384m
-
   mailpit:
     image: axllent/mailpit:v1.27.7
     profiles: [core]
@@ -107,9 +94,9 @@ services:
     mem_limit: 128m
 
   stripe-mock:
-    # Giả lập Stripe API (dev / test, không cần tài khoản); app trỏ tới qua STRIPE_API_BASE.
+    # Giả lập Stripe API cho load test / chaos; app trỏ tới qua STRIPE_API_BASE=http://localhost:12111.
     image: stripe/stripe-mock:v0.188.0
-    profiles: [core]
+    profiles: [loadtest]
     ports:
       - "${STRIPE_MOCK_PORT:-12111}:12111"
     mem_limit: 128m

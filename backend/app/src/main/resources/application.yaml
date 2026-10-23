@@ -115,13 +115,13 @@ tickethub:
     audience: tickethub-api
 
   storage:
-    # Dev: Adobe S3Mock ở compose profile core. Môi trường thật bỏ endpoint, dùng IAM role và URL của CloudFront.
-    endpoint: ${STORAGE_ENDPOINT:http://localhost:9090}
+    # Bucket S3 thật dùng chung cho dev và staging (infra/terraform/aws/media). Endpoint chỉ đặt khi test (S3Mock).
+    endpoint: ${STORAGE_ENDPOINT:}
     region: ap-southeast-1
     bucket: ${STORAGE_BUCKET:tickethub-media}
-    public-base-url: ${STORAGE_PUBLIC_BASE_URL:http://localhost:9090/tickethub-media}
-    access-key: ${STORAGE_ACCESS_KEY:dev-access-key}
-    secret-key: ${STORAGE_SECRET_KEY:dev-secret-key}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+    access-key: ${STORAGE_ACCESS_KEY:}
+    secret-key: ${STORAGE_SECRET_KEY:}
     max-banner-size: 2MB
 
   stripe:

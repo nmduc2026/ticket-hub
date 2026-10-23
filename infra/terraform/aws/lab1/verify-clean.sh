@@ -55,8 +55,9 @@ check "Auto Scaling Group" aws autoscaling describe-auto-scaling-groups --region
 check "Target group" aws elbv2 describe-target-groups --region "$region" --query 'length(TargetGroups)' --output text
 check "CloudFront distribution" aws cloudfront list-distributions \
   --query 'length(DistributionList.Items || `[]`)' --output text
-check "S3 bucket tickethub-*" aws s3api list-buckets \
-  --query 'length(Buckets[?starts_with(Name, `tickethub-`)])' --output text
+# Bỏ qua bucket media thường trực (infra/terraform/aws/media).
+check "S3 bucket tickethub-* (trừ media)" aws s3api list-buckets \
+  --query 'length(Buckets[?starts_with(Name, `tickethub-`) && !starts_with(Name, `tickethub-media-`)])' --output text
 check "SES identity" aws sesv2 list-email-identities --region "$region" \
   --query 'length(EmailIdentities)' --output text
 check "SNS topic tickethub-probe-*" aws sns list-topics --region "$region" \

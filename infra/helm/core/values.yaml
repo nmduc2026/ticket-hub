@@ -1,4 +1,4 @@
-# Thành phần nền cho staging k3d (Redis, Keycloak, Mailpit, S3Mock). Bản đơn giản: một replica, dữ liệu trên PVC local-path.
+# Thành phần nền cho staging k3d (Redis, Keycloak, Mailpit). Bản đơn giản: một replica, dữ liệu trên PVC local-path.
 # Mật khẩu và client secret nằm trong Secret tạo tay (docs/ops/k8s-staging.md), không nằm ở đây.
 publicAuthUrl: https://auth.tickethub.localhost
 
@@ -30,10 +30,3 @@ mailpit:
   resources:
     requests: { cpu: 20m, memory: 32Mi }
     limits: { memory: 128Mi }
-
-s3mock:
-  image: adobe/s3mock:5.2.3
-  bucket: tickethub-media
-  resources:
-    requests: { cpu: 50m, memory: 192Mi }
-    limits: { memory: 384Mi }

@@ -45,6 +45,9 @@ class TestcontainersConfiguration {
 			String base = "http://" + s3MockContainer.getHost() + ":" + s3MockContainer.getMappedPort(9090);
 			registry.add("tickethub.storage.endpoint", () -> base);
 			registry.add("tickethub.storage.public-base-url", () -> base + "/tickethub-media");
+			// S3Mock nhận khoá bất kỳ; khoá giả để SDK không đi tìm credentials trên máy.
+			registry.add("tickethub.storage.access-key", () -> "test-access-key");
+			registry.add("tickethub.storage.secret-key", () -> "test-secret-key");
 		};
 	}
 

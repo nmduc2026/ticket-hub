@@ -66,7 +66,7 @@ Monorepo (`overview.md` §22):
 ## Môi trường & deploy
 - dev: máy 16GB, Docker Compose theo profile
 - staging: máy 32GB, k3d
-- aws-lab: AWS `ap-southeast-1`, tạo bằng Terraform và destroy ngay sau lab
+- aws-lab: AWS `ap-southeast-1`, tạo bằng Terraform và destroy ngay sau lab. Ngoại lệ: bucket ảnh `infra/terraform/aws/media` dùng chung cho dev và staging, giữ tới hạn gỡ AWS
 - Thao tác cần **báo trước** cho người dùng: commit, push, mở PR, merge, deploy (k3d hay AWS), `kubectl`/`helm` lên cluster, `terraform apply`/`destroy`, chạy migration trên database không phải local/test.
   - Agent được thực hiện các thao tác này, nhưng trước khi làm phải báo: làm gì, trên môi trường nào, lệnh cụ thể, ảnh hưởng và cách hoàn tác. Chờ người dùng đồng ý rồi mới làm.
   - Người dùng trả lời **"skip"** cho một thao tác, hoặc cho cả một loại thao tác (vd. "skip commit"), thì agent tự làm mà không cần hỏi lại, nhưng vẫn ghi lại trong báo cáo.

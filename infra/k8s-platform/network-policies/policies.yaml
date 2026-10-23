@@ -95,12 +95,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-app-to-mailpit-s3mock
+  name: allow-app-to-mailpit
   namespace: tickethub
 spec:
   podSelector:
-    matchExpressions:
-      - { key: tickethub/role, operator: In, values: [mailpit, s3mock] }
+    matchLabels: { tickethub/role: mailpit }
   policyTypes: [Ingress]
   ingress:
     - from:
