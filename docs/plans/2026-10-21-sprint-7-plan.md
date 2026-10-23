@@ -102,7 +102,7 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 - Thay đổi ghế được gom 250 ms rồi mới phát; pod chết giữa chừng mất tối đa 250 ms thay đổi (client nối lại tải lại snapshot).
 - Rate limit: `POST /bookings` 10/phút, `POST /queue/*/join` 20/phút, còn lại 50/giây theo user; chưa đăng nhập 20/giây theo IP. IP lấy từ `getRemoteAddr()` sau `ForwardedHeaderFilter`, chỉ đúng khi Gateway chỉ nhận request qua proxy tin cậy ghi đè `X-Forwarded-For`. Redis lỗi: timeout lệnh 200 ms rồi bỏ qua giới hạn 5 giây.
 - Load shedding: ngưỡng ghi 500, ngưỡng đọc 350 request đang xử lý (chỉnh theo load test).
-- Gateway có chuyển SSE không buffer được hay không chưa kiểm (Spring Cloud Gateway Server MVC); cần chạy thật ở S7-2 trước khi tin SSE qua Gateway.
+- Gateway (Spring Cloud Gateway Server MVC) chuyển SSE không buffer: `SseThroughGatewayTests` chạy Gateway thật với app giả, sự kiện đầu tới client khi app còn chặn ở sự kiện sau. Chưa kiểm phần Envoy Gateway / HTTP/2 phía trước (S7-2).
 - Câu chữ `RATE_LIMITED` ("Bạn thao tác quá nhanh…") và `OVERLOADED` ("Hệ thống đang quá tải…") tôi tự viết vì prototype #23 chưa có hai trạng thái này; `ADMISSION_REQUIRED` dùng chữ "Lượt vào chọn ghế đã hết hạn" của prototype. Cần bạn duyệt câu chữ.
 - Trang phòng chờ dừng 3 giây ở "Đến lượt bạn" rồi tự sang chọn ghế (plan vừa nói "tự chuyển" vừa nói "đồng hồ lượt vào"); nút "Chọn ghế" bấm sớm được. Không có "Mã hàng chờ" như prototype vì API không trả.
 - Gateway phải xuất metric Prometheus (`/actuator/prometheus`) cho KEDA và alert: thêm `micrometer-registry-prometheus` vào Gateway và ServiceMonitor.
