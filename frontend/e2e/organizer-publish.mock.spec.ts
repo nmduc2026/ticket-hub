@@ -64,6 +64,7 @@ async function mockOrganizerBackend(page: Page) {
       venueName: VENUE.name,
       startsAt: body.startsAt,
       maxTicketsPerUser: 6,
+      highDemand: false,
       inventoryReady: false,
       salesInfoLocked: false,
       tiers: [],
