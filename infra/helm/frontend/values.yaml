@@ -1,7 +1,7 @@
 # Chart frontend (nginx-unprivileged phục vụ SPA tĩnh).
 image:
   repository: ghcr.io/nmduc2026/ticket-hub-frontend
-  tag: main
+  tag: sha-333268766485337e23d69291b5c98363f337b9d7
   pullPolicy: IfNotPresent
 
 replicaCount: 1
