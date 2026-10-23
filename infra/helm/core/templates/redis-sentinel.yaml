@@ -1,0 +1,173 @@
+{{- if .Values.redis.sentinel.enabled }}
+# Redis có Sentinel (overview.md §17, §20.3 C4): 3 pod, mỗi pod chạy redis-server và redis-sentinel. Pod redis-0 là master
+# ban đầu; khi master chết Sentinel bầu master mới, pod khởi động lại tự hỏi Sentinel ai là master hiện tại thay vì
+# tự nhận. Client (Gateway, app) nối qua Sentinel nên không cần restart khi đổi master.
+# Dữ liệu không ghi đĩa (cache giữ ghế + session): mất toàn bộ thì app dựng lại key giữ ghế từ Postgres.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-headless
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector: { app.kubernetes.io/name: redis }
+  ports:
+    - { name: redis, port: 6379, targetPort: redis }
+    - { name: sentinel, port: 26379, targetPort: sentinel }
+---
+# Giữ tên Service cũ trỏ vào master hiện tại không làm được nếu không có proxy; client dùng Sentinel (xem values của
+# app và gateway). Service này chỉ để công cụ kiểm tra (redis-cli) nối vào một pod bất kỳ.
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+spec:
+  selector: { app.kubernetes.io/name: redis }
+  ports:
+    - { name: redis, port: 6379, targetPort: redis }
+    - { name: sentinel, port: 26379, targetPort: sentinel }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-sentinel-scripts
+data:
+  # In ra địa chỉ master: hỏi Sentinel của các pod khác. Câu trả lời trỏ về chính pod này có thể là tin cũ (failover vừa
+  # xong, Sentinel kia chưa cập nhật) nên chỉ dùng khi không Sentinel nào nói master là pod khác. Không ai biết (cụm mới
+  # dựng) thì redis-0 là master.
+  find-master.sh: |
+    #!/bin/sh
+    ME="$(hostname).redis-headless"
+    SELF=""
+    i=0
+    while [ "$i" -lt {{ .Values.redis.sentinel.replicas }} ]; do
+      HOST="redis-$i.redis-headless"
+      if [ "$HOST" != "$ME" ]; then
+        FOUND="$(redis-cli -h "$HOST" -p 26379 --no-auth-warning sentinel get-master-addr-by-name {{ .Values.redis.sentinel.masterName }} 2>/dev/null | head -n 1)"
+        if [ -n "$FOUND" ] && [ "$FOUND" != "$ME" ]; then
+          echo "$FOUND"
+          exit 0
+        fi
+        if [ -n "$FOUND" ]; then
+          SELF="$FOUND"
+        fi
+      fi
+      i=$((i + 1))
+    done
+    if [ -n "$SELF" ]; then
+      echo "$SELF"
+    else
+      echo "redis-0.redis-headless"
+    fi
+  start-redis.sh: |
+    #!/bin/sh
+    set -eu
+    ME="$(hostname).redis-headless"
+    MASTER="$(sh /scripts/find-master.sh)"
+    set -- redis-server --requirepass "$REDIS_PASSWORD" --masterauth "$REDIS_PASSWORD" \
+      --save "" --appendonly no --replica-announce-ip "$ME"
+    if [ "$MASTER" != "$ME" ]; then
+      set -- "$@" --replicaof "$MASTER" 6379
+    fi
+    exec "$@"
+  start-sentinel.sh: |
+    #!/bin/sh
+    set -eu
+    ME="$(hostname).redis-headless"
+    MASTER="$(sh /scripts/find-master.sh)"
+    cat > /tmp/sentinel.conf <<CONF
+    port 26379
+    sentinel resolve-hostnames yes
+    sentinel announce-hostnames yes
+    sentinel announce-ip $ME
+    sentinel monitor {{ .Values.redis.sentinel.masterName }} $MASTER 6379 {{ .Values.redis.sentinel.quorum }}
+    sentinel auth-pass {{ .Values.redis.sentinel.masterName }} $REDIS_PASSWORD
+    sentinel down-after-milliseconds {{ .Values.redis.sentinel.masterName }} 5000
+    sentinel failover-timeout {{ .Values.redis.sentinel.masterName }} 15000
+    sentinel parallel-syncs {{ .Values.redis.sentinel.masterName }} 1
+    CONF
+    exec redis-sentinel /tmp/sentinel.conf
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+spec:
+  serviceName: redis-headless
+  replicas: {{ .Values.redis.sentinel.replicas }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels: { app.kubernetes.io/name: redis }
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/part-of: tickethub
+        tickethub/role: redis
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        seccompProfile: { type: RuntimeDefault }
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels: { app.kubernetes.io/name: redis }
+      volumes:
+        - name: scripts
+          configMap: { name: redis-sentinel-scripts }
+      containers:
+        - name: redis
+          image: {{ .Values.redis.image | quote }}
+          command: [sh, /scripts/start-redis.sh]
+          ports:
+            - { name: redis, containerPort: 6379 }
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: tickethub-redis, key: password } }
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts }
+          readinessProbe:
+            exec:
+              command: [sh, -c, 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG']
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: [sh, -c, 'redis-cli -a "$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG']
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+        - name: sentinel
+          image: {{ .Values.redis.image | quote }}
+          command: [sh, /scripts/start-sentinel.sh]
+          ports:
+            - { name: sentinel, containerPort: 26379 }
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: tickethub-redis, key: password } }
+          volumeMounts:
+            - { name: scripts, mountPath: /scripts }
+          readinessProbe:
+            exec:
+              command: [redis-cli, -p, "26379", ping]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: [redis-cli, -p, "26379", ping]
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 20m, memory: 32Mi }
+            limits: { memory: 64Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+{{- end }}

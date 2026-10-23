@@ -1,0 +1,154 @@
+server:
+  # Tắt êm: ngừng nhận request mới, chờ request đang chạy xong (SSE được đóng trước, xem SseHub).
+  shutdown: graceful
+  # 8080 dành cho Gateway (redirect URI của client tickethub-bff); app nằm sau Gateway.
+  port: 8081
+
+spring:
+  lifecycle:
+    # Thời hạn tối đa chờ request đang chạy khi tắt; khớp terminationGracePeriodSeconds của pod trừ preStop.
+    timeout-per-shutdown-phase: ${SHUTDOWN_TIMEOUT:30s}
+  application:
+    name: app
+  data:
+    redis:
+      # Lớp 1 giữ ghế (overview.md §10). Timeout ngắn: Redis chậm cũng coi như hỏng (fail-closed), không treo request.
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 500ms
+      connect-timeout: 1s
+      # Không có repository Redis (chỉ dùng template / Lua): tắt quét để khỏi log INFO cho từng repository JPA.
+      repositories:
+        enabled: false
+  threads:
+    virtual:
+      enabled: true
+  task:
+    execution:
+      simple:
+        # Virtual thread không giới hạn số luồng; chặn ở đây để event bất đồng bộ (§4.2 P4, @ApplicationModuleListener)
+        # không giành connection với request đang chạy khi nhiều event nổ ra cùng lúc (vd. huỷ sự kiện hàng nghìn đơn,
+        # overview.md §12: giới hạn đồng thời thật nằm ở pool DB / bulkhead, không ở thread).
+        concurrency-limit: 40
+  servlet:
+    multipart:
+      # Trần cứng bảo vệ server; giới hạn nghiệp vụ của banner (2 MB) kiểm ở service để trả 422 IMAGE_TOO_LARGE.
+      max-file-size: 5MB
+      max-request-size: 6MB
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tickethub}
+    username: ${DB_USER:tickethub}
+    password: ${DB_PASSWORD:${POSTGRES_PASSWORD:}}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        # Bảng không khai báo schema (event_publication của Modulith) nằm ở `shared`;
+        # entity của module khai báo schema của mình trong @Table.
+        default_schema: shared
+        jdbc:
+          time_zone: UTC
+  flyway:
+    # Một lịch sử migration chung đặt ở `shared`; mỗi module một thư mục db/migration/<module>/.
+    schemas: shared
+    default-schema: shared
+    locations: classpath:db/migration
+    # Mẫu thông báo (Thymeleaf) trong migration dùng cú pháp ${...}, không phải placeholder của Flyway.
+    placeholder-replacement: false
+
+  mail:
+    # Dev: Mailpit ở compose profile core (SMTP :1025, giao diện :8025). Cloud: SES qua biến môi trường.
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+
+  modulith:
+    events:
+      # Event đang xử lý dở (listener lỗi hoặc app tắt giữa chừng) được gửi lại khi khởi động (overview.md §8.3).
+      republish-outstanding-events-on-restart: true
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+management:
+  health:
+    redis:
+      # Redis chỉ phục vụ lớp giữ ghế; trạng thái của nó có chỉ báo riêng (seatHold), Redis chết không được làm app DOWN.
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        # prometheus: Prometheus trong cụm scrape cổng app; Gateway chỉ định tuyến /api/** nên không lộ ra ngoài.
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      status:
+        # Redis giữ ghế chết chỉ làm giữ ghế dừng (DEGRADED), app vẫn phục vụ xem sự kiện nên health trả 200.
+        order: DOWN,OUT_OF_SERVICE,DEGRADED,UP,UNKNOWN
+        http-mapping:
+          DEGRADED: 200
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      otlp:
+        # Tắt mặc định để dev/test không cần Jaeger.
+        enabled: ${OTLP_TRACES_ENABLED:false}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          # Trong cụm: OTLP_TRACES_ENDPOINT=http://jaeger:4318/v1/traces và OTLP_TRACES_ENABLED=true.
+          endpoint: ${OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+          transport: http
+
+tickethub:
+  security:
+    # iss mong đợi (địa chỉ công khai của Keycloak) và nơi lấy khoá ký (có thể là địa chỉ nội bộ).
+    issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/tickethub}
+    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/tickethub/protocol/openid-connect/certs}
+    audience: tickethub-api
+
+  storage:
+    # Bucket S3 thật dùng chung cho dev và staging (infra/terraform/aws/media). Endpoint chỉ đặt khi test (S3Mock).
+    endpoint: ${STORAGE_ENDPOINT:}
+    region: ap-southeast-1
+    bucket: ${STORAGE_BUCKET:tickethub-media}
+    public-base-url: ${STORAGE_PUBLIC_BASE_URL:}
+    access-key: ${STORAGE_ACCESS_KEY:}
+    secret-key: ${STORAGE_SECRET_KEY:}
+    max-banner-size: 2MB
+
+  stripe:
+    # Khoá test mode, chỉ từ biến môi trường / K8s Secret (không commit). Test API: stripe-mock đặt api-base.
+    secret-key: ${STRIPE_SECRET_KEY:}
+    webhook-secret: ${STRIPE_WEBHOOK_SECRET:}
+    # Endpoint webhook Connect có signing secret riêng (account.updated của connected account, ADR 0022).
+    connect-webhook-secret: ${STRIPE_CONNECT_WEBHOOK_SECRET:}
+    connect-return-url: ${WEB_BASE_URL:http://localhost:5173}/organizer/payments?connect=return
+    connect-refresh-url: ${WEB_BASE_URL:http://localhost:5173}/organizer/payments?connect=refresh
+    api-base: ${STRIPE_API_BASE:}
+    timeout: 3s
+    webhook-tolerance: 5m
+
+  ticket:
+    # Khoá ký QR ES256 dạng JWK JSON (có khoá riêng và kid) từ biến môi trường / K8s Secret. Để trống: khoá tạm (dev).
+    signing-jwk: ${TICKET_SIGNING_JWK:}
+
+  notification:
+    from: ${MAIL_FROM:Ticket Hub <no-reply@tickethub.local>}
+    web-base-url: ${WEB_BASE_URL:http://localhost:5173}
+
+  account:
+    keycloak:
+      # Keycloak Admin API cho khoá tài khoản và gán role ORGANIZER (client tickethub-account-admin, overview.md §13.2).
+      base-url: ${KEYCLOAK_ADMIN_URL:http://localhost:8180}
+      client-secret: ${KEYCLOAK_ACCOUNT_ADMIN_CLIENT_SECRET:}

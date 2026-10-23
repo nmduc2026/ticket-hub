@@ -1,0 +1,29 @@
+# Chart frontend (nginx-unprivileged phục vụ SPA tĩnh).
+image:
+  repository: ghcr.io/nmduc2026/ticket-hub-frontend
+  tag: main
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+containerPort: 8080
+runAsUser: 101 # user nginx của image gốc
+service:
+  port: 8080
+pdb:
+  maxUnavailable: 1
+
+probes:
+  startup: /healthz
+  startupFailureThreshold: 12
+  readiness: /healthz
+  liveness: /healthz
+
+resources:
+  requests: { cpu: 50m, memory: 32Mi }
+  limits: { memory: 96Mi }
+
+env: {}
+secretEnv: []
+
+podLabels:
+  tickethub/role: frontend

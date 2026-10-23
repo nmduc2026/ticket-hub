@@ -1,0 +1,19 @@
+# Tìm log theo traceId / bookingId: Discover, data view `filebeat-*`, truy vấn KQL (docs/ops/logging.md).
+# Giao diện không mở ra ngoài: kubectl -n logging port-forward svc/tickethub-kb-http 5601.
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: tickethub
+  namespace: logging
+spec:
+  version: 9.1.4
+  count: 1
+  elasticsearchRef:
+    name: tickethub
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          resources:
+            requests: { cpu: 100m, memory: 768Mi }
+            limits: { memory: 1Gi }

@@ -1,0 +1,127 @@
+# Mặc định chặn mọi traffic vào namespace tickethub, rồi mở đúng đường cần dùng (overview.md §13.4 Mạng).
+# Chỉ Envoy Gateway nhận traffic từ ngoài; app chỉ nhận từ gateway BFF; DB chỉ nhận từ app và keycloak.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: tickethub
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-envoy-to-edge-services
+  namespace: tickethub
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: tickethub/role, operator: In, values: [gateway, frontend, keycloak] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-app
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: app }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { tickethub/role: gateway }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-and-keycloak-to-postgres
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: postgres }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app, keycloak, postgres-pooler] }
+    # Các instance của cụm nói chuyện với nhau: replication, pg_rewind, kiểm tra trạng thái.
+    - from:
+        - podSelector:
+            matchLabels: { tickethub/role: postgres }
+    # Operator CNPG gọi cổng trạng thái (8000) và kết nối SQL của từng instance.
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: cnpg-system }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-and-app-to-redis
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: redis }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app, gateway, redis] }
+---
+# Gateway và app gọi Keycloak trong cụm (discovery, JWKS).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-services-to-keycloak
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: keycloak }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app, gateway] }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-mailpit
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: mailpit }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { tickethub/role: app }
+---
+# App (và Keycloak) nối vào PgBouncer; chỉ Pooler nối tiếp vào Postgres (policy allow-app-and-keycloak-to-postgres).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-app-to-pooler
+  namespace: tickethub
+spec:
+  podSelector:
+    matchLabels: { tickethub/role: postgres-pooler }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - { key: tickethub/role, operator: In, values: [app] }
+    # Operator CNPG gọi cổng trạng thái của Pooler.
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: cnpg-system }

@@ -1,0 +1,18 @@
+# C4 (overview.md §20.3): Redis chết, kể cả toàn bộ Sentinel (mỗi pod Redis chạy cả redis và sentinel nên kill cả 3 pod).
+# Kỳ vọng: giữ ghế mới trả 503 SEAT_HOLD_UNAVAILABLE, xem sự kiện vẫn chạy, alert SeatHoldUnavailable tới Telegram;
+# Redis về → app dựng lại key từ Postgres rồi mở lại giữ ghế; chạy kèm Flash sale → 0 ghế trùng.
+# Áp:  kubectl apply -f infra/chaos/c4-redis-kill.yaml
+# Chỉ kill master (thử failover bình thường): xem c4-redis-kill-master.yaml.
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: c4-redis-kill-all
+  namespace: tickethub
+spec:
+  action: pod-kill
+  mode: all
+  selector:
+    namespaces: [tickethub]
+    labelSelectors:
+      app.kubernetes.io/name: redis
+  gracePeriod: 0

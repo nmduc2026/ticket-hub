@@ -1,0 +1,45 @@
+# Jaeger v2 all-in-one nhận OTLP (4318 http) từ gateway và app; lưu trong bộ nhớ (mất khi restart, đủ cho staging).
+# Giao diện: kubectl -n monitoring port-forward svc/jaeger 16686 (không mở ra ngoài).
+# Phiên bản image và việc OTLP nghe 0.0.0.0 chưa kiểm trên cụm (docs/plans/2026-10-19-sprint-4-pending.md).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: monitoring
+  labels: { app.kubernetes.io/name: jaeger, app.kubernetes.io/part-of: tickethub }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: jaeger }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: jaeger, app.kubernetes.io/part-of: tickethub }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: jaeger
+          image: jaegertracing/jaeger:2.9.0
+          args: ["--set=receivers.otlp.protocols.http.endpoint=0.0.0.0:4318", "--set=receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317"]
+          ports:
+            - { name: ui, containerPort: 16686 }
+            - { name: otlp-http, containerPort: 4318 }
+            - { name: otlp-grpc, containerPort: 4317 }
+          readinessProbe: { httpGet: { path: /, port: ui }, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /, port: ui }, initialDelaySeconds: 20, periodSeconds: 20 }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 384Mi }
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: [ALL] } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: monitoring
+  labels: { app.kubernetes.io/name: jaeger, app.kubernetes.io/part-of: tickethub }
+spec:
+  selector: { app.kubernetes.io/name: jaeger }
+  ports:
+    - { name: ui, port: 16686, targetPort: ui }
+    - { name: otlp-http, port: 4318, targetPort: otlp-http }
+    - { name: otlp-grpc, port: 4317, targetPort: otlp-grpc }

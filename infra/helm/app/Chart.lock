@@ -1,0 +1,6 @@
+dependencies:
+- name: tickethub-lib
+  repository: file://../tickethub-lib
+  version: 0.1.0
+digest: sha256:e6970e09bdd9ba7a9a1ae4836df55a9d459214533a75b5be6e7305721fc3650d
+generated: "2026-10-21T14:12:39.205721+07:00"

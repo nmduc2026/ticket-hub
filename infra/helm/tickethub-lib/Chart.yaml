@@ -1,0 +1,5 @@
+apiVersion: v2
+name: tickethub-lib
+description: Library chart dùng chung cho app, gateway, frontend (Deployment, Service, PodDisruptionBudget)
+type: library
+version: 0.1.0

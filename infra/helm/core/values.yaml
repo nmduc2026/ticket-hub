@@ -1,0 +1,32 @@
+# Thành phần nền cho staging k3d (Redis, Keycloak, Mailpit). Bản đơn giản: một replica, dữ liệu trên PVC local-path.
+# Mật khẩu và client secret nằm trong Secret tạo tay (docs/ops/k8s-staging.md), không nằm ở đây.
+publicAuthUrl: https://auth.tickethub.localhost
+
+# Postgres do CloudNativePG quản lý (infra/k8s-platform/postgres); chart này chỉ cần tên người dùng cho Keycloak.
+postgres:
+  host: tickethub-pg-rw
+  user: tickethub
+
+redis:
+  image: redis:7.4.5
+  # Sentinel: 3 pod, mỗi pod chạy redis + sentinel; quorum 2. Tắt thì chạy một Redis đơn (templates/redis.yaml).
+  sentinel:
+    enabled: true
+    replicas: 3
+    masterName: tickethub
+    quorum: 2
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { memory: 256Mi }
+
+keycloak:
+  image: quay.io/keycloak/keycloak:26.3.3
+  resources:
+    requests: { cpu: 250m, memory: 768Mi }
+    limits: { memory: 1Gi }
+
+mailpit:
+  image: axllent/mailpit:v1.27.7
+  resources:
+    requests: { cpu: 20m, memory: 32Mi }
+    limits: { memory: 128Mi }

@@ -1,0 +1,6 @@
+# Mọi file văn bản dùng LF (Windows không chuyển CRLF); Spotless và Docker build trên Linux đòi LF.
+* text=auto eol=lf
+.githooks/* text eol=lf
+*.sh text eol=lf
+/backend/mvnw text eol=lf
+*.cmd text eol=crlf

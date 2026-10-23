@@ -30,7 +30,7 @@ infra/
 
 - Profile: `core` (Postgres, Redis, Keycloak, Mailpit), `kafka`, `search`, `observability`, `platform` (`overview.md` §19.2). Máy 16 GB chạy `core` + tối đa 1 profile.
 - **Pin version image**, không dùng `latest`. Mọi service có `healthcheck`; `depends_on` dùng `condition: service_healthy`.
-- Postgres: một database, **mỗi module một schema**. S3 khi dev dùng Adobe S3Mock.
+- Postgres: một database, **mỗi module một schema**. S3: dev và staging dùng chung bucket thật (`infra/terraform/aws/media`), test tự động dùng Adobe S3Mock. Stripe: test mode thật; stripe-mock ở profile `loadtest`, chỉ bật khi load test / chaos.
 - Biến môi trường trong `.env` (gitignore); commit `.env.example` với giá trị giả.
 - Giới hạn RAM từng container để máy dev không bị treo.
 
@@ -39,7 +39,7 @@ infra/
 - Realm `tickethub` export ở `infra/keycloak/`, import khi container khởi động; sửa realm qua UI thì export lại và commit.
 - Client và role theo `overview.md` §13.2; audience mapper `tickethub-api`; `tickethub-account-admin` chỉ có `view-users`, `manage-users`.
 - Client secret trong file export lấy từ biến môi trường, không commit secret thật. User test chỉ dùng ở dev.
-- Mọi thay đổi realm và quyền client gắn `[USER-REVIEW]`.
+- Thay đổi realm và quyền client phải nêu rõ trong báo cáo bàn giao.
 
 ## 5. Dockerfile
 
@@ -72,10 +72,10 @@ infra/
 
 ## 9. Terraform và AWS
 
-- Region `ap-southeast-1`. Mỗi lab một thư mục, state local (gitignore), không có tài nguyên thường trực.
+- Region `ap-southeast-1`. Mỗi lab một thư mục, state local (gitignore), không có tài nguyên thường trực (trừ bucket `media`).
 - Provider đặt `default_tags`: `Project=tickethub`, `Lab=<tên>`, `ExpiresAt=<ngày>`.
 - Theo §23.4: RDS `skip_final_snapshot = true`; EBS `delete_on_termination = true`, gp3; CloudWatch Logs giữ 3–7 ngày; không NAT Gateway, không Elastic IP thừa; EC2 dùng Spot.
-- Quy trình: `terraform plan` → người dùng xem plan (`[USER-REVIEW]`) → `apply` (hỏi từng lần) → làm lab → `destroy` → `verify-clean.sh` → hôm sau kiểm Cost Explorer.
+- Quy trình: `terraform plan` → người dùng xem plan → `apply` (hỏi từng lần) → làm lab → `destroy` → `verify-clean.sh` → hôm sau kiểm Cost Explorer.
 - Mọi tài nguyên gỡ xong trước **11/12/2026**.
 
 ## 10. Quy trình làm task hạ tầng

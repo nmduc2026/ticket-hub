@@ -1,0 +1,688 @@
+# Dashboard Grafana (sidecar nạp ConfigMap nhãn grafana_dashboard=1). Sinh từ JSON; sửa trên Grafana rồi export lại vào đây.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-red
+  namespace: monitoring
+  labels: { grafana_dashboard: "1", app.kubernetes.io/part-of: tickethub }
+data:
+  red.json: |
+    {
+      "uid": "th-red",
+      "title": "Ticket Hub: RED",
+      "tags": [
+        "tickethub"
+      ],
+      "schemaVersion": 39,
+      "version": 1,
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Request/giây theo uri",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum by (uri) (rate(http_server_requests_seconds_count{job=\"app\"}[5m]))",
+              "legendFormat": "{{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Tỷ lệ lỗi 5xx",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "tickethub:http_error_ratio:rate5m",
+              "legendFormat": "5xx",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Latency p95 theo uri",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{job=\"app\"}[5m])))",
+              "legendFormat": "{{uri}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Request theo status",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum by (status) (rate(http_server_requests_seconds_count{job=\"app\"}[5m]))",
+              "legendFormat": "{{status}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-jvm
+  namespace: monitoring
+  labels: { grafana_dashboard: "1", app.kubernetes.io/part-of: tickethub }
+data:
+  jvm.json: |
+    {
+      "uid": "th-jvm",
+      "title": "Ticket Hub: JVM",
+      "tags": [
+        "tickethub"
+      ],
+      "schemaVersion": 39,
+      "version": 1,
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Heap đang dùng",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(jvm_memory_used_bytes{job=\"app\",area=\"heap\"})",
+              "legendFormat": "used",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(jvm_memory_max_bytes{job=\"app\",area=\"heap\"})",
+              "legendFormat": "max",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "GC pause (tổng giây/giây)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(jvm_gc_pause_seconds_sum{job=\"app\"}[5m]))",
+              "legendFormat": "pause",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Thread",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "jvm_threads_live_threads{job=\"app\"}",
+              "legendFormat": "live",
+              "refId": "A"
+            },
+            {
+              "expr": "jvm_threads_peak_threads{job=\"app\"}",
+              "legendFormat": "peak",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "CPU process",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "process_cpu_usage{job=\"app\"}",
+              "legendFormat": "cpu",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-hikari
+  namespace: monitoring
+  labels: { grafana_dashboard: "1", app.kubernetes.io/part-of: tickethub }
+data:
+  hikari.json: |
+    {
+      "uid": "th-hikari",
+      "title": "Ticket Hub: HikariCP",
+      "tags": [
+        "tickethub"
+      ],
+      "schemaVersion": 39,
+      "version": 1,
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Kết nối",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "hikaricp_connections_active{job=\"app\"}",
+              "legendFormat": "active",
+              "refId": "A"
+            },
+            {
+              "expr": "hikaricp_connections_idle{job=\"app\"}",
+              "legendFormat": "idle",
+              "refId": "B"
+            },
+            {
+              "expr": "hikaricp_connections_max{job=\"app\"}",
+              "legendFormat": "max",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Đang chờ kết nối",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "hikaricp_connections_pending{job=\"app\"}",
+              "legendFormat": "pending",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Thời gian chờ lấy kết nối (p95)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(hikaricp_connections_acquire_seconds_bucket{job=\"app\"}[5m])))",
+              "legendFormat": "p95",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Timeout lấy kết nối",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(hikaricp_connections_timeout_total{job=\"app\"}[5m]))",
+              "legendFormat": "timeout",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dashboard-business
+  namespace: monitoring
+  labels: { grafana_dashboard: "1", app.kubernetes.io/part-of: tickethub }
+data:
+  business.json: |
+    {
+      "uid": "th-business",
+      "title": "Ticket Hub: Nghiệp vụ",
+      "tags": [
+        "tickethub"
+      ],
+      "schemaVersion": 39,
+      "version": 1,
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Booking giữ ghế / hết hạn / xác nhận (mỗi phút)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(tickethub_booking_held_total[5m])) * 60",
+              "legendFormat": "held",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(tickethub_booking_confirmed_total[5m])) * 60",
+              "legendFormat": "confirmed",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(rate(tickethub_booking_expired_total[5m])) * 60",
+              "legendFormat": "expired",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Vé bán / phút",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 0,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(tickethub_tickets_issued_total[5m])) * 60",
+              "legendFormat": "issued",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Thanh toán thành công / thất bại (mỗi phút)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(tickethub_payment_succeeded_total[5m])) * 60",
+              "legendFormat": "succeeded",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(tickethub_payment_failed_total[5m])) * 60",
+              "legendFormat": "failed",
+              "refId": "B"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Hoàn tiền (mỗi phút)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 8,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(tickethub_booking_refund_requested_total[5m])) * 60",
+              "legendFormat": "requested",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(rate(tickethub_refund_completed_total[5m])) * 60",
+              "legendFormat": "completed",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(rate(tickethub_refund_failed_total[5m])) * 60",
+              "legendFormat": "failed",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Bất biến (phải bằng 0)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "max(tickethub_invariant_duplicate_seat_tickets)",
+              "legendFormat": "ghế trùng",
+              "refId": "A"
+            },
+            {
+              "expr": "max(tickethub_payment_succeeded_unsettled)",
+              "legendFormat": "payment kẹt",
+              "refId": "B"
+            },
+            {
+              "expr": "max(tickethub_invariant_refund_failed_bookings)",
+              "legendFormat": "REFUND_FAILED",
+              "refId": "C"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "TicketIssuanceFailed (15 phút)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 12,
+            "y": 16,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(tickethub_tickets_issuance_failed_total[15m]))",
+              "legendFormat": "failed",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Stripe: circuit breaker",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 24,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "resilience4j_circuitbreaker_state{state=\"open\"}",
+              "legendFormat": "{{name}} open",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

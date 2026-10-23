@@ -1,0 +1,72 @@
+# Chart app (modular monolith). Không đặt secret ở đây: secretEnv chỉ tham chiếu Secret có sẵn trong namespace.
+# Tag image do CI cập nhật (docs/ops/k8s-staging.md); không dùng latest.
+image:
+  repository: ghcr.io/nmduc2026/ticket-hub-app
+  tag: main
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+containerPort: 8081
+runAsUser: 65532 # distroless nonroot
+service:
+  port: 8081
+pdb:
+  maxUnavailable: 1
+
+# Tắt êm (docs/ops/autoscaling.md): 10 giây preStop + tối đa 30 giây chờ request = 40 < 45.
+terminationGracePeriodSeconds: 45
+preStopSeconds: 10
+
+probes:
+  startup: /actuator/health/liveness
+  startupFailureThreshold: 36
+  readiness: /actuator/health/readiness
+  liveness: /actuator/health/liveness
+
+resources:
+  requests: { cpu: 250m, memory: 512Mi }
+  limits: { memory: 768Mi }
+
+env:
+  SHUTDOWN_TIMEOUT: 30s
+  # Qua PgBouncer (k8s-platform/postgres/pooler.yaml, ADR 0034); migration Flyway nối thẳng Postgres (khoá advisory theo phiên).
+  DB_URL: jdbc:postgresql://tickethub-pg-pooler-rw:5432/tickethub
+  SPRING_FLYWAY_URL: jdbc:postgresql://tickethub-pg-rw:5432/tickethub
+  SPRING_FLYWAY_USER: tickethub
+  # Pool nhỏ hơn: PgBouncer đã gom kết nối (đo trên pg_stat_activity khi chạy Load).
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "10"
+  DB_USER: tickethub
+  REDIS_HOST: redis
+  # Nối Redis qua Sentinel (chart core, redis.sentinel.enabled): đổi master không cần restart.
+  SPRING_DATA_REDIS_SENTINEL_MASTER: tickethub
+  SPRING_DATA_REDIS_SENTINEL_NODES: redis-0.redis-headless:26379,redis-1.redis-headless:26379,redis-2.redis-headless:26379
+  # Lớp Redis giữ ghế (overview.md §10). Tắt để đo baseline chỉ với Postgres; bật cho các lần đo sau lớp Redis.
+  TICKETHUB_BOOKING_SEATHOLD_ENABLED: "false"
+  # Keycloak Admin API cho gán role organizer và khoá tài khoản (client tickethub-account-admin).
+  KEYCLOAK_ADMIN_URL: http://keycloak:8080
+  MAIL_HOST: mailpit
+  MAIL_PORT: "1025"
+  KEYCLOAK_ISSUER_URI: https://auth.tickethub.localhost/realms/tickethub
+  KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/tickethub/protocol/openid-connect/certs
+  # Bucket S3 thật dùng chung với dev (infra/terraform/aws/media); đặt theo `terraform output`.
+  STORAGE_BUCKET: ""
+  STORAGE_PUBLIC_BASE_URL: ""
+  WEB_BASE_URL: https://tickethub.localhost
+  # Trace xuyên Gateway → app (docs/ops/observability.md).
+  OTLP_TRACES_ENABLED: "true"
+  OTLP_TRACES_ENDPOINT: http://jaeger.monitoring.svc:4318/v1/traces
+
+# Secret tạo tay một lần bằng kubectl (xem docs/ops/k8s-staging.md); chart không tạo secret.
+secretEnv:
+  - { name: DB_PASSWORD, secret: tickethub-db, key: password }
+  - { name: REDIS_PASSWORD, secret: tickethub-redis, key: password }
+  - { name: SPRING_FLYWAY_PASSWORD, secret: tickethub-db, key: password }
+  - { name: KEYCLOAK_ACCOUNT_ADMIN_CLIENT_SECRET, secret: tickethub-keycloak, key: account-admin-client-secret }
+  - { name: STRIPE_SECRET_KEY, secret: tickethub-stripe, key: secret-key, optional: true }
+  - { name: STRIPE_WEBHOOK_SECRET, secret: tickethub-stripe, key: webhook-secret, optional: true }
+  - { name: TICKET_SIGNING_JWK, secret: tickethub-ticket-signing, key: jwk, optional: true }
+  - { name: STORAGE_ACCESS_KEY, secret: tickethub-storage, key: access-key }
+  - { name: STORAGE_SECRET_KEY, secret: tickethub-storage, key: secret-key }
+
+podLabels:
+  tickethub/role: app

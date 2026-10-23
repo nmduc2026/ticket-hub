@@ -1,0 +1,16 @@
+# Prometheus và blackbox (namespace monitoring) được vào app, gateway, frontend, postgres.
+# /actuator/prometheus không cần token nên chỉ mở cho namespace này (NetworkPolicy ở namespace tickethub).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring-ingress
+  namespace: tickethub
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: tickethub/role, operator: In, values: [app, gateway, frontend, postgres] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: monitoring }

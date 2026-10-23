@@ -14,7 +14,7 @@ description: "Quy tắc code chung của Ticket Hub cho cả backend và fronten
 - **Một hàm một việc**, tên nói đúng việc đó. Hàm dài quá ~40 dòng hoặc lồng quá 3 cấp thì tách.
 - **Không lặp logic nghiệp vụ.** Quy tắc BR-xx chỉ được cài đặt ở **một** chỗ; nơi khác gọi lại.
 - **Tái sử dụng có điều kiện:** chỉ tách thành hàm / component dùng chung khi đã có **từ 2–3 chỗ dùng thật** và chúng giống nhau về nghĩa, không chỉ giống về hình thức.
-- **Chỗ để code dùng chung:** backend `com.ndz.backend.shared`; frontend `src/lib/` (hàm), `src/components/` (component không thuộc feature nào). Code chỉ một feature dùng thì để trong feature đó.
+- **Chỗ để code dùng chung:** backend `com.ndz.shared`; frontend `src/lib/` (hàm), `src/components/` (component không thuộc feature nào). Code chỉ một feature dùng thì để trong feature đó.
 - **Bất biến trước, tối ưu sau:** không bán trùng ghế, không mất tiền (`overview.md` §1.1) quan trọng hơn mọi tối ưu hiệu năng.
 
 ## 2. Đặt tên

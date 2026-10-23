@@ -18,10 +18,24 @@
 | 6 | Bảng `idempotency_keys` + filter dùng chung trong `shared` (§6.7) | BE | §6.7, §11.1; ADR 0025 | 3 | Test: gửi lại cùng key → cùng response; khác body → 422; đang xử lý → 409 |
 | 7 | Frontend: Vite + React 19 + TS strict, Tailwind v4 + shadcn, TanStack Router / Query, Zustand, Orval sinh client từ OpenAPI của `app`; i18n `vi` (react-i18next); layout; luồng đăng nhập (401 → chuyển tới Gateway), `GET /me`, bảo vệ route theo role; Vite proxy theo §13.1 | FE | §13.1 (luồng đăng nhập), §14.1–14.3; ADR 0003 | 4, 5 | Đăng nhập / đăng xuất được; vào `/admin` bằng user CUSTOMER bị chặn |
 | 7b | Khung giao diện dùng chung theo `docs/design/README.md` §2–3: token sáng / tối; layout khách (header, footer); khung Admin / Organizer (sidebar nhóm, topbar sticky, breadcrumb `Trang chủ ›`, Tìm nhanh Ctrl K, đổi sáng / tối, menu tài khoản, chuông chưa có dữ liệu); toast `sonner`; modal / sheet / popover đóng khi click ra ngoài, nút ✕ và Esc; theme Keycloak (màn #18); hồ sơ cá nhân (màn #19, trừ cài đặt thông báo) | FE | README §2–3; prototype #18, #19 và khung của các màn Admin / Organizer; skill react mục 10 | 7 | Playwright: Ctrl K mở Tìm nhanh, Esc đóng; click ra ngoài đóng menu; đổi theme giữ khi tải lại; ảnh chụp khớp prototype ở 1280px và 390px |
-| 8 | Dockerfile `app`, `gateway`, frontend (multi-stage, non-root). CI GitHub Actions: backend build + unit + Testcontainers, Spotless, Error Prone, JaCoCo, SonarCloud; frontend lint, type-check, test; build image, đẩy lên GHCR khi merge vào `main`; gitleaks; Playwright đăng nhập 3 role; Renovate | Infra | §19.3, §19.4 (Image), §20.1; ADR 0007 | 3, 7 | PR mở ra là CI chạy; CI xanh trên `main`; image của cả 3 ứng dụng có trên GHCR |
+| 8 | Dockerfile `app`, `gateway`, frontend (multi-stage, non-root). CI GitHub Actions: backend build + unit + Testcontainers, Spotless, Error Prone, JaCoCo; frontend lint, type-check, test; build image, đẩy lên GHCR khi merge vào `main`; gitleaks; Playwright đăng nhập 3 role | Infra | §19.3, §19.4 (Image), §20.1; ADR 0007 | 3, 7 | PR mở ra là CI chạy; CI xanh trên `main`; image của cả 3 ứng dụng có trên GHCR |
 | 9 | AWS: checklist bảo vệ tài khoản (§23.4 lớp 1–2: MFA, IAM Identity Center, budget 0.01$); Terraform thăm dò ở `infra/terraform/aws/probe/` cho EC2, Spot, RDS, Multi-AZ, ALB, ASG, CloudFront, SES, CloudWatch / SNS, kèm hướng dẫn chạy | Infra | §23; ADR 0013, 0017 | 1 | Người dùng chạy apply / destroy từng dịch vụ; bảng kết quả "dùng được / bị chặn / phương án thay thế"; `verify-clean.sh` sạch |
 | 10 | Verify toàn sprint theo AC bên dưới, kèm bằng chứng (skill `verification`) | Verify | AC bên dưới | 1–8 | Báo cáo verify |
-| 11 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho vùng `[USER-REVIEW]`) | Review | — | 10 | APPROVED / CHANGES REQUESTED |
+| 11 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho vùng rủi ro cao: bảo mật, secret, AWS) | Review | — | 10 | APPROVED / CHANGES REQUESTED |
+
+## Trạng thái
+
+Verify ngày 20/10/2026: `docs/test/sprint-1-verify.md` (APPROVED, kèm việc treo).
+
+| # | Trạng thái | Còn lại |
+|---|---|---|
+| 1, 2, 3, 4, 5, 6 | Xong. 59 test backend (`app` 52, `gateway` 7) xanh | – |
+| 7, 7b | Xong. 14 test Vitest, Playwright 23 xanh ở 1280px và 390px. Hồ sơ cá nhân (#19) đầy đủ xong 22/10/2026: ảnh đại diện, SĐT, ngày sinh, tỉnh, danh sách và đăng xuất phiên, xoá tài khoản (`GET/PUT /me/profile`, `POST /me/avatar`, `GET /me/sessions`, `DELETE /me/sessions/{id}`, `DELETE /me`) | Kiểm `sid` và xoá tài khoản trên stack thật (DC-1 ở plan dọn dẹp) |
+| 8 | Dockerfile, CI, Spotless, Error Prone, JaCoCo, gitleaks đã viết; 3 image build được, không còn CRITICAL | CI chưa chạy thật: PR, CI xanh trên `main`, image trên GHCR (plan dọn dẹp, hạng mục 1) |
+| 9 | Checklist, Terraform thăm dò, `run-probe.sh`, `verify-clean.sh` đã viết, `terraform validate` sạch | Chưa `apply`: bảng kết quả Free plan và destroy sạch (plan dọn dẹp, hạng mục 16) |
+| 10, 11 | Xong | – |
+
+AC-1 đến AC-6 và AC-9 đạt. AC-7 đạt một phần (gitleaks chặn secret; CI chưa chạy trên PR). AC-8 chưa đạt.
 
 ## Thứ tự
 
@@ -42,13 +56,6 @@
 - AC-7: CI chạy trên mọi PR; commit chứa secret bị gitleaks chặn.
 - AC-8: Có bảng kết quả kiểm Free plan và mọi tài nguyên thăm dò đã destroy.
 - AC-9: Khung Admin / Organizer và layout khách khớp prototype (bố cục, chữ, breadcrumb `Trang chủ ›`); mọi popover / modal đóng được bằng click ra ngoài và Esc, focus trả về nút mở; không có chuỗi viết cứng ngoài i18n.
-
-## Người dùng tự xem (`[USER-REVIEW]`)
-
-- Cấu hình BFF (việc 4) và Resource Server (việc 5).
-- Realm export và quyền của client `tickethub-account-admin` (việc 2).
-- `.env.example`, gitleaks: không có secret thật trong Git.
-- Mọi `terraform plan` của việc 9 trước khi apply.
 
 ## Thao tác cần báo trước
 

@@ -1,0 +1,21 @@
+# App-of-apps: một Application gốc trỏ vào infra/argocd/apps; thêm thành phần = thêm file vào thư mục đó.
+# Bootstrap một lần (báo trước, CLAUDE.md): kubectl apply -f infra/argocd/root.yaml -n argocd
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nmduc2026/ticket-hub.git
+    targetRevision: main
+    path: infra/argocd/apps
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

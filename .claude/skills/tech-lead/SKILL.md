@@ -28,7 +28,6 @@ Ghi vào `docs/plans/YYYY-MM-DD-<slug>.md`, theo mẫu của plan Sprint 1:
 
 ## Thứ tự (việc nào làm song song được)
 ## Acceptance criteria
-## Người dùng tự xem (`[USER-REVIEW]`)
 ## Thao tác cần báo trước (theo CLAUDE.md)
 ## Câu hỏi mở (đánh dấu [BLOCKING] nếu chặn)
 ```
@@ -67,5 +66,5 @@ Ghi vào `docs/plans/YYYY-MM-DD-<slug>.md`, theo mẫu của plan Sprint 1:
    - Migration, tương thích ngược, rollback.
    - Log, metric, alert đủ để vận hành chưa?
    - Có UI: mục Critical / High của `pre-delivery-checklist` (skill `ui-ux`) đạt chưa? Màn có khớp prototype (bố cục, chữ, hành vi theo ghi chú "HÀNH ĐỘNG") không; lệch có được người dùng đồng ý không?
-4. **Review độc lập** (tuỳ chọn, khoảng 1 lần mỗi sprint): với vùng `[USER-REVIEW]` (tiền, oversell, bảo mật), gọi một subagent general-purpose review diff theo skill `code-review`, để có mắt thứ hai không bị thiên vị bởi người viết code.
+4. **Review độc lập** (tuỳ chọn, khoảng 1 lần mỗi sprint): với vùng rủi ro cao (tiền, oversell, bảo mật), gọi một subagent general-purpose review diff theo skill `code-review`, để có mắt thứ hai không bị thiên vị bởi người viết code.
 5. Kết luận: **APPROVED** hoặc **CHANGES REQUESTED** kèm danh sách việc cần sửa.

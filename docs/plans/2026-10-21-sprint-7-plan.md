@@ -1,0 +1,120 @@
+# Plan: Sprint 7. Flash sale
+
+**Mục tiêu:** chịu được đột biến tải khi mở bán sự kiện hot: phòng chờ công bằng (BR-04), sơ đồ ghế và thông báo realtime, tự bảo vệ bằng rate limit, cache, load shedding, và autoscale kịp nhờ pre-warm.
+
+**Đầu vào:** Sprint 1–6 đã xong (lớp Redis giữ ghế, Redis Sentinel, JMeter, Chaos Mesh, Admin / Organizer đầy đủ). Mỗi hạng mục chỉ đọc đúng các § `overview.md` và ADR ở cột "Đọc".
+
+**Ngoài sprint này:** bật / tắt phòng chờ bằng feature flag Unleash (Sprint 8; sprint này bật theo `high_demand`); Kafka (Sprint 8: Queue nghe event Booking qua event in-process của Modulith).
+
+## Hạng mục
+
+| # | Việc | Vùng | Đọc | Phụ thuộc | Xong khi |
+|---|---|---|---|---|---|
+| 1 | Module `queue` (package `com.ndz.queue`, Modulith `verify()`): giữ `queue:{eventId}:meta` (`high_demand`, `sale_starts_at`) từ event của Catalog; thiếu meta (sự kiện publish trước khi có module, Redis mất dữ liệu) thì lấy lại qua interface công khai rồi ghi lại. `POST /queue/{eventId}/join` (customer; chỉ sự kiện `high_demand`; mở từ `sale_starts_at` − 15 phút): còn lượt vào thì trả `ADMITTED`, không xếp lại; ngược lại score ngẫu nhiên trong `[0, sale_starts_at)` nếu vào trước giờ mở bán, sau đó score = thời điểm vào; `ZADD NX`. `GET /queue/{eventId}/status` (vị trí, thời gian chờ ước tính, `ADMITTED` nếu còn key lượt vào). Sự kiện `SUSPENDED` / `CANCELLED` / `ENDED` → đóng phòng chờ: ngừng gọi người, SSE `closed {reason}`, xoá `queue:{eventId}:*`, `join` → `409 QUEUE_CLOSED` | BE | §5, §7.1, §9; BR-04; ADR 0015, 0027 | — | Test: 1.000 user vào trước giờ mở bán → thứ tự khác thứ tự vào và luôn đứng trước người vào sau giờ mở bán; vào lại không đổi vị trí; đang có lượt vào gọi `join` → `ADMITTED`, không bị gọi tên lần hai; sự kiện không `high_demand` → `404 QUEUE_NOT_ENABLED`; vào sớm hơn 15 phút → `409 QUEUE_NOT_OPEN`; xoá meta → `join` vẫn chạy; sự kiện bị tạm dừng → mọi người trong hàng nhận `closed` |
+| 2 | Điều tiết: scheduler mỗi giây (ShedLock) cho từng sự kiện đang mở phòng chờ; số người đang ở trong = phần tử còn hạn của `queue:{eventId}:admitted` + `queue:{eventId}:pending` (bỏ phần tử quá hạn trước khi đếm); dưới `max_active` thì `ZPOPMIN` tối đa N người, tạo `queue:{eventId}:admit:{userId}` TTL 15 phút và `ZADD admitted` trong cùng một Lua script (pod chết giữa chừng không làm mất chỗ); trước giờ mở bán không gọi ai; hết vé vẫn gọi như thường (ghế đang giữ có thể trống lại). Queue nghe `BookingCreated` (score = `expires_at` + ân hạn) / `BookingConfirmed` / `BookingExpired` / `BookingCancelled` để giữ ZSET `pending`. `max_active`, N cấu hình được | BE | §7.1, §9; BR-03, 04; ADR 0027 | 1 | Integration test: `max_active = 50` → tối đa 50 người ở trong; người bỏ đi (lượt vào hết hạn, booking hết hạn) thì người kế tiếp được gọi; mất một event Booking thì số đếm tự lành khi phần tử hết hạn |
+| 3 | Booking kiểm lượt vào (bước 0 ở §10): sự kiện `high_demand` thì `POST /bookings` cần key lượt vào còn hạn, xoá key khi tạo booking thành công (1 lượt 1 booking); thiếu → `403 ADMISSION_REQUIRED`. Booking gọi interface công khai của `queue` | BE | §7.1, §10; BR-04; ADR 0018, 0027 | 2 | Test: một lượt vào tạo booking thứ hai → 403; booking lỗi (ghế bận) thì lượt vào còn nguyên để chọn lại |
+| 4 | SSE: `GET /queue/{eventId}/stream` (vị trí, `ADMITTED`), `GET /events/{id}/seats/stream` (trạng thái ghế: Booking publish thay đổi lên `seat-updates:{eventId}`, giữ `seatstatus:{eventId}`), `GET /me/notifications/stream` (Notification publish lên `user-notify:{userId}`: thông báo mới + số chưa đọc). `SseEmitter` trên virtual threads, heartbeat 15 giây, Gateway chuyển SSE không buffer và không timeout sớm; Envoy Gateway bật HTTP/2 để nhiều stream không chạm giới hạn 6 kết nối / domain của HTTP/1.1 | BE, Infra | §9, §12, §13.1; ADR 0001, 0011 | 2 | Test: 2 pod, client nối pod A nhận được thay đổi ghế sinh ra ở pod B; kết nối lại lúc đã được gọi tên → nhận `ADMITTED` ngay; SSE thông báo chỉ đẩy cho đúng user |
+| 5 | Rate limit ở Gateway bằng Bucket4j trên Redis: user đã đăng nhập giới hạn theo `rl:{userId}`, request chưa đăng nhập theo `rl:ip:{ip}` (IP thật lấy từ `X-Forwarded-For` của proxy tin cậy); không giới hạn theo IP với user đã đăng nhập (JMeter chạy từ một máy, khách 4G đi chung IP qua CGNAT); giới hạn riêng cho `POST /bookings`, `POST /queue/*/join`, API đọc; vượt → `429 RATE_LIMITED` + `Retry-After`; Redis lỗi → **fail-open** (bỏ qua giới hạn, log, metric, alert) | BE | §9, §13.4, §15.2 (Redis); skill springbot | — | Test: vượt giới hạn → 429 có `Retry-After`; 2 user đăng nhập cùng IP không ăn chung giới hạn; dừng Redis → request vẫn qua, metric `ratelimit_bypassed` tăng, alert bắn |
+| 6 | Cache chi tiết sự kiện `cache:event:{eventId}` (TTL 5 phút + jitter; chỉ 1 request rebuild bằng lock, các request khác trả bản cũ); nằm ở module `booking` (chi tiết sự kiện đọc từ `event_snapshots`); xoá cache khi nhận `EventUpdated` / `EventOnSale` / `EventEnded` / `EventSuspended` / `EventResumed` / `EventCancelled` | BE | §9 (cache stampede) | — | Test: 200 request đồng thời khi cache trống → đúng 1 lần đọc DB; sửa sự kiện → lần đọc sau thấy bản mới; tới giờ mở bán → lần đọc sau thấy `ON_SALE` |
+| 7 | Load shedding ở Gateway (`503 OVERLOADED` + `Retry-After` khi số request đang xử lý vượt ngưỡng; kết nối SSE đếm riêng, không tính vào ngưỡng; không shed webhook Stripe, health probe và `POST /payments`; API đọc bị shed trước); graceful shutdown cho `app` và `gateway` (ngừng nhận request mới, xử lý xong request đang chạy, đóng SSE để client nối sang pod khác; `preStop` + `terminationGracePeriodSeconds`); metric `events_opening_soon` (số sự kiện mở bán trong 15 phút tới) | BE, Infra | §15.3, §17; ADR 0028 | 4 | Test: vượt ngưỡng → 503 có `Retry-After`, DB không tăng kết nối; lúc đang shed, webhook và `POST /payments` vẫn qua; 500 kết nối SSE mở không kích hoạt shed; rolling restart trong lúc chạy Load → 0 lỗi 5xx ngoài 503 có chủ đích |
+| 8 | FE phòng chờ (#4): vị trí, thời gian chờ ước tính, trạng thái trước giờ mở bán (bốc thăm), tự chuyển sang chọn ghế khi `ADMITTED`, đồng hồ lượt vào 15 phút; SSE đứt → gọi `status` rồi nối lại; gọi `GET /me` mỗi 5 phút; trang chi tiết sự kiện (#3) chuyển nút "Mua vé" sang "Vào phòng chờ" cho sự kiện `high_demand`; nhận `closed` → hiện lý do (tạm dừng / huỷ / kết thúc); hết vé → "Hiện đã hết vé, ghế có thể trống lại"; màn phòng chờ và sơ đồ ghế không mở stream thông báo | FE | §7.1, §14.4 (Phòng chờ); BR-04; prototype #3, #4 | 1, 4 (mock MSW trước) | Component test các trạng thái; Playwright (mock SSE): nhận `ADMITTED` → tự sang `/events/:id/seats`; tắt mạng rồi bật lại → vẫn giữ lượt vào |
+| 9 | FE realtime: sơ đồ ghế (#5) cập nhật màu theo SSE, kết nối lại thì tải snapshot `GET /events/{id}/seats` rồi nghe tiếp; chuông và trang thông báo nhận qua SSE, rơi về polling 60 giây khi SSE lỗi; organizer cấu hình phòng chờ ở #24 (`high_demand`, khoá sau publish theo BR-14; BE thêm `highDemand` vào request tạo / sửa sự kiện, hiện code chưa nhận trường này); bảng điều khiển sự kiện (#25) tự làm mới; các trạng thái lỗi còn lại ở #23 (`429`, `503`, `ADMISSION_REQUIRED`, `SEAT_HOLD_UNAVAILABLE`) | BE, FE | §12, §14.4; BR-14; prototype #5, #23, #24, #25 | 4, 5, 7 | Playwright: hai trình duyệt, A giữ ghế → ghế đổi màu ở B trong ≤ 2 giây; SSE bị cắt → chuông vẫn cập nhật bằng polling; test BE: sửa `highDemand` sau publish → bị từ chối như các trường khoá khác |
+| 10 | KEDA trên k3d cho `gateway` và `app`: trigger CPU + Prometheus (request / giây, p95 latency); pre-warm khi `events_opening_soon > 0` (min replica cao hơn); không khai báo HPA riêng; kiểm `startupProbe`, `readinessProbe`, `PodDisruptionBudget` | Infra | §17; ADR 0028; skill infra (KEDA) | 7 | Tạo sự kiện mở bán sau 10 phút → replica tăng trước giờ mở bán; tải giảm → scale-in không làm rớt SSE quá 1 lần kết nối lại |
+| 11 | Load test có phòng chờ: Spike (10 → 500 user trong 5 giây) và Flash sale (500 user / 100 ghế) với sự kiện `high_demand`; JMeter không hỗ trợ SSE sẵn nên hỏi vị trí bằng `GET /queue/{eventId}/status`; chaos C5 (spike 500 user) có runbook + postmortem | Verify, Infra | §20.2, §20.3 (C5) | 2–10 | Report ở `docs/test/load/sprint-7-load.md`: hệ thống không sập, p99 < 1 giây (tính trên request REST, không tính SSE), đúng 100 vé, 0 trùng |
+| 12 | Verify toàn sprint theo AC bên dưới, kèm bằng chứng | Verify | AC bên dưới | 1–11 | `docs/test/sprint-7-verify.md` |
+| 13 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho phòng chờ và lượt vào) | Review | — | 12 | APPROVED / CHANGES REQUESTED |
+
+## Thứ tự
+
+1. Phòng chờ: 1 → 2 → 3; 4 sau 2.
+2. Bảo vệ: 5, 6 song song với 1–4; 7 sau 4. Sprint 6 trễ thì 1–5 vẫn bắt đầu được; chỉ phần xoá cache theo `EventSuspended` / `EventResumed` / `EventCancelled` (6) và đóng phòng chờ (1) chờ event của Sprint 6.
+3. FE: 8 sau 1, 4; 9 sau 4, 5, 7 (mock MSW / SSE trước).
+4. Infra: 10 sau 7; 11 sau mọi việc trên.
+5. 12 → 13.
+
+## API cho FE mock
+
+| Endpoint | Request chính | Response chính | Mã lỗi nghiệp vụ |
+|---|---|---|---|
+| `POST /queue/{eventId}/join` | — | `202 {position, estimatedWaitSeconds, phase: LOTTERY \| QUEUED \| ADMITTED}` | `QUEUE_NOT_ENABLED`, `QUEUE_NOT_OPEN`, `QUEUE_CLOSED`, `QUEUE_UNAVAILABLE` (503) |
+| `GET /queue/{eventId}/status` | — | `{position, estimatedWaitSeconds, phase, admissionExpiresAt?}` | `QUEUE_NOT_JOINED`, `QUEUE_CLOSED`, `QUEUE_UNAVAILABLE` (503) |
+| `GET /queue/{eventId}/stream` | SSE | `event: position {position, estimatedWaitSeconds}`, `event: admitted {admissionExpiresAt}`, `event: closed {reason: SUSPENDED \| CANCELLED \| ENDED}`, heartbeat | — |
+| `GET /events/{id}/seats/stream` | SSE | `event: seats {changes: [{seatId, status}]}` | — |
+| `GET /me/notifications/stream` | SSE | `event: notification {…}`, `event: unread {count}` | — |
+| `POST /bookings` (thêm lỗi) | — | — | `403 ADMISSION_REQUIRED`, `429 RATE_LIMITED` |
+| Mọi API (Gateway) | — | — | `429 RATE_LIMITED`, `503 OVERLOADED` (kèm `Retry-After`) |
+
+## Acceptance criteria
+
+- AC-1 (BR-04): Phòng chờ chỉ mở cho sự kiện `high_demand`, từ 15 phút trước giờ mở bán; trước giờ mở bán không ai được gọi vào.
+- AC-2 (BR-04): Người vào trong 15 phút trước giờ mở bán được xếp ngẫu nhiên và đứng trước mọi người vào sau giờ mở bán; người vào sau xếp theo thời điểm vào; vào lại (F5, tab mới) không đổi vị trí.
+- AC-3 (BR-04): Lượt vào hạn 15 phút; một lượt vào chỉ tạo được 1 booking (lần hai → `403 ADMISSION_REQUIRED`); booking lỗi vì ghế bận thì lượt vào vẫn còn; muốn mua tiếp phải xếp hàng lại.
+- AC-4 (BR-04): SSE đứt đúng lúc được gọi tên → kết nối lại hoặc gọi `status` nhận `ADMITTED` ngay, không mất lượt; khách chờ 40 phút vẫn không phải đăng nhập lại khi được gọi.
+- AC-5: Số người đang ở trong không vượt `max_active`; khách bỏ đi (lượt vào hoặc booking hết hạn) thì người kế tiếp được gọi trong ≤ 2 nhịp scheduler; sự kiện bị tạm dừng / huỷ / kết thúc → phòng chờ đóng, người đang chờ được báo lý do.
+- AC-6 (§12): Thay đổi ghế ở pod bất kỳ tới mọi client đang xem sơ đồ trong ≤ 2 giây; kết nối lại thì sơ đồ khớp snapshot.
+- AC-7: Thông báo mới tới chuông qua SSE không cần tải lại trang; SSE lỗi → chuông vẫn cập nhật bằng polling 60 giây; user chỉ nhận thông báo của mình.
+- AC-8 (§13.4): Vượt rate limit → `429 RATE_LIMITED` + `Retry-After`; user đã đăng nhập chỉ bị giới hạn theo tài khoản, không theo IP; Redis chết → rate limit fail-open, có log, metric và alert.
+- AC-9: Cache sự kiện: 200 request đồng thời khi cache trống → 1 lần đọc DB; sửa sự kiện hoặc tới giờ mở bán → bản mới hiện trong lần đọc kế tiếp.
+- AC-10 (§15.3): Vượt ngưỡng → `503 OVERLOADED` + `Retry-After`, webhook Stripe và `POST /payments` không bị shed; rolling restart lúc đang có tải → không có lỗi 5xx khác, client SSE tự nối sang pod khác.
+- AC-11 (§17): Có sự kiện mở bán trong 15 phút tới → KEDA giữ số replica tối thiểu cao hơn trước giờ mở bán; hết sự kiện sắp mở → về mức thường.
+- AC-12 (§20.2, C5): Spike 10 → 500 user trong 5 giây khi bật phòng chờ → không sập, p99 < 1 giây; Flash sale qua phòng chờ → đúng 100 vé, 0 ghế trùng; có runbook + postmortem C5.
+- AC-13 (BR-14): Organizer bật `high_demand` khi tạo / sửa sự kiện nháp; sau publish không sửa được.
+
+## Thao tác cần báo trước
+
+Commit / push / PR / merge; `kubectl` / `helm` lên k3d (KEDA, cấu hình Gateway); chạy load test và chaos C5 trên staging.
+
+## Quyết định nhỏ trong sprint
+
+- `POST /queue/{eventId}/join` trả `phase`: `LOTTERY` (trước giờ mở bán, chưa có vị trí cố định), `QUEUED`, `ADMITTED`.
+- Ngưỡng mặc định (cấu hình được, chỉnh theo kết quả load test): `max_active` 200 / sự kiện, gọi tối đa 20 người / giây; rate limit `POST /bookings` 10 lần / phút / user (khách hay gặp `SEAT_UNAVAILABLE` rồi chọn lại), API đọc chưa đăng nhập 20 request / giây / IP.
+- Bảng điều khiển sự kiện (#25) tự làm mới bằng polling 30 giây (§12 không có stream cho số liệu); nếu bạn muốn realtime thật thì thêm một stream SSE ở hạng mục 4.
+- `high_demand` khoá sau publish (BR-14); cần bật gấp sau publish thì dùng feature flag Unleash ở Sprint 8 (BR-04).
+- Phòng chờ đóng khi sự kiện tạm dừng / huỷ / kết thúc; hết vé thì vẫn mở và vẫn gọi người.
+- `max_active` và tốc độ gọi là cấu hình chung của hệ thống; organizer chỉ bật `high_demand` ở #24.
+
+## Tình trạng đợt code Sprint 7 (nhánh `feature/sprint-7`, 22/10/2026)
+
+Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi hạng mục một commit, chưa push. Mỗi hạng mục có test tích hợp với Redis và Postgres thật; đã chạy `./mvnw verify` toàn bộ ngày 23/10: app 492 test, chỉ `RefundFlowTests` đỏ do lệch dạng phân trang của `GET /admin/bookings` (đã sửa test); gateway 21 test đạt. FE: lint, `tsc -b`, build sạch; Vitest 228/230, 2 test (`profile.test.tsx`, `adminOrganizers.test.tsx`) chạm timeout 5 giây khi chạy cả bộ nhưng đạt khi chạy riêng.
+
+| Hạng mục | Kết quả | Còn lại |
+|---|---|---|
+| 1 Module `queue` | `join` / `status`, score ngẫu nhiên trước giờ mở bán, `ZADD NX`, lấy lại meta qua `CatalogApi.queueInfo`, đóng phòng chờ khi sự kiện tạm dừng / huỷ / kết thúc; 11 test + 2 test listener | – (SSE `closed {reason}` ở hạng mục 4; Redis lỗi lúc `join` / `status` trả `503 QUEUE_UNAVAILABLE` kèm `Retry-After`) |
+| 2 Điều tiết | Lua gọi người vào, job ShedLock mỗi giây, `max_active` 200, 20 người / giây; 8 test | Chưa đo thực tế (hạng mục 11) |
+| 3 Booking kiểm lượt vào | `403 ADMISSION_REQUIRED`, một lượt một booking, ghế bận thì giữ lượt; 4 test | – |
+| 6 Cache chi tiết sự kiện | Cache + khoá rebuild + bản cũ, xoá sau commit; 6 test | – |
+| 4 SSE | 3 luồng (`/queue/{id}/stream`, `/events/{id}/seats/stream` công khai, `/me/notifications/stream`) qua Redis pub/sub, heartbeat 15 giây; Booking gom thay đổi ghế và phát 250 ms một lần; 12 test | Gateway chuyển SSE không buffer và Envoy HTTP/2 (hạ tầng, S7-2); không giữ `seatstatus:{eventId}` trong Redis (xem quyết định) |
+| 5 Rate limit | Bucket4j trên Redis ở Gateway, fail-open; 5 test với Redis thật (kể cả `docker pause`) | Alert cho `tickethub_gateway_ratelimit_bypassed_total` (hạ tầng, S7-2) |
+| 7 Load shedding, tắt êm | `503 OVERLOADED` + `Retry-After`, SSE đếm riêng, `server.shutdown=graceful`, `SseHub` đóng kết nối trước khi tắt, metric `tickethub_events_opening_soon`; 7 test | `preStop` / `terminationGracePeriodSeconds`, rolling restart 0 lỗi 5xx (S7-2) |
+| 9 (phần BE) | `highDemand` ở tạo / sửa sự kiện, khoá sau publish; 2 test | FE (#24, #5, #23, #25) |
+| 8 FE phòng chờ | Route `/events/:id/queue`, SSE + nối lại + polling dự phòng, giữ phiên 5 phút, nút "Vào phòng chờ" ở chi tiết; 22 test (FE) | So bố cục với prototype #4 trên trình duyệt thật (Playwright mock SSE đã có: `e2e/queue.mock.spec.ts`) |
+| 9 FE realtime | Sơ đồ ghế và chuông qua SSE (polling dự phòng), công tắc phòng chờ ở #24, thông báo `ADMISSION_REQUIRED` / `RATE_LIMITED` / `OVERLOADED`, #25 tự làm mới 30 giây; 14 test | Playwright hai trình duyệt với stack thật (S7-4; chuông qua SSE / polling đã có: `e2e/notifications-sse.mock.spec.ts`); câu chữ 429 / 503 chưa có trong prototype #23 (xem quyết định) |
+| 4, 5, 7, 10 (hạ tầng) | Đã viết: preStop + thời hạn tắt (chart lib), KEDA (`ScaledObject` app / gateway, pre-warm), Envoy `h2` + bỏ timeout SSE, ServiceMonitor và alert Gateway, runbook `gateway-overload.md`, `docs/ops/autoscaling.md`; `helm lint` + `helm template` đạt | Chưa chạy trên cụm (S7-2) |
+
+### Quyết định / thoả hiệp khi làm (chưa hỏi trước, cần duyệt)
+
+- **Booking gọi Queue, Queue không nghe event của Booking.** Plan ghi Queue nghe `BookingCreated` / `Confirmed` / `Expired` / `Cancelled`, nhưng Booking đã phải phụ thuộc Queue (kiểm lượt vào, hạng mục 3) nên Queue nghe lại Booking sẽ tạo vòng phụ thuộc mà Modulith `verify()` từ chối. Listener nằm ở Booking và gọi `QueueApi.bookingPending` / `bookingSettled`; sửa `overview.md` §7.1.
+- Thêm key `queue:open-events` (SET) để scheduler biết sự kiện nào có phòng chờ; ghi vào `overview.md` §9.
+- Cache chi tiết sự kiện chứa cả hạng vé và `soldOut`, nên số vé còn / "hết vé" có thể cũ tới 5 phút (sơ đồ ghế vẫn chính xác). Nếu chỉ cache phần tĩnh thì không giảm được truy vấn đếm ghế, là phần nặng nhất. Đã sửa test `PublicEventApiTests` về `soldOut` theo TTL.
+- Đóng phòng chờ xoá cả `pending`; sự kiện được mở lại thì các booking đang chờ thanh toán không được đếm tới khi hết hạn, nên có thể gọi dư người trong thời gian ngắn (Booking vẫn là nơi chặn bán trùng).
+- Lượt vào chỉ bị xoá sau khi booking commit; xoá lỗi (Redis) chỉ ghi log vì booking đã tạo, lượt vào còn sót tự hết hạn.
+- **Không giữ `seatstatus:{eventId}` trong Redis** như plan hạng mục 4 ghi: màn chọn ghế vẫn tải snapshot từ Postgres và không có chỗ nào đọc hash đó; thêm khi đo thấy snapshot là điểm nghẽn.
+- Thay đổi ghế được gom 250 ms rồi mới phát; pod chết giữa chừng mất tối đa 250 ms thay đổi (client nối lại tải lại snapshot).
+- Rate limit: `POST /bookings` 10/phút, `POST /queue/*/join` 20/phút, còn lại 50/giây theo user; chưa đăng nhập 20/giây theo IP. IP lấy từ `getRemoteAddr()` sau `ForwardedHeaderFilter`, chỉ đúng khi Gateway chỉ nhận request qua proxy tin cậy ghi đè `X-Forwarded-For`. Redis lỗi: timeout lệnh 200 ms rồi bỏ qua giới hạn 5 giây.
+- Load shedding: ngưỡng ghi 500, ngưỡng đọc 350 request đang xử lý (chỉnh theo load test).
+- Gateway (Spring Cloud Gateway Server MVC) chuyển SSE không buffer: `SseThroughGatewayTests` chạy Gateway thật với app giả, sự kiện đầu tới client khi app còn chặn ở sự kiện sau. Chưa kiểm phần Envoy Gateway / HTTP/2 phía trước (S7-2).
+- Câu chữ `RATE_LIMITED` ("Bạn thao tác quá nhanh…") và `OVERLOADED` ("Hệ thống đang quá tải…") tôi tự viết vì prototype #23 chưa có hai trạng thái này; `ADMISSION_REQUIRED` dùng chữ "Lượt vào chọn ghế đã hết hạn" của prototype. Cần bạn duyệt câu chữ.
+- Trang phòng chờ dừng 3 giây ở "Đến lượt bạn" rồi tự sang chọn ghế (plan vừa nói "tự chuyển" vừa nói "đồng hồ lượt vào"); nút "Chọn ghế" bấm sớm được. Không có "Mã hàng chờ" như prototype vì API không trả.
+- Gateway phải xuất metric Prometheus (`/actuator/prometheus`) cho KEDA và alert: thêm `micrometer-registry-prometheus` vào Gateway và ServiceMonitor.
+- `IntegrationTest` đặt `tickethub.queue.admit-interval=24h` để job không chạy nền trong test; test gọi `QueueAdmissionService.admitWaiting()` với đồng hồ test.
+
+## Việc treo của Sprint 7
+
+| # | Việc | Bị chặn bởi | Làm gì khi được gỡ |
+|---|---|---|---|
+| S7-1 | Kịch bản JMeter cho hạng mục 11 | Đã viết (`-Jscenario=queue`, seed `-v high_demand=true`), chưa chạy được: máy dev không có JMeter | Chạy thử một lượt nhỏ trên staging rồi chỉnh nếu cần |
+| S7-2 | Hạng mục 4 và 7 phần hạ tầng (Gateway SSE không buffer, Envoy HTTP/2, `preStop`, `terminationGracePeriodSeconds`), hạng mục 10 (KEDA, PDB, probe) | B3, hạng mục 13, 14 dọn dẹp | Viết manifest trước, chạy trên k3d khi có cụm |
+| S7-3 | Hạng mục 11 (load test có phòng chờ, chaos C5), 12 (verify) | B3, S5-1 (baseline chưa đo), JMeter | Viết kịch bản JMeter với `GET /queue/{eventId}/status`, chạy trên staging |
+| S7-4 | Còn lại: Playwright hai trình duyệt thấy ghế đổi màu ≤ 2 giây; SSE đa pod thật (AC-6). Đã xong: spec mock phòng chờ và chuông | Hạng mục 11 dọn dẹp (E2E stack thật), trình duyệt thật | Viết spec mock trước; chạy với `app` + `gateway` thật khi có stack |
+| S7-5 | Review độc lập `queue` và lượt vào bằng subagent (hạng mục 13); `./mvnw verify` toàn bộ đã chạy (xem trên) | Để cuối sprint theo quyết định của bạn | Gọi subagent review theo skill `code-review` |
+| S7-6 | ~~Test Vitest đỏ `my-bookings/refund.test.tsx`~~ đã sửa theo API `GET /admin/bookings` phân trang (cùng lỗi ở `RefundFlowTests` BE, cũng đã sửa) | – | – |

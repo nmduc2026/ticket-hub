@@ -1,0 +1,86 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    # Sau operator CNPG / cert-manager (wave 0); trước app để ServiceMonitor có CRD.
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    # Chưa xác nhận phiên bản trên mạng: kiểm bằng `helm search repo` trước khi đồng bộ (docs/plans/2026-10-19-sprint-4-pending.md).
+    targetRevision: 75.15.1
+    helm:
+      valuesObject:
+        # Chỉ giữ thứ cần; máy staging 32GB.
+        prometheus:
+          prometheusSpec:
+            retention: 7d
+            resources:
+              requests: { cpu: 200m, memory: 512Mi }
+              limits: { memory: 1Gi }
+            # Lấy mọi ServiceMonitor / PodMonitor / PrometheusRule, không chỉ của release này.
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+            probeSelectorNilUsesHelmValues: false
+        alertmanager:
+          alertmanagerSpec:
+            # Secret `alertmanager-telegram` (key `token`) tạo tay, không commit (docs/ops/observability.md).
+            secrets: [alertmanager-telegram]
+            resources:
+              requests: { cpu: 20m, memory: 64Mi }
+              limits: { memory: 128Mi }
+          config:
+            route:
+              receiver: telegram
+              group_by: [alertname, severity]
+              group_wait: 10s
+              repeat_interval: 4h
+              routes:
+                # Alert bất biến: gửi ngay, nhắc lại mỗi giờ.
+                - matchers: [severity="invariant"]
+                  receiver: telegram
+                  group_wait: 0s
+                  repeat_interval: 1h
+                - matchers: [alertname="Watchdog"]
+                  receiver: "null"
+            receivers:
+              - name: "null"
+              - name: telegram
+                telegram_configs:
+                  - bot_token_file: /etc/alertmanager/secrets/alertmanager-telegram/token
+                    # chat_id là số, không phải secret nhưng phụ thuộc bot của người dùng: sửa ở đây khi có.
+                    chat_id: 0
+                    parse_mode: HTML
+                    message: |-
+                      <b>[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}</b> ({{ .CommonLabels.severity }})
+                      {{ range .Alerts }}{{ .Annotations.summary }}
+                      Runbook: {{ .Annotations.runbook_url }}
+                      {{ end }}
+        grafana:
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
+          # Dashboard là ConfigMap nhãn grafana_dashboard=1 (k8s-platform/observability/dashboards.yaml).
+          sidecar:
+            dashboards: { enabled: true, label: grafana_dashboard, searchNamespace: ALL }
+          admin:
+            existingSecret: grafana-admin
+            userKey: admin-user
+            passwordKey: admin-password
+        # k3d không có các thành phần control-plane lộ metric.
+        kubeEtcd: { enabled: false }
+        kubeControllerManager: { enabled: false }
+        kubeScheduler: { enabled: false }
+        kubeProxy: { enabled: false }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    # CRD của operator rất lớn: bắt buộc ServerSideApply.
+    syncOptions: [CreateNamespace=true, ServerSideApply=true]

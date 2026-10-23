@@ -1,0 +1,19 @@
+# Blackbox: gọi endpoint quan trọng từ trong cụm mỗi phút (§16.1 Synthetic), qua Service nội bộ.
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: synthetic
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  jobName: blackbox-synthetic
+  interval: 60s
+  module: http_2xx
+  prober:
+    url: blackbox-exporter-prometheus-blackbox-exporter.monitoring.svc:9115
+  targets:
+    staticConfig:
+      static:
+        - http://app.tickethub.svc:8081/actuator/health/readiness
+        - http://gateway.tickethub.svc:8080/actuator/health/readiness
+        - http://frontend.tickethub.svc:8080/

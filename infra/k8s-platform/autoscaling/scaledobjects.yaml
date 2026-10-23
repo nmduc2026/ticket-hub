@@ -1,0 +1,74 @@
+# Autoscaling bằng KEDA cho gateway và app (overview.md §17, ADR 0028). Không khai báo HPA riêng: KEDA tạo HPA.
+# Pre-warm: có sự kiện mở bán trong 15 phút tới (metric app xuất, tickethub_events_opening_soon) thì giữ tối thiểu
+# `prewarm` bản sao, để JVM kịp khởi động trước khi khách đổ vào. Trigger Prometheus kiểu AverageValue: số bản sao
+# mong muốn = ceil(giá trị truy vấn / threshold), nên truy vấn pre-warm trả `prewarm` khi có sự kiện sắp mở, 0 khi không.
+# Scale-in chậm (mỗi phút một pod, sau 5 phút ổn định) để mỗi lần thu nhỏ chỉ làm rớt SSE của một pod.
+# Chưa chạy trên cụm: địa chỉ Prometheus theo tên release `kube-prometheus-stack`, cần xác nhận (docs/ops/autoscaling.md).
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: app
+  namespace: tickethub
+spec:
+  scaleTargetRef: { name: app }
+  minReplicaCount: 1
+  maxReplicaCount: 4
+  cooldownPeriod: 300
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies: [{ type: Pods, value: 1, periodSeconds: 60 }]
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata: { value: "70" }
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: sum(rate(http_server_requests_seconds_count{job="app"}[1m]))
+        threshold: "100"
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        # p95 theo giây; vượt 0,8 giây thì thêm bản sao tỉ lệ thuận.
+        query: histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job="app"}[2m])))
+        threshold: "0.8"
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: clamp_max(max(tickethub_events_opening_soon), 1) * 2
+        threshold: "1"
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: gateway
+  namespace: tickethub
+spec:
+  scaleTargetRef: { name: gateway }
+  minReplicaCount: 1
+  maxReplicaCount: 4
+  cooldownPeriod: 300
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+          policies: [{ type: Pods, value: 1, periodSeconds: 60 }]
+  triggers:
+    - type: cpu
+      metricType: Utilization
+      metadata: { value: "70" }
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        # Request đang xử lý trung bình mỗi bản sao (không tính SSE); ngưỡng shed là 500 nên thêm bản sao từ 150.
+        query: sum(tickethub_gateway_inflight)
+        threshold: "150"
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+        query: clamp_max(max(tickethub_events_opening_soon), 1) * 2
+        threshold: "1"

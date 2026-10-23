@@ -22,7 +22,7 @@
 | 10 | FE checkout (#6) và thành công (#7): Stripe Payment Element, dòng phí nền tảng "không hoàn lại", đồng hồ theo `expiresAt`, khoá nút khi còn < 90 giây, xử lý `HOLD_EXPIRING`, thẻ bị từ chối cho thử lại; sau khi trả tiền thì hỏi lại trạng thái booking tới khi `CONFIRMED` rồi chuyển sang vé | FE | §14.4; BR-03, 07; skill react mục 3, 9 | 2, 9 | Component test các trạng thái; thẻ test 4242 thành công |
 | 11 | FE "Vé của tôi" (#8, #9; QR bằng qrcode.react) và "Đơn của tôi" (#21) | FE | §14.2 (Customer) | 7, 8, 9 | Hiển thị đúng vé / đơn của user đang đăng nhập |
 | 12 | Helm: library chart + chart `app`, `gateway`, frontend (probe, resources, non-root, PDB); Postgres / Redis / Keycloak bằng chart đơn giản; tạo cụm k3d trên máy staging | Infra | §19.1, §19.4; skill infra mục 7 | S1 | `helm lint` / `helm template` sạch; app chạy trên k3d, đăng nhập được |
-| 13 | ArgoCD (app-of-apps); CI cập nhật image tag trong values → ArgoCD đồng bộ; Gateway API + Envoy Gateway, cert-manager (CA tự ký cho local), NetworkPolicy; Trivy và OWASP Dependency-Check trong CI | Infra | §19.3, §19.4, §13.4 (Mạng, Dependency); ADR 0014 | 12 | Commit đổi image tag → k3d tự cập nhật; truy cập qua HTTPS của Envoy; pod khác không gọi thẳng được `app` |
+| 13 | ArgoCD (app-of-apps); CI cập nhật image tag trong values → ArgoCD đồng bộ; Gateway API + Envoy Gateway, cert-manager (CA tự ký cho local), NetworkPolicy; Trivy trong CI | Infra | §19.3, §19.4, §13.4 (Mạng, Dependency); ADR 0014 | 12 | Commit đổi image tag → k3d tự cập nhật; truy cập qua HTTPS của Envoy; pod khác không gọi thẳng được `app` |
 | 14 | E2E Playwright mua trọn vé trên compose: thẻ test Stripe, webhook chuyển về local bằng Stripe CLI; chạy truy vấn ghế trùng sau test | FE, Verify | §20.1 (E2E), §10 (truy vấn ghế trùng) | 4–11 | Playwright xanh; truy vấn ghế trùng = 0 |
 | 15 | Verify toàn sprint theo AC bên dưới, kèm bằng chứng | Verify | AC bên dưới | 1–14 | Báo cáo verify |
 | 16 | Review cuối sprint (skill `tech-lead`; review độc lập bằng subagent cho phần thanh toán) | Review | — | 15 | APPROVED / CHANGES REQUESTED |
@@ -56,12 +56,6 @@
 - AC-9: QR là JWT ES256 verify được bằng public key theo `kid`; `GET /me/tickets` và `GET /me/bookings` chỉ trả dữ liệu của người đang đăng nhập.
 - AC-10: Playwright mua trọn vé chạy xanh; truy vấn ghế trùng (§10) trả 0 dòng.
 - AC-11: Đổi image tag trong Git → ArgoCD cập nhật k3d; app chạy qua HTTPS của Envoy Gateway; Trivy chạy trong CI.
-
-## Người dùng tự xem (`[USER-REVIEW]`)
-
-- Idempotency khi gọi Stripe, verify webhook, máy trạng thái payment, job đối soát, nhánh đến muộn và hoàn tự động (việc 2–6).
-- Miễn CSRF cho webhook ở Gateway (việc 3).
-- Cách giữ khoá ký vé (việc 7); Secret trong Helm (việc 12).
 
 ## Thao tác cần báo trước
 

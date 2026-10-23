@@ -9,26 +9,41 @@ description: "Quy tắc backend Spring Boot của Ticket Hub: cấu trúc packag
 
 ## 1. Cấu trúc một module
 
-Package gốc `com.ndz.backend.<module>`. Package gốc của module là **API công khai**; mọi thứ trong `internal` là riêng của module.
+Package gốc `com.ndz.<module>` (không có package `backend`; `AppApplication` nằm ở `com.ndz`, Spring Modulith coi mỗi package con trực tiếp là một module). Mỗi module nghiệp vụ (`account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `queue`) là một Spring Modulith module và **chia theo tầng package**:
 
 ```
-com.ndz.backend.booking/
-├── BookingApi.java              # interface công khai cho module khác gọi đồng bộ
-├── events/                      # record event module phát ra (BookingConfirmed…), @NamedInterface("events")
-└── internal/
-    ├── domain/                  # entity, value object, máy trạng thái, quy tắc BR
-    ├── application/             # service / use case, @Transactional ở đây
-    ├── persistence/             # repository JPA, truy vấn jOOQ, SQL khoá ghế
-    └── web/                     # controller, request / response record
+com.ndz.booking/
+├── config/            # @Configuration, @ConfigurationProperties của module
+├── controller/        # @RestController
+├── service/           # interface service (use case)
+│   └── impl/          # class implement interface, chứa logic nghiệp vụ, @Transactional ở đây
+├── repository/        # Spring Data JPA; truy vấn native / jOOQ / SQL khoá ghế cũng ở đây
+├── entity/            # JPA entity, máy trạng thái, quy tắc BR
+│   └── enums/         # enum dùng trong entity (trạng thái, loại…)
+├── dto/
+│   ├── request/       # request record
+│   └── response/      # response record
+├── mapper/            # chuyển entity ↔ DTO
+├── constant/          # hằng số của module (không phải mã lỗi)
+├── util/              # tiện ích của module, không chứa logic nghiệp vụ
+│   ── phần dưới đây ngoài cây chuẩn ──
+├── api/               # interface công khai cho module khác gọi đồng bộ (BookingApi) + record trả về, @NamedInterface("api")
+├── event/             # record event module phát ra (BookingConfirmed…), @NamedInterface("events")
+│   └── listener/      # @ApplicationModuleListener nghe event của module khác
+├── job/               # @Scheduled + ShedLock
+└── client/            # adapter gọi dịch vụ ngoài (StripeGateway…)
 ```
 
-- Module khác chỉ dùng `BookingApi` và `events`. `ApplicationModules.of(...).verify()` + ArchUnit chạy trong test để bắt vi phạm.
-- `shared`: ProblemDetail, `BusinessException`, idempotency, tiện ích tiền / thời gian, cấu hình bảo mật chung. Không đưa logic nghiệp vụ của module vào `shared`.
+- Thư mục nào module chưa cần thì không tạo (không tạo thư mục rỗng).
+- `exception/` **không** nằm trong từng module: ba file `ErrorCode`, `BusinessException`, `GlobalExceptionHandler` ở `shared/exception/`. Mã lỗi nghiệp vụ mới thêm vào `ErrorCode`.
+- Phụ thuộc theo chiều: `controller` → `service` (interface) → `repository`; `service/impl` dùng `mapper`, `entity`, `repository`. `controller` không gọi `repository` hay `service/impl`. Entity không ra khỏi `service`; `controller` chỉ thấy `dto`.
+- Modulith: chỉ package gốc và package có `@NamedInterface` (`api`, `event`) là công khai; mọi package khác là riêng của module. Module khác chỉ dùng `api` và `event`. `ApplicationModules.of(...).verify()` + ArchUnit chạy trong test để bắt vi phạm.
+- `shared`: ProblemDetail, `exception/`, idempotency, tiện ích tiền / thời gian, cấu hình bảo mật chung. Cũng chia theo tầng khi cần (`config`, `util`, `exception`…). Không đưa logic nghiệp vụ của module vào `shared`.
 
 ## 2. Web (controller)
 
-- Controller **mỏng**: nhận request, validate, gọi một method application, map response. Không có logic nghiệp vụ, không gọi repository.
-- Request / response là `record`; không trả entity ra ngoài. Mapping bằng MapStruct hoặc factory method.
+- Controller (`controller/`) **mỏng**: nhận request, validate, gọi một method của interface service, map response. Không có logic nghiệp vụ, không gọi repository.
+- Request / response là `record` trong `dto/request`, `dto/response`; không trả entity ra ngoài. Chuyển entity ↔ DTO ở `mapper/` (MapStruct hoặc factory method).
 - Path và đặt tên theo `overview.md` §11.1: `/api/v1`, danh từ số nhiều kebab-case; hành động không phải CRUD là `POST .../{action}`.
 - Validate bằng Bean Validation (`@Valid`, `@NotNull`, `@Size(max = 6)`…). Lỗi validate → 400 Problem Details.
 - `@PreAuthorize` cho role; quyền sở hữu kiểm trong application service.
@@ -36,22 +51,24 @@ com.ndz.backend.booking/
 
 ## 3. Application service và transaction
 
-- `@Transactional` đặt ở application service, không đặt ở controller hay repository. Đọc dùng `@Transactional(readOnly = true)`.
-- Một use case = một method public, tên theo hành động (`holdSeats`, `startPayment`, `requestRefund`).
-- Lỗi nghiệp vụ ném `BusinessException(code, message)`; `@RestControllerAdvice` trong `shared` chuyển thành Problem Details có `code`.
+- Mỗi service là một interface ở `service/` kèm một class `...Impl` ở `service/impl/`. `@Transactional` đặt ở class impl, không đặt ở controller hay repository. Đọc dùng `@Transactional(readOnly = true)`.
+- Một use case = một method trên interface, tên theo hành động (`holdSeats`, `startPayment`, `requestRefund`). Interface công khai cho module khác (`api/BookingApi`) được implement bởi một class ở `service/impl/`.
+- Lỗi nghiệp vụ ném `BusinessException(ErrorCode, message)`; `GlobalExceptionHandler` (`@RestControllerAdvice`, `shared/exception/`) chuyển thành Problem Details có `code`.
 - Không gọi dịch vụ ngoài (Stripe, Keycloak Admin API) bên trong transaction DB đang giữ khoá; ghi trạng thái trước, gọi ngoài sau, có idempotency key.
 
 ## 4. Event giữa module
 
-- Event là `record` bất biến trong package `events`, có `eventId` (UUIDv7) và `occurredAt`, để sau này map 1-1 sang envelope Kafka (`overview.md` §8.2).
+- Event là `record` bất biến trong package `event`, có `eventId` (UUIDv7) và `occurredAt`, để sau này map 1-1 sang envelope Kafka (`overview.md` §8.2).
 - Phát bằng `ApplicationEventPublisher` trong cùng transaction với thay đổi dữ liệu (Modulith ghi vào `event_publication`).
-- Nghe bằng `@ApplicationModuleListener`. Consumer **idempotent**: ghi `processed_events` trong cùng transaction với xử lý.
+- Nghe bằng `@ApplicationModuleListener` đặt ở `event/listener/`; listener chỉ gọi interface service, không chứa logic nghiệp vụ. Consumer **idempotent**: ghi `processed_events` trong cùng transaction với xử lý.
+- Hai module nghe event của nhau sẽ tạo vòng phụ thuộc mà Modulith `verify()` từ chối. Phá vòng theo hướng đã có phụ thuộc đồng bộ: **bên nhận định nghĩa kiểu event nó cần** trong package `event` của mình (vd. `PaymentSucceeded` nằm ở `booking.event`, do Payment phát; Payment phụ thuộc Booking, Booking không phụ thuộc Payment). Xem `overview.md` §8.1.
 - Gọi đồng bộ sang module khác chỉ khi người dùng đang chờ kết quả (vd. Payment → `BookingApi.startPayment`), ADR 0018.
 
 ## 5. Persistence
 
 - Mỗi module một schema Postgres; Flyway migration của module nằm trong `db/migration/<module>/`, tên `V<yyyyMMddHHmm>__<module>_<mô_tả>.sql`.
-- Migration không sửa sau khi đã merge; đổi schema theo **expand → migrate → contract** (`overview.md` §18). Migration có `DROP` / đổi kiểu cột gắn `[USER-REVIEW]`.
+- Entity ở `entity/` (khai báo `@Table(schema = "<module>")`), repository Spring Data JPA ở `repository/`. Truy vấn native / jOOQ / SQL khoá ghế cũng là repository (interface kèm custom implementation).
+- Migration không sửa sau khi đã merge; đổi schema theo **expand → migrate → contract** (`overview.md` §18). Migration có `DROP` / đổi kiểu cột phải nêu rõ trong báo cáo bàn giao.
 - Khoá chính UUIDv7 sinh ở app. Bảng cập nhật đồng thời có `@Version`.
 - `spring.jpa.open-in-view=false`. Quan hệ mặc định `LAZY`; tránh N+1 (fetch join / entity graph / jOOQ cho truy vấn đọc phức tạp).
 - jOOQ dùng cho báo cáo và truy vấn đọc nhiều bảng **trong cùng module**.
@@ -62,11 +79,12 @@ com.ndz.backend.booking/
 
 - Tiền: value object `Money(long amountMinor, Currency currency)`; phép tính phí ở một chỗ.
 - Thời gian: `Instant` + `Clock` được inject.
-- Máy trạng thái (`overview.md` §7.7) cài trong entity / domain service: method chuyển trạng thái kiểm trạng thái hiện tại, chuyển không hợp lệ ném lỗi hoặc bỏ qua có log, không có setter `status` public.
+- Máy trạng thái (`overview.md` §7.7) cài trong entity (enum trạng thái ở `entity/enums`): method chuyển trạng thái kiểm trạng thái hiện tại, chuyển không hợp lệ ném lỗi hoặc bỏ qua có log, không có setter `status` public.
+- Domain không có thư mục riêng: quy tắc BR nằm trong entity hoặc service impl, cài ở đúng một chỗ.
 
 ## 7. Cấu hình
 
-- `@ConfigurationProperties` dạng `record`, prefix `tickethub.<module>`, có mặc định theo BR:
+- `@ConfigurationProperties` dạng `record` đặt ở `config/`, prefix `tickethub.<module>`, có mặc định theo BR:
 
 ```yaml
 tickethub:
@@ -81,11 +99,11 @@ tickethub:
 
 ## 8. Job định kỳ
 
-`@Scheduled` + **ShedLock** cho mọi job (`ExpireBookings`, đối soát, chuyển trạng thái sự kiện, dọn idempotency key). Job xử lý theo lô, idempotent, chạy lại không gây sai.
+Job nằm ở `job/` và chỉ gọi interface service. `@Scheduled` + **ShedLock** cho mọi job (`ExpireBookings`, đối soát, chuyển trạng thái sự kiện, dọn idempotency key). Job xử lý theo lô, idempotent, chạy lại không gây sai.
 
 ## 9. Gọi dịch vụ ngoài (Stripe, Keycloak Admin API)
 
-- Bọc trong adapter thuộc `internal` của module (vd. `payment.internal.stripe.StripeGateway`); domain không phụ thuộc SDK.
+- Bọc trong adapter ở `client/` của module (vd. `payment.client.StripeGateway`); entity và service không phụ thuộc kiểu của SDK.
 - Resilience4j theo `overview.md` §15.1: timeout, retry **chỉ khi có idempotency key**, circuit breaker, bulkhead.
 - Mọi lệnh tạo / hoàn tiền có idempotency key theo §7.2, §7.4 (`booking-{id}`, `refund-{refundId}`).
 - Webhook: verify chữ ký trên raw body, dedupe theo `stripe_event_id`, xử lý theo máy trạng thái.
@@ -93,7 +111,7 @@ tickethub:
 ## 10. Bảo mật
 
 - `app` là Resource Server: kiểm chữ ký, `iss`, `aud=tickethub-api`, role từ `realm_access.roles`, chỉ map `CUSTOMER` / `ORGANIZER` / `ADMIN`.
-- `gateway` theo đúng bảng "Yêu cầu cấu hình bắt buộc" ở `overview.md` §13.1. Mọi thay đổi cấu hình bảo mật gắn `[USER-REVIEW]`.
+- `gateway` theo đúng bảng "Yêu cầu cấu hình bắt buộc" ở `overview.md` §13.1. Thay đổi cấu hình bảo mật phải nêu rõ trong báo cáo bàn giao.
 - Lấy người dùng hiện tại qua một helper trong `shared` (`CurrentUser`), không đọc `SecurityContextHolder` rải rác.
 
 ## 11. Log và quan sát

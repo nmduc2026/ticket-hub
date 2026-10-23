@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nmduc2026/ticket-hub.git
+    targetRevision: main
+    path: infra/helm/app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tickethub
+  # KEDA đổi số bản sao (infra/k8s-platform/autoscaling): ArgoCD không đưa về replicaCount của chart.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers: [/spec/replicas]
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [CreateNamespace=true]

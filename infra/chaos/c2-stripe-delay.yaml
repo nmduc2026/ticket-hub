@@ -1,0 +1,21 @@
+# C2 (overview.md §20.3): Stripe chậm 3 giây. Kỳ vọng: circuit breaker mở, checkout hiện lỗi rõ ràng, ghế vẫn giữ đến hết hạn.
+# Áp:  kubectl apply -f infra/chaos/c2-stripe-delay.yaml     Gỡ:  kubectl delete -f infra/chaos/c2-stripe-delay.yaml
+# Cần stripe-mock chạy trên staging (Sprint 5 hạng mục 1, mục "Việc treo của Sprint 5" ở plan dọn dẹp).
+apiVersion: chaos-mesh.org/v1alpha1
+kind: NetworkChaos
+metadata:
+  name: c2-stripe-delay
+  namespace: tickethub
+spec:
+  action: delay
+  mode: all
+  selector:
+    namespaces: [tickethub]
+    labelSelectors:
+      app.kubernetes.io/name: stripe-mock
+  direction: to
+  delay:
+    latency: 3s
+    jitter: 200ms
+    correlation: "50"
+  duration: 10m

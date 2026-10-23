@@ -1,0 +1,19 @@
+# Cụm k3d cho staging (máy 32GB): k3d cluster create --config infra/k3d/cluster.yaml
+# Traefik và servicelb mặc định tắt: ingress dùng Envoy Gateway (ADR 0014).
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: tickethub
+servers: 1
+agents: 2
+image: rancher/k3s:v1.33.5-k3s1
+ports:
+  - port: 80:80
+    nodeFilters: [loadbalancer]
+  - port: 443:443
+    nodeFilters: [loadbalancer]
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=traefik
+        nodeFilters: [server:*]

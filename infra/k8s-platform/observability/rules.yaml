@@ -1,0 +1,181 @@
+# Alert theo overview.md §16.3. Mỗi alert có runbook_url trỏ docs/runbooks/.
+# severity=invariant là mức cao nhất (không chờ burn rate); Alertmanager gửi ngay và nhắc mỗi giờ.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tickethub-invariants
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  groups:
+    - name: tickethub.invariants
+      rules:
+        - alert: DuplicateSeatTickets
+          expr: max(tickethub_invariant_duplicate_seat_tickets) > 0
+          labels: { severity: invariant }
+          annotations:
+            summary: "Có ghế được bán cho hơn một vé còn hiệu lực (oversell)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/duplicate-seat-tickets.md
+        - alert: PaymentSucceededUnsettled
+          expr: max(tickethub_payment_succeeded_unsettled) > 0
+          for: 5m
+          labels: { severity: invariant }
+          annotations:
+            summary: "Payment SUCCEEDED quá 5 phút mà booking chưa CONFIRMED hay chưa được hoàn"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/payment-succeeded-unsettled.md
+        - alert: TicketIssuanceFailed
+          expr: sum(increase(tickethub_tickets_issuance_failed_total[15m])) > 0
+          labels: { severity: invariant }
+          annotations:
+            summary: "Phát vé thất bại do lỗi nghiệp vụ (booking chuyển sang hoàn 100%)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/ticket-issuance-failed.md
+        - alert: SeatHoldUnavailable
+          expr: min(tickethub_booking_seat_hold_available) < 1
+          for: 1m
+          labels: { severity: critical }
+          annotations:
+            summary: "Redis giữ ghế không dùng được: giữ ghế mới đang trả 503 (fail-closed)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/seat-hold-unavailable.md
+        - alert: RefundFailedBookings
+          expr: max(tickethub_invariant_refund_failed_bookings) > 0
+          labels: { severity: invariant }
+          annotations:
+            summary: "Có booking REFUND_FAILED cần Admin hoàn thủ công"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/refund-failed.md
+---
+# SLO: tỷ lệ request không 5xx >= 99.5% / 30 ngày, ngân sách lỗi 0.5% (§16.2).
+# Nhanh: đốt 2% ngân sách trong 1 giờ = burn rate 14.4. Chậm: 10% trong 3 ngày = burn rate 1.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tickethub-slo
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  groups:
+    - name: tickethub.slo.recording
+      rules:
+        - record: tickethub:http_error_ratio:rate5m
+          expr: |
+            sum(rate(http_server_requests_seconds_count{job="app",status=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_server_requests_seconds_count{job="app"}[5m])), 1e-9)
+        - record: tickethub:http_error_ratio:rate1h
+          expr: |
+            sum(rate(http_server_requests_seconds_count{job="app",status=~"5.."}[1h]))
+            / clamp_min(sum(rate(http_server_requests_seconds_count{job="app"}[1h])), 1e-9)
+        - record: tickethub:http_error_ratio:rate6h
+          expr: |
+            sum(rate(http_server_requests_seconds_count{job="app",status=~"5.."}[6h]))
+            / clamp_min(sum(rate(http_server_requests_seconds_count{job="app"}[6h])), 1e-9)
+        - record: tickethub:http_error_ratio:rate3d
+          expr: |
+            sum(rate(http_server_requests_seconds_count{job="app",status=~"5.."}[3d]))
+            / clamp_min(sum(rate(http_server_requests_seconds_count{job="app"}[3d])), 1e-9)
+    - name: tickethub.slo.alerts
+      rules:
+        - alert: ApiErrorBudgetBurnFast
+          expr: tickethub:http_error_ratio:rate1h > (14.4 * 0.005) and tickethub:http_error_ratio:rate5m > (14.4 * 0.005)
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: "Đốt ngân sách lỗi API nhanh (2% trong 1 giờ)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/slo-burn-rate.md
+        - alert: ApiErrorBudgetBurnSlow
+          expr: tickethub:http_error_ratio:rate3d > (1 * 0.005) and tickethub:http_error_ratio:rate6h > (1 * 0.005)
+          for: 15m
+          labels: { severity: warning }
+          annotations:
+            summary: "Đốt ngân sách lỗi API chậm (10% trong 3 ngày)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/slo-burn-rate.md
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tickethub-platform
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  groups:
+    - name: tickethub.platform
+      rules:
+        - alert: EndpointDown
+          expr: probe_success{job="blackbox-synthetic"} == 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: "Probe ngoài thất bại: {{ $labels.instance }}"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/endpoint-down.md
+        - alert: HikariPoolExhausted
+          expr: max(hikaricp_connections_pending{job="app"}) > 0 and max(hikaricp_connections_active{job="app"}) >= max(hikaricp_connections_max{job="app"})
+          for: 2m
+          labels: { severity: warning }
+          annotations:
+            summary: "Pool kết nối HikariCP cạn, có request chờ kết nối"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/slo-burn-rate.md
+        # C9: cert-manager tự gia hạn khi còn 1/3 vòng đời; alert bắn khi còn < 7 ngày mà chưa gia hạn được, hoặc Certificate không Ready.
+        - alert: CertificateExpiringSoon
+          expr: (certmanager_certificate_expiration_timestamp_seconds - time()) < 7 * 24 * 3600
+          for: 10m
+          labels: { severity: warning }
+          annotations:
+            summary: "Chứng chỉ {{ $labels.namespace }}/{{ $labels.name }} sắp hết hạn"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/certificate-expiry.md
+        - alert: CertificateNotReady
+          expr: certmanager_certificate_ready_status{condition="False"} == 1
+          for: 15m
+          labels: { severity: warning }
+          annotations:
+            summary: "Chứng chỉ {{ $labels.namespace }}/{{ $labels.name }} không Ready"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/certificate-expiry.md
+        - alert: PostgresPrimaryDown
+          expr: absent(cnpg_pg_replication_in_recovery == 0)
+          for: 1m
+          labels: { severity: critical }
+          annotations:
+            summary: "Không thấy primary Postgres (CNPG)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/postgres-failover.md
+---
+# Alert giả lập để kiểm đường tới Telegram (AC-12): bắn khi có ConfigMap `alert-drill` trong namespace monitoring
+# (kubectl -n monitoring create configmap alert-drill; xoá ConfigMap để tắt). Xem docs/ops/observability.md.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tickethub-drill
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  groups:
+    - name: tickethub.drill
+      rules:
+        - alert: DrillInvariant
+          expr: kube_configmap_info{namespace="monitoring",configmap="alert-drill"} == 1
+          labels: { severity: invariant }
+          annotations:
+            summary: "Alert giả lập (diễn tập): đường Alertmanager → Telegram"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/duplicate-seat-tickets.md
+---
+# Gateway: bảo vệ quá tải và rate limit (overview.md §13.4, §15.3). Runbook: docs/runbooks/gateway-overload.md.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tickethub-gateway
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  groups:
+    - name: tickethub.gateway
+      rules:
+        - alert: GatewayShedding
+          expr: sum(rate(tickethub_gateway_shed_total[1m])) > 0
+          for: 1m
+          labels: { severity: warning }
+          annotations:
+            summary: "Gateway đang từ chối request vì quá tải (503 OVERLOADED)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/gateway-overload.md
+        - alert: RateLimitBypassed
+          expr: sum(rate(tickethub_gateway_ratelimit_bypassed_total[5m])) > 0
+          for: 2m
+          labels: { severity: critical }
+          annotations:
+            summary: "Redis lỗi: rate limit ở Gateway đang bỏ qua (fail-open)"
+            runbook_url: https://github.com/nmduc2026/ticket-hub/blob/main/docs/runbooks/gateway-overload.md

@@ -1,0 +1,31 @@
+# Prometheus scrape app và gateway qua cổng http của Service (Actuator /actuator/prometheus).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tickethub-app
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  namespaceSelector: { matchNames: [tickethub] }
+  selector:
+    matchLabels: { app.kubernetes.io/name: app }
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s
+---
+# Gateway xuất tickethub_gateway_* (request đang xử lý, bị từ chối, bỏ qua rate limit) cho KEDA và alert.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: tickethub-gateway
+  namespace: monitoring
+  labels: { app.kubernetes.io/part-of: tickethub }
+spec:
+  namespaceSelector: { matchNames: [tickethub] }
+  selector:
+    matchLabels: { app.kubernetes.io/name: gateway }
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

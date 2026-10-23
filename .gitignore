@@ -1,0 +1,46 @@
+# Secret và cấu hình cục bộ
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Backend (Maven)
+target/
+# Spring Modulith sinh javadoc.json khi chạy test
+/build/
+*.log
+hs_err_pid*
+
+# Frontend
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+crash.log
+
+# Cong cu kiem thu trinh duyet
+.playwright-mcp/
+playwright-report/
+test-results/
+
+# Terraform: bản plan và log lỗi tạm của run-probe.sh
+tfplan
+apply.err
+
+# TanStack Router
+frontend/.tanstack/

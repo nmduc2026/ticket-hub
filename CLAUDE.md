@@ -27,17 +27,21 @@ Danh sách đầy đủ: `overview.md` §21.
 
 ## Lệnh thường dùng
 ```bash
-# TODO: điền khi scaffold backend/ và frontend/
-# Backend: Maven
-# Frontend: npm
-# Hạ tầng dev: docker compose --profile <core|kafka|search|observability|platform>
+# Backend (chạy trong backend/, cần Docker cho Testcontainers):
+#   ./mvnw verify                                  # build + toàn bộ test
+#   ./mvnw -pl app spring-boot:run       # app ở :8081, cần compose profile core; tự đọc infra/docker-compose/.env
+#   ./mvnw -pl gateway spring-boot:run   # gateway ở :8080, cần Keycloak đã healthy; tự đọc .env như trên
+# TODO: Frontend (npm) điền khi scaffold frontend/
+# Hạ tầng dev (chạy trong infra/docker-compose/, lần đầu: cp .env.example .env):
+#   docker compose --profile <core|kafka|search|observability|platform> up -d
+# Bật gitleaks pre-commit (một lần sau khi clone): git config core.hooksPath .githooks
 ```
 
 ## Cấu trúc thư mục
 Monorepo (`overview.md` §22):
 - `backend/`: Maven multi-module ngay từ đầu, `backend/pom.xml` là parent
   - `backend/gateway/`: Spring Cloud Gateway làm BFF, ứng dụng riêng
-  - `backend/app/`: modular monolith, package gốc `com.ndz.backend`, mỗi module nghiệp vụ là 1 package: `account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `shared`; `queue` (phòng chờ) thêm ở Sprint 7
+  - `backend/app/`: modular monolith, package gốc `com.ndz`, mỗi module nghiệp vụ là 1 package: `account`, `catalog`, `booking`, `payment`, `ticket`, `notification`, `shared`; `queue` (phòng chờ) thêm ở Sprint 7. Bên trong module chia theo tầng (`controller`, `service`/`impl`, `repository`, `entity`, `dto`, `mapper`...), xem skill springbot mục 1
   - Giai đoạn đầu event giữa các module đi bằng Spring Modulith in-process; Kafka vào ở Sprint 8
 - `frontend/`: tổ chức theo feature (`src/features/<feature>`); `src/api/generated/` do Orval sinh, không sửa tay
 - `infra/`: docker-compose, helm, argocd, keycloak, terraform
@@ -57,13 +61,12 @@ Monorepo (`overview.md` §22):
 - Git:
   - `main` luôn build và deploy được. Nhánh: `feat/<slug>`, `fix/<slug>`, `infra/<slug>`, `docs/<slug>`, `chore/<slug>`.
   - Commit theo Conventional Commits, scope là module: `feat(booking): giữ ghế bằng Postgres (BR-02, BR-03)`. Ghi mã BR khi liên quan.
-  - 1 PR = 1 việc kiểm chứng được. Mô tả PR: mục tiêu, BR / AC liên quan, cách test, kết quả verify. Gắn `[USER-REVIEW]` khi đụng phần người dùng bắt buộc tự xem (xem file lộ trình).
-  - Chỉ merge khi CI xanh; squash merge vào `main`.
+  - 1 PR = 1 việc kiểm chứng được. Mô tả PR: mục tiêu, BR / AC liên quan, cách test, kết quả verify.  - Chỉ merge khi CI xanh; squash merge vào `main`.
 
 ## Môi trường & deploy
 - dev: máy 16GB, Docker Compose theo profile
 - staging: máy 32GB, k3d
-- aws-lab: AWS `ap-southeast-1`, tạo bằng Terraform và destroy ngay sau lab
+- aws-lab: AWS `ap-southeast-1`, tạo bằng Terraform và destroy ngay sau lab. Ngoại lệ: bucket ảnh `infra/terraform/aws/media` dùng chung cho dev và staging, giữ tới hạn gỡ AWS
 - Thao tác cần **báo trước** cho người dùng: commit, push, mở PR, merge, deploy (k3d hay AWS), `kubectl`/`helm` lên cluster, `terraform apply`/`destroy`, chạy migration trên database không phải local/test.
   - Agent được thực hiện các thao tác này, nhưng trước khi làm phải báo: làm gì, trên môi trường nào, lệnh cụ thể, ảnh hưởng và cách hoàn tác. Chờ người dùng đồng ý rồi mới làm.
   - Người dùng trả lời **"skip"** cho một thao tác, hoặc cho cả một loại thao tác (vd. "skip commit"), thì agent tự làm mà không cần hỏi lại, nhưng vẫn ghi lại trong báo cáo.
@@ -76,7 +79,7 @@ Monorepo (`overview.md` §22):
 - **Một session cho một hạng mục** trong plan sprint; xong hạng mục thì báo cáo bàn giao, người dùng `/clear` trước hạng mục kế tiếp.
 - **Không đọc cả `overview.md`** (rất dài): chỉ đọc các § mà plan / hạng mục chỉ ra, tìm theo tiêu đề.
 - Yêu cầu mơ hồ → `brainstorm`. Bắt đầu sprint / việc lớn, viết ADR, review cuối sprint → `tech-lead`.
-- Review độc lập (tuỳ chọn, vùng `[USER-REVIEW]`): gọi subagent general-purpose review diff theo skill `code-review`.
+- Review độc lập (tuỳ chọn, vùng rủi ro cao: tiền, oversell, bảo mật): gọi subagent general-purpose review diff theo skill `code-review`.
 
 ## Skill
 | Vùng việc | Skill nạp |

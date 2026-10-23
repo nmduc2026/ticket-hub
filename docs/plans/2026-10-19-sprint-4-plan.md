@@ -62,12 +62,6 @@
 - AC-14: Phát vé tạo đúng 1 thông báo "vé đã phát" cho người mua; yêu cầu hoàn tạo 1 thông báo; gửi lại cùng event không tạo thêm; `GET /me/notifications` của user khác không thấy thông báo này.
 - AC-15: Chuông hiện số chưa đọc (polling ≤ 60 giây); đánh dấu đã đọc / đọc tất cả cập nhật số; tắt loại "Tạm dừng bán" trong cài đặt thì không nhận loại đó; loại vé và hoàn tiền / huỷ sự kiện không tắt được.
 
-## Người dùng tự xem (`[USER-REVIEW]`)
-
-- Số tiền hoàn theo từng lý do, luồng `REFUND_FAILED` và hoàn thủ công (việc 2–4).
-- Check-in và xoay khoá ký vé (việc 5).
-- Cấu hình backup CNPG, runbook PITR (việc 9); quy tắc alert (việc 10).
-
 ## Thao tác cần báo trước
 
 Commit / push / PR / merge; `kubectl` / `helm` lên k3d; diễn tập xoá dữ liệu và PITR trên staging (C7), kill primary (C1); đặt Telegram bot token, Sentry DSN vào Secret (không commit).

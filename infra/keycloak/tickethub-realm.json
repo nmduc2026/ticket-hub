@@ -1,0 +1,172 @@
+{
+  "realm": "tickethub",
+  "displayName": "Ticket Hub",
+  "loginTheme": "tickethub",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "bruteForceProtected": true,
+  "internationalizationEnabled": true,
+  "supportedLocales": ["vi", "en"],
+  "defaultLocale": "vi",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "no-reply@tickethub.local",
+    "fromDisplayName": "Ticket Hub"
+  },
+  "roles": {
+    "realm": [
+      { "name": "CUSTOMER", "description": "Khách hàng mua vé (mặc định cho mọi tài khoản)" },
+      { "name": "ORGANIZER", "description": "Ban tổ chức sự kiện" },
+      { "name": "ADMIN", "description": "Quản trị nền tảng" },
+      { "name": "offline_access", "description": "${role_offline-access}" },
+      { "name": "uma_authorization", "description": "${role_uma_authorization}" },
+      {
+        "name": "default-roles-tickethub",
+        "description": "Role mặc định của realm",
+        "composite": true,
+        "composites": {
+          "realm": ["CUSTOMER", "offline_access", "uma_authorization"],
+          "client": { "account": ["view-profile", "manage-account"] }
+        }
+      }
+    ]
+  },
+  "defaultRole": {
+    "name": "default-roles-tickethub",
+    "description": "Role mặc định của realm",
+    "composite": true,
+    "clientRole": false
+  },
+  "clients": [
+    {
+      "clientId": "tickethub-bff",
+      "name": "Ticket Hub Gateway (BFF)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_BFF_CLIENT_SECRET}",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/login/oauth2/code/keycloak",
+        "http://localhost:5173/login/oauth2/code/keycloak"
+      ],
+      "webOrigins": [],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:8080/*##http://localhost:5173/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "tickethub-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "tickethub-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "tickethub-internal",
+      "name": "Ticket Hub internal (service to service)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_INTERNAL_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "tickethub-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "tickethub-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "tickethub-account-admin",
+      "name": "Ticket Hub account admin (module account)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${KEYCLOAK_ACCOUNT_ADMIN_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "id": "00000000-0000-7000-8000-000000000001",
+      "username": "customer",
+      "email": "customer@tickethub.local",
+      "emailVerified": true,
+      "firstName": "Khách",
+      "lastName": "Hàng",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "123123", "temporary": false }],
+      "realmRoles": ["CUSTOMER"]
+    },
+    {
+      "id": "00000000-0000-7000-8000-000000000002",
+      "username": "organizer",
+      "email": "organizer@tickethub.local",
+      "emailVerified": true,
+      "firstName": "Ban",
+      "lastName": "Tổ Chức",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "123123", "temporary": false }],
+      "realmRoles": ["CUSTOMER", "ORGANIZER"]
+    },
+    {
+      "id": "00000000-0000-7000-8000-000000000003",
+      "username": "admin",
+      "email": "admin@tickethub.local",
+      "emailVerified": true,
+      "firstName": "Quản",
+      "lastName": "Trị",
+      "enabled": true,
+      "credentials": [{ "type": "password", "value": "123123", "temporary": false }],
+      "realmRoles": ["CUSTOMER", "ADMIN"]
+    },
+    {
+      "username": "service-account-tickethub-account-admin",
+      "enabled": true,
+      "serviceAccountClientId": "tickethub-account-admin",
+      "clientRoles": { "realm-management": ["view-users", "manage-users"] }
+    },
+    {
+      "username": "service-account-tickethub-internal",
+      "enabled": true,
+      "serviceAccountClientId": "tickethub-internal"
+    }
+  ]
+}
