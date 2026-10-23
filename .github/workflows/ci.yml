@@ -185,7 +185,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.image }}
       # Chặn khi có lỗ hổng CRITICAL đã có bản vá; HIGH chỉ báo trong log.
       - name: Trivy (CRITICAL chặn)
-        uses: aquasecurity/trivy-action@v0.32.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.IMAGE_NAME }}:scan
           severity: CRITICAL
