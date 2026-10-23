@@ -27,14 +27,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   backend:
-    name: Backend (Spotless, Error Prone, test, JaCoCo, SonarCloud)
+    name: Backend (Spotless, Error Prone, test, JaCoCo)
     runs-on: ubuntu-24.04
-    env:
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
     steps:
       - uses: actions/checkout@v4.2.2
-        with:
-          fetch-depth: 0 # SonarCloud cần lịch sử để gán dòng mới / cũ
       - uses: actions/setup-java@v4.7.1
         with:
           distribution: temurin
@@ -44,16 +40,6 @@ jobs:
       - name: Build và test
         working-directory: backend
         run: ./mvnw -B -ntp verify
-      # Chưa cấu hình SonarCloud (thiếu secret SONAR_TOKEN và biến SONAR_PROJECT_KEY / SONAR_ORGANIZATION) thì bỏ qua.
-      - name: SonarCloud
-        if: ${{ env.SONAR_TOKEN != '' && github.event.pull_request.head.repo.fork != true }}
-        working-directory: backend
-        run: >
-          ./mvnw -B -ntp org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
-          -Dsonar.host.url=https://sonarcloud.io
-          -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
-          -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
-          -Dsonar.coverage.jacoco.xmlReportPaths=**/target/site/jacoco/jacoco.xml
       - name: Kiểm hợp đồng OpenAPI không lệch
         run: git diff --exit-code -- frontend/openapi/openapi.json
       - uses: actions/upload-artifact@v4.6.2
@@ -250,33 +236,3 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "chore(deploy): image tag sha-${GITHUB_SHA::7} [skip ci]"
           git push origin HEAD:main
-
-  # OWASP Dependency-Check cho thư viện Maven. Cần secret NVD_API_KEY (miễn phí) để tải CVE nhanh; chưa có thì bỏ qua.
-  dependency-check:
-    name: OWASP Dependency-Check (backend)
-    runs-on: ubuntu-24.04
-    env:
-      NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-    steps:
-      - uses: actions/checkout@v4.2.2
-        if: ${{ env.NVD_API_KEY != '' }}
-      - uses: actions/setup-java@v4.7.1
-        if: ${{ env.NVD_API_KEY != '' }}
-        with:
-          distribution: temurin
-          java-version: '21'
-          cache: maven
-      # Chặn khi có lỗ hổng CVSS >= 9 (CRITICAL).
-      - name: Quét phụ thuộc
-        if: ${{ env.NVD_API_KEY != '' }}
-        working-directory: backend
-        run: >
-          ./mvnw -B -ntp org.owasp:dependency-check-maven:12.1.6:aggregate
-          -DnvdApiKey=${NVD_API_KEY} -DfailBuildOnCVSS=9 -Dformats=HTML
-      - uses: actions/upload-artifact@v4.6.2
-        if: ${{ env.NVD_API_KEY != '' && always() }}
-        with:
-          name: dependency-check-report
-          path: backend/target/dependency-check-report.html
-          if-no-files-found: ignore
-          retention-days: 7

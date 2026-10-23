@@ -14,7 +14,7 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 
 | # | Việc chặn | Bạn làm | Mở khoá |
 |---|---|---|---|
-| B1 | Đưa code lên GitHub | Duyệt push 4 nhánh và mở PR theo thứ tự Sprint 1 → 4; bật bảo vệ `main` (bắt buộc job `backend`, `frontend`, `e2e`, `secrets` xanh, squash merge); cài GitHub App Renovate (cấu hình ở `renovate.json`); SonarCloud theo `docs/ops/ci-cd.md` mục "Cần cấu hình một lần"; xin `NVD_API_KEY` ở nvd.nist.gov/developers/request-an-api-key | 1, 2 |
+| B1 | Đưa code lên GitHub | Duyệt push 4 nhánh và mở PR theo thứ tự Sprint 1 → 4; bật bảo vệ `main` (bắt buộc job `backend`, `frontend`, `e2e`, `secrets` xanh, squash merge) | 1, 2 |
 | B2 | Tài khoản Stripe test (Singapore) | Dashboard Stripe → Developers → API keys: đặt `STRIPE_SECRET_KEY`, `VITE_STRIPE_PUBLISHABLE_KEY` (pk_test_…) vào `.env`; `stripe listen --events payment_intent.*,charge.refunded,refund.failed --forward-to localhost:8080/api/v1/webhooks/stripe` lấy `STRIPE_WEBHOOK_SECRET`. Bật luôn Connect cho spike Sprint 5 (hạng mục 16) | 12 |
 | B3 | Cụm k3d trên máy staging | Cài k3d theo `docs/ops/k8s-staging.md`; duyệt từng lệnh `kubectl` / `helm` Claude báo trước | 13, 14, 15 |
 | B4 | Telegram bot | BotFather → `/newbot`, cho token và chat id (đặt vào Secret, không commit; `chat_id: 0` trong `kube-prometheus-stack.yaml` đang là giữ chỗ) | 14 |
@@ -86,7 +86,7 @@ Làm theo thứ tự này; mỗi việc mở khoá các hạng mục ở cột c
 
 ## Thao tác cần báo trước
 
-Push, mở PR, merge (hạng mục 1, 2 và mọi PR sau đó); `kubectl` / `helm` lên k3d; diễn tập PITR và kill primary trên staging; **`terraform apply` thăm dò và lab 1 (hỏi từng lần)**, `terraform destroy`; đặt Stripe key, Telegram token, Sentry DSN, `NVD_API_KEY` vào Secret / `.env` (không commit).
+Push, mở PR, merge (hạng mục 1, 2 và mọi PR sau đó); `kubectl` / `helm` lên k3d; diễn tập PITR và kill primary trên staging; **`terraform apply` thăm dò và lab 1 (hỏi từng lần)**, `terraform destroy`; đặt Stripe key, Telegram token, Sentry DSN vào Secret / `.env` (không commit).
 
 ## Quyết định đã chốt (người dùng, 21/10/2026)
 
@@ -122,7 +122,7 @@ Phụ thuộc tính năng của sprint đó, đã ghi vào plan tương ứng:
 
 - npm 10.8 ở máy dev lỗi peer dependency của Vite 8: dùng `npx -y npm@11 install` (Dockerfile và CI đã dùng npm 11).
 - OpenAPI do test backend ghi ra `frontend/openapi/openapi.json`: đổi API thì commit file này, CI kiểm lệch.
-- Spring Cloud 2025.1.3 chạy trên Boot 4.1.1; ghi đè `tomcat` 11.0.27, `jackson-bom` 3.1.8 vì CVE: Renovate nâng / bỏ khi có bản mới.
+- Spring Cloud 2025.1.3 chạy trên Boot 4.1.1; ghi đè `tomcat` 11.0.27, `jackson-bom` 3.1.8 vì CVE: bỏ khi Spring Boot cập nhật.
 - Admin hoàn thủ công không bắt `Idempotency-Key`: đã chặn bằng trạng thái (`REFUND_FAILED` → `REFUND_REQUESTED`), gọi lần hai trả 409.
 
 ## Quyết định nhỏ Sprint 4 (chờ duyệt ở B7)

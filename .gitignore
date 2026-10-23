@@ -41,3 +41,6 @@ test-results/
 # Terraform: bản plan và log lỗi tạm của run-probe.sh
 tfplan
 apply.err
+
+# TanStack Router
+frontend/.tanstack/

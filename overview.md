@@ -931,7 +931,7 @@ Yêu cầu cấu hình bắt buộc:
 | Secrets | Vault (Spring Cloud Vault) / External Secrets trên K8s; không có secret trong Git (gitleaks pre-commit) |
 | Input | Bean Validation ở mọi DTO, query tham số hoá (JPA/jOOQ), không nối chuỗi SQL |
 | Audit | Ghi lại mọi thao tác quản trị (duyệt organizer, khoá tài khoản, tạm dừng / huỷ sự kiện, hoàn tiền, đổi phí) — ai, lúc nào, thay đổi gì (Hibernate Envers + bảng audit) |
-| Dependency | Trivy + OWASP Dependency-Check trong CI, Renovate tự cập nhật |
+| Dependency | Trivy trong CI |
 | Mạng (K8s) | NetworkPolicy: chỉ Gateway nhận traffic từ ngoài; DB chỉ nhận kết nối từ service sở hữu |
 | Headers | CSP, HSTS, X-Content-Type-Options, Referrer-Policy |
 
@@ -1133,7 +1133,7 @@ Máy dev 16GB **không chạy full stack**: hằng ngày chạy `core`, bật th
 ```
 Push / PR ─▶ GitHub Actions
              ├─ Build + unit test + integration test (Testcontainers)
-             ├─ Spotless, Error Prone, ArchUnit, JaCoCo, SonarCloud
+             ├─ Spotless, Error Prone, ArchUnit, JaCoCo
              ├─ Trivy (image + dependency), gitleaks
              ├─ Build image ─▶ push GHCR
              └─ Cập nhật image tag trong Helm values (repo infra)
@@ -1233,7 +1233,7 @@ Dùng **Chaos Mesh** để chủ động gây sự cố. Mỗi kịch bản: gâ
 | Audit | Hibernate Envers |
 | Observability | Micrometer, Actuator, OpenTelemetry, Logback JSON |
 | Testing | JUnit, AssertJ, Mockito, Testcontainers, Awaitility, WireMock, Pact, ArchUnit, Instancio |
-| Chất lượng | Spotless, Error Prone, JaCoCo, SonarCloud |
+| Chất lượng | Spotless, Error Prone, JaCoCo |
 
 ### 21.2. Frontend
 
@@ -1276,9 +1276,9 @@ Dùng **Chaos Mesh** để chủ động gây sự cố. Mỗi kịch bản: gâ
 | Bảo mật | Trivy, Falco, NetworkPolicy, gitleaks |
 | Backup | pgBackRest/Barman (qua CNPG), **Velero** |
 | IaC | **Terraform** |
-| CI | **GitHub Actions**, GHCR, Renovate |
+| CI | **GitHub Actions**, GHCR |
 | Chi phí | OpenCost, AWS Budgets |
-| Bên ngoài (free) | Stripe test mode, Cloudflare DNS, SonarCloud, Sentry |
+| Bên ngoài (free) | Stripe test mode, Cloudflare DNS, Sentry |
 
 ---
 

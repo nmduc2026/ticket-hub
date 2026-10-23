@@ -7,7 +7,7 @@ Workflow: `.github/workflows/ci.yml`. Chạy trên mọi PR và mọi push vào 
 | Job | Làm gì | Gate |
 |---|---|---|
 | `secrets` | gitleaks quét toàn bộ lịch sử | Có secret → đỏ |
-| `backend` | `./mvnw verify`: Error Prone khi biên dịch, test (gồm Testcontainers), Spotless, JaCoCo; SonarCloud nếu đã cấu hình; kiểm `frontend/openapi/openapi.json` không lệch | Test / Spotless / Error Prone lỗi → đỏ |
+| `backend` | `./mvnw verify`: Error Prone khi biên dịch, test (gồm Testcontainers), Spotless, JaCoCo; kiểm `frontend/openapi/openapi.json` không lệch | Test / Spotless / Error Prone lỗi → đỏ |
 | `frontend` | lint (oxlint), type-check, Vitest, build; kiểm client Orval sinh ra không lệch | Lỗi → đỏ |
 | `e2e` | Dựng Postgres + Redis + Keycloak (compose `core`), chạy `app`, `gateway`, Vite dev rồi Playwright: đăng nhập 3 role, chặn role, đăng xuất, khung giao diện ở 1280px và 390px | Lỗi → đỏ |
 | `images` | Build image `app`, `gateway`, `frontend`; Trivy; đẩy GHCR **chỉ khi push vào `main`** | CRITICAL đã có bản vá → đỏ; HIGH chỉ báo |
@@ -18,8 +18,6 @@ Image: `ghcr.io/<chủ repo>-{app,gateway,frontend}:sha-<commit>` và `:main`. K
 
 | Việc | Cách |
 |---|---|
-| SonarCloud | Tạo project trên sonarcloud.io; thêm secret `SONAR_TOKEN`, biến repo `SONAR_ORGANIZATION`, `SONAR_PROJECT_KEY`. Chưa có thì bước Sonar tự bỏ qua |
-| Renovate | Cài GitHub App Renovate cho repo; cấu hình ở `renovate.json` |
 | Gói GHCR | Lần đầu đẩy xong, vào Packages đặt quyền cho repo; để private nếu không muốn công khai |
 | Bảo vệ nhánh | Settings → Branches: `main` yêu cầu job `backend`, `frontend`, `e2e`, `secrets` xanh, squash merge |
 

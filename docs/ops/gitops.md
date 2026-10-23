@@ -40,7 +40,6 @@ Repo công khai nên ArgoCD đọc không cần credential. Thêm `tickethub.loc
 | HTTPS qua Envoy | `curl --cacert ca.crt https://tickethub.localhost/` trả SPA |
 | NetworkPolicy | `kubectl -n tickethub run probe --rm -it --image=busybox --labels=tickethub/role=other -- wget -T 3 -qO- http://app:8081/actuator/health` bị chặn |
 | Trivy | Job `images` của CI (CRITICAL đã có bản vá → đỏ) |
-| OWASP Dependency-Check | Job `dependency-check`, cần secret `NVD_API_KEY` |
 
 ## Rollback
 

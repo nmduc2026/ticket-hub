@@ -30,7 +30,7 @@ Nhánh `feature/sprint-3`. Chạy ngày 21/10/2026 trên máy dev (Windows 11), 
 | AC-8 (BR-10, BR-06) | `PlatformFeeTests` (làm tròn xuống, 333.333 × 500 → 16.666), `PaymentApiTests.feeIsRoundedDown` | Đạt |
 | AC-9 | `TicketApiTests.qrTokenVerifiesWithThePublicKeyLookedUpByKid`, `iOnlySeeMyOwnTickets`; `MyBookingsApiTests.iOnlySeeMyOwnBookingsNewestFirst`; FE `myTickets.test.tsx` | Đạt |
 | AC-10 | `e2e/purchase.spec.ts` + truy vấn ghế trùng. Phần BE: `TicketApiTests.theDatabaseRefusesTwoLiveTicketsForOneSeat` | **Chưa chạy** (cần Stripe test key, `stripe listen`) |
-| AC-11 | `helm lint` / `template` sạch; Trivy và OWASP Dependency-Check đã thêm vào CI; ArgoCD, Envoy Gateway, NetworkPolicy chưa chạy trên cụm | **Chưa kiểm chứng** (chưa có k3d) |
+| AC-11 | `helm lint` / `template` sạch; Trivy đã thêm vào CI; ArgoCD, Envoy Gateway, NetworkPolicy chưa chạy trên cụm | **Chưa kiểm chứng** (chưa có k3d) |
 
 ## Chưa đạt hoặc chưa chạy
 
@@ -39,7 +39,7 @@ Nhánh `feature/sprint-3`. Chạy ngày 21/10/2026 trên máy dev (Windows 11), 
 | AC-2 (phần Stripe thật), AC-3 (thẻ `4000…0002` thật), AC-10 | Thiếu Stripe test key và `stripe listen` | Pending hạng mục 1, 14 |
 | AC-11 | Chưa dựng k3d, ArgoCD | Pending hạng mục 12, 13 |
 | Đối chiếu prototype #6–#9, #21 trên trình duyệt thật, 390px, bàn phím | Chưa chạy; chỉ có test component | Pending hạng mục 10 |
-| Trivy, OWASP Dependency-Check, job `update-image-tags` | Chỉ chạy được trên GitHub Actions sau khi push | Quan sát CI khi mở PR |
+| Trivy, job `update-image-tags` | Chỉ chạy được trên GitHub Actions sau khi push | Quan sát CI khi mở PR |
 
 ## Rủi ro còn lại
 

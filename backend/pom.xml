@@ -41,7 +41,6 @@
 		<errorprone.version>2.50.0</errorprone.version>
 		<spotless.version>3.10.4</spotless.version>
 		<jacoco.version>0.8.15</jacoco.version>
-		<sonar-maven.version>5.8.0.7211</sonar-maven.version>
 	</properties>
 
 	<dependencyManagement>
@@ -108,15 +107,6 @@
 	</dependencyManagement>
 
 	<build>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.sonarsource.scanner.maven</groupId>
-					<artifactId>sonar-maven-plugin</artifactId>
-					<version>${sonar-maven.version}</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
 		<plugins>
 			<!-- Error Prone chạy trong lúc biên dịch; cần các tuỳ chọn add-exports ở .mvn/jvm.config (JDK 21). -->
 			<plugin>
@@ -161,7 +151,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- JaCoCo: báo cáo coverage cho SonarCloud (target/site/jacoco/jacoco.xml). -->
+			<!-- JaCoCo: báo cáo coverage (target/site/jacoco/jacoco.xml). -->
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
