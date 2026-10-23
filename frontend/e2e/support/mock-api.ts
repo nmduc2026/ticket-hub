@@ -17,7 +17,12 @@ export function json(route: Route, body: unknown, status = 200): Promise<void> {
   return route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) })
 }
 
-/** Đăng nhập giả: `GET /api/v1/me` trả hồ sơ organizer. */
+/**
+ * Đăng nhập giả: `GET /api/v1/me` trả hồ sơ organizer.
+ * Request `/api/v1/**` chưa mock trả 502 như khi không có Gateway; không thì khi Gateway đang chạy (CI) nó trả 401
+ * và frontend chuyển sang Keycloak. Playwright ưu tiên route đăng ký sau, nên mock riêng của từng test vẫn thắng.
+ */
 export async function mockSession(page: Page): Promise<void> {
+  await page.route('**/api/v1/**', (route) => json(route, { title: 'Chưa mock', status: 502 }, 502))
   await page.route('**/api/v1/me', (route) => json(route, mockUser))
 }
