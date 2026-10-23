@@ -3,6 +3,7 @@ package com.ndz.queue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -26,6 +27,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import com.ndz.IntegrationTest;
 import com.ndz.MutableClock;
+import com.ndz.RedisControl;
 import com.ndz.TestTokens;
 import com.ndz.queue.client.RedisWaitingRoom;
 import com.ndz.queue.service.QueueService;
@@ -59,6 +61,9 @@ class QueueJoinTests {
 
 	@Autowired
 	QueueService queue;
+
+	@Autowired
+	RedisControl redisControl;
 
 	@BeforeEach
 	void prepare() {
@@ -221,6 +226,25 @@ class QueueJoinTests {
 
 		assertThat(redis.keys("queue:{" + event + "}:*")).isEmpty();
 		join(Uuid7.next(), event).andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("QUEUE_CLOSED"));
+	}
+
+	@Test
+	@DisplayName("Redis chết → join và status trả 503 QUEUE_UNAVAILABLE kèm Retry-After, không phải 500")
+	void whenRedisIsDownJoinAndStatusReturn503() throws Exception {
+		UUID event = highDemandEvent();
+		UUID user = Uuid7.next();
+		join(user, event).andExpect(status().isAccepted());
+
+		redisControl.pause();
+		try {
+			join(Uuid7.next(), event).andExpect(status().isServiceUnavailable())
+					.andExpect(jsonPath("$.code").value("QUEUE_UNAVAILABLE")).andExpect(header().string("Retry-After", "5"));
+			queueStatus(user, event).andExpect(status().isServiceUnavailable())
+					.andExpect(jsonPath("$.code").value("QUEUE_UNAVAILABLE")).andExpect(header().string("Retry-After", "5"));
+		}
+		finally {
+			redisControl.resume();
+		}
 	}
 
 	@Test

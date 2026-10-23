@@ -6,7 +6,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.QueryTimeoutException;
+import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.data.redis.RedisSystemException;
 import org.springframework.stereotype.Service;
 
 import com.ndz.catalog.api.CatalogApi;
@@ -25,6 +31,8 @@ import com.ndz.shared.sse.SseChannels;
 
 @Service
 class QueueServiceImpl implements QueueService {
+
+	private static final Logger log = LoggerFactory.getLogger(QueueServiceImpl.class);
 
 	private static final Set<String> CLOSED_STATUSES = Set.of("SUSPENDED", "CANCELLED", "ENDED");
 
@@ -45,6 +53,15 @@ class QueueServiceImpl implements QueueService {
 
 	@Override
 	public QueueStatusResponse join(UUID eventId, UUID userId) {
+		return whenRedisUp(() -> doJoin(eventId, userId));
+	}
+
+	@Override
+	public QueueStatusResponse status(UUID eventId, UUID userId) {
+		return whenRedisUp(() -> doStatus(eventId, userId));
+	}
+
+	private QueueStatusResponse doJoin(UUID eventId, UUID userId) {
 		Meta meta = requireMeta(eventId);
 		Instant now = clock.instant();
 		if (now.isBefore(meta.saleStartsAt().minus(properties.openBefore()))) {
@@ -58,14 +75,28 @@ class QueueServiceImpl implements QueueService {
 		return queued(meta, now, rank);
 	}
 
-	@Override
-	public QueueStatusResponse status(UUID eventId, UUID userId) {
+	private QueueStatusResponse doStatus(UUID eventId, UUID userId) {
 		Meta meta = requireMeta(eventId);
 		if (room.admission(eventId, userId).isPresent()) {
 			return admitted(eventId, userId);
 		}
 		return room.rank(eventId, userId).stream().mapToObj(rank -> queued(meta, clock.instant(), rank)).findFirst()
 				.orElseThrow(() -> new BusinessException(ErrorCode.QUEUE_NOT_JOINED, "Bạn chưa vào phòng chờ"));
+	}
+
+	/**
+	 * Hàng chờ chỉ sống trong Redis: Redis không dùng được thì báo 503 kèm {@code Retry-After} để khách thử lại, thay vì
+	 * trả 500. Chỉ bắt lỗi của Redis, lỗi cơ sở dữ liệu khi lấy lại meta vẫn đi theo đường 5xx thường.
+	 */
+	private QueueStatusResponse whenRedisUp(Supplier<QueueStatusResponse> action) {
+		try {
+			return action.get();
+		}
+		catch (RedisConnectionFailureException | RedisSystemException | QueryTimeoutException e) {
+			log.warn("Redis không dùng được, phòng chờ tạm dừng nhận yêu cầu", e);
+			throw new BusinessException(ErrorCode.QUEUE_UNAVAILABLE, "Phòng chờ đang bận, vui lòng thử lại sau ít giây")
+					.retryAfter((int) properties.retryAfter().toSeconds());
+		}
 	}
 
 	@Override

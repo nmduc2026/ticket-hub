@@ -13,8 +13,10 @@ import org.springframework.boot.context.properties.bind.DefaultValue;
  * @param admitPerSecond số người gọi vào tối đa mỗi giây; cũng dùng để ước tính thời gian chờ
  * @param maxActive số người tối đa đang ở trong cùng lúc: lượt vào còn hạn + booking chờ thanh toán
  * @param admissionTtl hạn của một lượt vào (BR-04: 15 phút)
+ * @param retryAfter gợi ý khách thử lại sau chừng này khi Redis không dùng được ({@code QUEUE_UNAVAILABLE})
  */
 @ConfigurationProperties("tickethub.queue")
 public record QueueProperties(@DefaultValue("15m") Duration openBefore, @DefaultValue("20") int admitPerSecond,
-		@DefaultValue("200") int maxActive, @DefaultValue("15m") Duration admissionTtl) {
+		@DefaultValue("200") int maxActive, @DefaultValue("15m") Duration admissionTtl,
+		@DefaultValue("5s") Duration retryAfter) {
 }

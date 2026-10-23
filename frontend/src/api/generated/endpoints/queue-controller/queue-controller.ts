@@ -51,11 +51,16 @@ export type joinQueueResponse409 = {
   data: ProblemDetail
   status: 409
 }
+
+export type joinQueueResponse503 = {
+  data: ProblemDetail
+  status: 503
+}
     
 export type joinQueueResponseSuccess = (joinQueueResponse202) & {
   headers: Headers;
 };
-export type joinQueueResponseError = (joinQueueResponse404 | joinQueueResponse409) & {
+export type joinQueueResponseError = (joinQueueResponse404 | joinQueueResponse409 | joinQueueResponse503) & {
   headers: Headers;
 };
 
@@ -83,7 +88,7 @@ export const joinQueue = async (eventId: string, options?: RequestInit): Promise
 
 
 
-export const getJoinQueueMutationOptions = <TError = ProblemDetail | ProblemDetail,
+export const getJoinQueueMutationOptions = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinQueue>>, TError,{eventId: string}, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof joinQueue>>, TError,{eventId: string}, TContext> => {
 
@@ -110,12 +115,12 @@ const {mutation: mutationOptions} = options ?
 
     export type JoinQueueMutationResult = NonNullable<Awaited<ReturnType<typeof joinQueue>>>
     
-    export type JoinQueueMutationError = ProblemDetail | ProblemDetail
+    export type JoinQueueMutationError = ProblemDetail | ProblemDetail | ProblemDetail
 
     /**
  * @summary Vào phòng chờ
  */
-export const useJoinQueue = <TError = ProblemDetail | ProblemDetail,
+export const useJoinQueue = <TError = ProblemDetail | ProblemDetail | ProblemDetail,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof joinQueue>>, TError,{eventId: string}, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof joinQueue>>,
@@ -263,11 +268,16 @@ export type getQueueStatusResponse409 = {
   data: ProblemDetail
   status: 409
 }
+
+export type getQueueStatusResponse503 = {
+  data: ProblemDetail
+  status: 503
+}
     
 export type getQueueStatusResponseSuccess = (getQueueStatusResponse200) & {
   headers: Headers;
 };
-export type getQueueStatusResponseError = (getQueueStatusResponse404 | getQueueStatusResponse409) & {
+export type getQueueStatusResponseError = (getQueueStatusResponse404 | getQueueStatusResponse409 | getQueueStatusResponse503) & {
   headers: Headers;
 };
 
@@ -303,7 +313,7 @@ export const getGetQueueStatusQueryKey = (eventId?: string,) => {
     }
 
     
-export const getGetQueueStatusQueryOptions = <TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail>(eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQueueStatus>>, TError, TData>>, }
+export const getGetQueueStatusQueryOptions = <TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail | ProblemDetail>(eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQueueStatus>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -322,10 +332,10 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type GetQueueStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getQueueStatus>>>
-export type GetQueueStatusQueryError = ProblemDetail | ProblemDetail
+export type GetQueueStatusQueryError = ProblemDetail | ProblemDetail | ProblemDetail
 
 
-export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail>(
+export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail | ProblemDetail>(
  eventId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQueueStatus>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof getQueueStatus>>,
@@ -335,7 +345,7 @@ export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStat
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail>(
+export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail | ProblemDetail>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQueueStatus>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof getQueueStatus>>,
@@ -345,7 +355,7 @@ export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStat
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail>(
+export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail | ProblemDetail>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQueueStatus>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -353,7 +363,7 @@ export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStat
  * @summary Vị trí trong phòng chờ
  */
 
-export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail>(
+export function useGetQueueStatus<TData = Awaited<ReturnType<typeof getQueueStatus>>, TError = ProblemDetail | ProblemDetail | ProblemDetail>(
  eventId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getQueueStatus>>, TError, TData>>, }
  , queryClient?: QueryClient 
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {

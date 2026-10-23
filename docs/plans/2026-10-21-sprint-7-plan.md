@@ -36,8 +36,8 @@
 
 | Endpoint | Request chính | Response chính | Mã lỗi nghiệp vụ |
 |---|---|---|---|
-| `POST /queue/{eventId}/join` | — | `202 {position, estimatedWaitSeconds, phase: LOTTERY \| QUEUED \| ADMITTED}` | `QUEUE_NOT_ENABLED`, `QUEUE_NOT_OPEN`, `QUEUE_CLOSED` |
-| `GET /queue/{eventId}/status` | — | `{position, estimatedWaitSeconds, phase, admissionExpiresAt?}` | `QUEUE_NOT_JOINED`, `QUEUE_CLOSED` |
+| `POST /queue/{eventId}/join` | — | `202 {position, estimatedWaitSeconds, phase: LOTTERY \| QUEUED \| ADMITTED}` | `QUEUE_NOT_ENABLED`, `QUEUE_NOT_OPEN`, `QUEUE_CLOSED`, `QUEUE_UNAVAILABLE` (503) |
+| `GET /queue/{eventId}/status` | — | `{position, estimatedWaitSeconds, phase, admissionExpiresAt?}` | `QUEUE_NOT_JOINED`, `QUEUE_CLOSED`, `QUEUE_UNAVAILABLE` (503) |
 | `GET /queue/{eventId}/stream` | SSE | `event: position {position, estimatedWaitSeconds}`, `event: admitted {admissionExpiresAt}`, `event: closed {reason: SUSPENDED \| CANCELLED \| ENDED}`, heartbeat | — |
 | `GET /events/{id}/seats/stream` | SSE | `event: seats {changes: [{seatId, status}]}` | — |
 | `GET /me/notifications/stream` | SSE | `event: notification {…}`, `event: unread {count}` | — |
@@ -79,7 +79,7 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 
 | Hạng mục | Kết quả | Còn lại |
 |---|---|---|
-| 1 Module `queue` | `join` / `status`, score ngẫu nhiên trước giờ mở bán, `ZADD NX`, lấy lại meta qua `CatalogApi.queueInfo`, đóng phòng chờ khi sự kiện tạm dừng / huỷ / kết thúc; 11 test + 2 test listener | SSE `closed {reason}` khi đóng phòng chờ (hạng mục 4); Redis lỗi lúc `join` hiện trả 500, chưa có mã 503 riêng |
+| 1 Module `queue` | `join` / `status`, score ngẫu nhiên trước giờ mở bán, `ZADD NX`, lấy lại meta qua `CatalogApi.queueInfo`, đóng phòng chờ khi sự kiện tạm dừng / huỷ / kết thúc; 11 test + 2 test listener | – (SSE `closed {reason}` ở hạng mục 4; Redis lỗi lúc `join` / `status` trả `503 QUEUE_UNAVAILABLE` kèm `Retry-After`) |
 | 2 Điều tiết | Lua gọi người vào, job ShedLock mỗi giây, `max_active` 200, 20 người / giây; 8 test | Chưa đo thực tế (hạng mục 11) |
 | 3 Booking kiểm lượt vào | `403 ADMISSION_REQUIRED`, một lượt một booking, ghế bận thì giữ lượt; 4 test | – |
 | 6 Cache chi tiết sự kiện | Cache + khoá rebuild + bản cũ, xoá sau commit; 6 test | – |

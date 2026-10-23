@@ -623,6 +623,16 @@
                 }
               }
             }
+          },
+          "503" : {
+            "description" : "QUEUE_UNAVAILABLE: Redis không dùng được, thử lại sau Retry-After",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
           }
         }
       }
@@ -2508,6 +2518,16 @@
           },
           "409" : {
             "description" : "QUEUE_CLOSED",
+            "content" : {
+              "application/problem+json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProblemDetail"
+                }
+              }
+            }
+          },
+          "503" : {
+            "description" : "QUEUE_UNAVAILABLE: Redis không dùng được, thử lại sau Retry-After",
             "content" : {
               "application/problem+json" : {
                 "schema" : {

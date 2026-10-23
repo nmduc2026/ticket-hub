@@ -46,6 +46,8 @@ class QueueController {
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "409", description = "QUEUE_NOT_OPEN (chưa tới giờ mở phòng chờ) hoặc QUEUE_CLOSED",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "503", description = "QUEUE_UNAVAILABLE: Redis không dùng được, thử lại sau Retry-After",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@PostMapping("/join")
 	@ResponseStatus(HttpStatus.ACCEPTED)
 	QueueStatusResponse join(@PathVariable UUID eventId) {
@@ -59,6 +61,8 @@ class QueueController {
 	@ApiResponse(responseCode = "404", description = "QUEUE_NOT_JOINED, QUEUE_NOT_ENABLED hoặc EVENT_NOT_FOUND",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@ApiResponse(responseCode = "409", description = "QUEUE_CLOSED",
+			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
+	@ApiResponse(responseCode = "503", description = "QUEUE_UNAVAILABLE: Redis không dùng được, thử lại sau Retry-After",
 			content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
 	@GetMapping("/status")
 	QueueStatusResponse status(@PathVariable UUID eventId) {
