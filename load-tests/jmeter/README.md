@@ -31,7 +31,17 @@ jmeter -n -t ticket-hub.jmx -JCookieManager.save.cookies=true -Jscenario=load -J
 jmeter -n -t ticket-hub.jmx -JCookieManager.save.cookies=true -Jscenario=soak -Jusers=200 -JuseScheduler=true -Jduration=3600 -Jloops=-1 ...
 
 # Stress: tăng -Jusers theo bậc cho tới khi gãy, ghi thành phần gãy trước
+
+# Phòng chờ (sự kiện high_demand): vào hàng, hỏi GET /queue/{eventId}/status mỗi giây tới khi ADMITTED, rồi giữ ghế
+# Spike 10 → 500 user trong 5 giây:
+jmeter -n -t ticket-hub.jmx -JCookieManager.save.cookies=true -Jscenario=queue -Jusers=500 -JrampUp=5 ...
+# Flash sale qua phòng chờ (500 user / 100 ghế):
+jmeter -n -t ticket-hub.jmx -JCookieManager.save.cookies=true -Jscenario=queue -Jusers=500 -JrampUp=10 ...
 ```
+
+### Dữ liệu cho kịch bản `queue`
+
+Dựng sự kiện với `-v high_demand=true` rồi ghi meta phòng chờ vào Redis bằng lệnh in ở đầu `scripts/seed-event.sql` (Queue đọc meta từ Redis trước, nên không cần sự kiện trong Catalog). `max_active` mặc định 200 và gọi 20 người / giây: 500 user mất khoảng 25 giây để được gọi hết, trừ khi đặt `TICKETHUB_QUEUE_MAX_ACTIVE`, `TICKETHUB_QUEUE_ADMIT_PER_SECOND` khác. Kịch bản không có SSE; `-JqueuePollMs` (mặc định 1000) chỉnh nhịp hỏi `status`. p99 tính trên các request REST ở trên (join, status, giữ ghế).
 
 Kết quả (`.jtl` và báo cáo HTML) lưu ở `docs/test/load/`; số đo tổng hợp ghi vào `docs/test/load/sprint-5-load.md`.
 

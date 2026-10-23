@@ -112,7 +112,7 @@ Làm các hạng mục không bị chặn theo thứ tự đã duyệt, mỗi h�
 
 | # | Việc | Bị chặn bởi | Làm gì khi được gỡ |
 |---|---|---|---|
-| S7-1 | Kịch bản JMeter cho hạng mục 11 (hỏi `GET /queue/{id}/status`) | Không bị chặn, chưa viết | Thêm thread group phòng chờ vào `load-tests/jmeter/ticket-hub.jmx` |
+| S7-1 | Kịch bản JMeter cho hạng mục 11 | Đã viết (`-Jscenario=queue`, seed `-v high_demand=true`), chưa chạy được: máy dev không có JMeter | Chạy thử một lượt nhỏ trên staging rồi chỉnh nếu cần |
 | S7-2 | Hạng mục 4 và 7 phần hạ tầng (Gateway SSE không buffer, Envoy HTTP/2, `preStop`, `terminationGracePeriodSeconds`), hạng mục 10 (KEDA, PDB, probe) | B3, hạng mục 13, 14 dọn dẹp | Viết manifest trước, chạy trên k3d khi có cụm |
 | S7-3 | Hạng mục 11 (load test có phòng chờ, chaos C5), 12 (verify) | B3, S5-1 (baseline chưa đo), JMeter | Viết kịch bản JMeter với `GET /queue/{eventId}/status`, chạy trên staging |
 | S7-4 | Còn lại: Playwright hai trình duyệt thấy ghế đổi màu ≤ 2 giây; SSE đa pod thật (AC-6). Đã xong: spec mock phòng chờ và chuông | Hạng mục 11 dọn dẹp (E2E stack thật), trình duyệt thật | Viết spec mock trước; chạy với `app` + `gateway` thật khi có stack |

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Kịch bản JMeter của Ticket Hub (ADR 0009). MỘT file, chọn kịch bản bằng -Jscenario=flash|load|soak|stress:
+  Kịch bản JMeter của Ticket Hub (ADR 0009). MỘT file, chọn kịch bản bằng -Jscenario=flash|load|soak|stress|queue:
     flash  : mọi user đăng nhập rồi cùng giữ ghế trong vài giây (500 user / 100 ghế): kiểm bất biến BR-01
     load   : user xem danh sách / sơ đồ ghế rồi giữ ghế, tải đều
     soak   : như load, chạy 1-2 giờ với 200 user
     stress : như load, tăng user cho tới khi gãy
+    queue  : như load nhưng sự kiện high_demand: vào phòng chờ, hỏi GET /queue/{eventId}/status mỗi giây tới khi ADMITTED
+             (JMeter không hỗ trợ SSE sẵn) rồi mới giữ ghế. Spike = -Jusers=500 -JrampUp=5; Flash sale = -Jusers=500 -JrampUp=10.
   Đăng nhập qua luồng Keycloak thật qua Gateway để lấy cookie SESSION (không phát token giả).
   Bản nháp: chưa chạy thật (chờ cụm staging và JMeter trên máy chạy tải). Cách chạy: load-tests/jmeter/README.md.
 -->
@@ -151,6 +153,82 @@
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           </HTTPSamplerProxy>
           <hashTree/>
+        </hashTree>
+
+        <IfController guiclass="IfControllerPanel" testclass="IfController" testname="Chỉ kịch bản queue: vào phòng chờ và chờ tới lượt" enabled="true">
+          <stringProp name="IfController.condition">"${scenario}" == "queue"</stringProp>
+          <boolProp name="IfController.evaluateAll">false</boolProp>
+          <boolProp name="IfController.useExpression">true</boolProp>
+        </IfController>
+        <hashTree>
+          <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="Header phòng chờ" enabled="true">
+            <collectionProp name="HeaderManager.headers">
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">X-Requested-With</stringProp>
+                <stringProp name="Header.value">XMLHttpRequest</stringProp>
+              </elementProp>
+              <elementProp name="" elementType="Header">
+                <stringProp name="Header.name">X-XSRF-TOKEN</stringProp>
+                <stringProp name="Header.value">${COOKIE_XSRF-TOKEN}</stringProp>
+              </elementProp>
+            </collectionProp>
+          </HeaderManager>
+          <hashTree/>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Vào phòng chờ (POST /queue/{eventId}/join)" enabled="true">
+            <stringProp name="HTTPSampler.path">/api/v1/queue/${eventId}/join</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="202 (đã vào hàng hoặc đã có lượt vào)" enabled="true">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="1">^202$</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">1</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Lấy phase" enabled="true">
+              <stringProp name="JSONPostProcessor.referenceNames">phase</stringProp>
+              <stringProp name="JSONPostProcessor.jsonPathExprs">$.phase</stringProp>
+              <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+              <stringProp name="JSONPostProcessor.defaultValues">ERROR</stringProp>
+            </JSONPostProcessor>
+            <hashTree/>
+          </hashTree>
+          <WhileController guiclass="WhileControllerGui" testclass="WhileController" testname="Chờ tới lượt (hỏi status, dừng khi ADMITTED hoặc lỗi)" enabled="true">
+            <stringProp name="WhileController.condition">${__jexl3("${phase}" == "QUEUED" || "${phase}" == "LOTTERY")}</stringProp>
+          </WhileController>
+          <hashTree>
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Vị trí trong phòng chờ (GET /queue/{eventId}/status)" enabled="true">
+              <stringProp name="HTTPSampler.path">/api/v1/queue/${eventId}/status</stringProp>
+              <stringProp name="HTTPSampler.method">GET</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">false</boolProp>
+            </HTTPSamplerProxy>
+            <hashTree>
+              <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="200" enabled="true">
+                <collectionProp name="Asserion.test_strings">
+                  <stringProp name="1">^200$</stringProp>
+                </collectionProp>
+                <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+                <boolProp name="Assertion.assume_success">false</boolProp>
+                <intProp name="Assertion.test_type">1</intProp>
+              </ResponseAssertion>
+              <hashTree/>
+              <JSONPostProcessor guiclass="JSONPostProcessorGui" testclass="JSONPostProcessor" testname="Lấy phase" enabled="true">
+                <stringProp name="JSONPostProcessor.referenceNames">phase</stringProp>
+                <stringProp name="JSONPostProcessor.jsonPathExprs">$.phase</stringProp>
+                <stringProp name="JSONPostProcessor.match_numbers">1</stringProp>
+                <stringProp name="JSONPostProcessor.defaultValues">ERROR</stringProp>
+              </JSONPostProcessor>
+              <hashTree/>
+            </hashTree>
+            <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Chờ giữa hai lần hỏi" enabled="true">
+              <stringProp name="ConstantTimer.delay">${__P(queuePollMs,1000)}</stringProp>
+            </ConstantTimer>
+            <hashTree/>
+          </hashTree>
         </hashTree>
 
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Giữ ghế (POST /bookings)" enabled="true">
